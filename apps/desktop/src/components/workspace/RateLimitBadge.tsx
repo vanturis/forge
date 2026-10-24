@@ -53,7 +53,8 @@ export function RateLimitBadge({ autoContinueAt }: { autoContinueAt: string | nu
       >
         <button
           type="button"
-          className="rounded"
+          className="shrink-0 rounded"
+          aria-label={text}
           aria-expanded={pinned}
           onClick={() => setPinned((p) => !p)}
           onBlur={() => setPinned(false)}
@@ -62,7 +63,8 @@ export function RateLimitBadge({ autoContinueAt }: { autoContinueAt: string | nu
           }}
         >
           <Badge tone={reached ? "danger" : "warning"}>
-            <AlertTriangle className="h-3 w-3" /> {text}
+            {/* Narrow: only the icon, the text is in the tooltip. */}
+            <AlertTriangle className="h-3 w-3" /> <span className="hidden @4xl/composer:inline">{text}</span>
           </Badge>
         </button>
       </Tooltip>

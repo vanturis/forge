@@ -596,11 +596,17 @@ export const Composer = memo(function Composer({
               <span className="hidden @2xl/composer:inline">{t.chat.composer.plan}</span>
             </Button>
           </Tooltip>
-          <div className="min-w-0 flex-1" />
-          <RateLimitBadge autoContinueAt={session?.autoContinueAt ?? null} />
-          {session && <SessionUsageMeter sessionId={session.id} title={session.title} />}
-          {session?.context && <ContextMeter usage={session.context} onCompact={() => void compactSession(session.id)} disabled={working || waiting || sending} />}
-          <span className="hidden shrink-0 whitespace-nowrap text-caption text-subtle @5xl/composer:inline">
+          {/* The displays give way first: still too narrow after the breakpoints, they are cut off here instead of pushing send and stop out of the window. */}
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+            <RateLimitBadge autoContinueAt={session?.autoContinueAt ?? null} />
+            {session && (
+              <div className="hidden shrink-0 @xl/composer:flex">
+                <SessionUsageMeter sessionId={session.id} title={session.title} />
+              </div>
+            )}
+            {session?.context && <ContextMeter usage={session.context} onCompact={() => void compactSession(session.id)} disabled={working || waiting || sending} />}
+          </div>
+          <span className="hidden shrink-0 whitespace-nowrap text-caption text-subtle @6xl/composer:inline">
             {enterToSend ? (
               <>
                 <Kbd>Enter</Kbd> {t.chat.composer.send} · <Kbd>{t.chat.composer.shiftEnter}</Kbd> {t.chat.composer.newline}
@@ -617,7 +623,7 @@ export const Composer = memo(function Composer({
               value={options.effort ?? "__default"}
               onChange={(v) => void options.changeEffort(v === "__default" ? null : (v as EffortLevel))}
               options={[{ value: "__default", label: t.chat.composer.effortDefault }, ...effortLevels.map((l) => ({ value: l, label: t.chat.composer.effortLevel(l) }))]}
-              className="hidden w-36 shrink-0 @4xl/composer:inline-flex"
+              className="hidden w-36 shrink-0 @5xl/composer:inline-flex"
               aria-label={t.chat.composer.effort}
               disabled={working}
             />
@@ -627,12 +633,12 @@ export const Composer = memo(function Composer({
             value={modelValue}
             onChange={(v) => void options.changeModel(v === "__default" ? null : v)}
             options={modelOptions}
-            className="hidden w-40 shrink-0 @xl/composer:inline-flex"
+            className="hidden w-40 shrink-0 @3xl/composer:inline-flex"
             aria-label={t.chat.composer.model}
             disabled={working}
           />
           {/* Narrow: Effort (and below that the model) move into one menu instead of squeezing the row. */}
-          <div className="shrink-0 @4xl/composer:hidden">
+          <div className="shrink-0 @5xl/composer:hidden">
             <DropdownMenu
               header={t.chat.composer.modelAndEffort}
               trigger={
