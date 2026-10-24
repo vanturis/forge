@@ -271,6 +271,7 @@ export const phoneTools = {
       desktop_notifications: "Benachrichtigungen von Windows",
       enter_to_send: "Enter sendet die Nachricht",
       auto_continue: "nach einem Nutzungslimit automatisch weitermachen",
+      limit_warnings: "Warnungen, bevor das Nutzungslimit erreicht ist (Hinweis im Eingabefeld, Prognose-Hinweise, Hinweise an Claude); aus zeigt nur noch ein erreichtes Limit",
       idle_close_minutes: "nach wie vielen Minuten ohne Aktivität FORGE den Claude-Prozess einer Session schließt (sie bleibt erhalten); 0 schaltet das aus. In den Einstellungen wählbar: 15, 30, 60, 120, 240",
       long_session_tokens: "ab wie vielen Tokens Kontext FORGE vorschlägt, in einer neuen Session weiterzumachen; 0 schaltet den Hinweis aus. In den Einstellungen wählbar: 100000, 200000, 400000, 800000",
       update_checks: "nach Updates von FORGE suchen",

@@ -217,6 +217,9 @@ export const views: typeof De = {
     autoContinueLabel: "Continue after usage limit",
     autoContinueDescription:
       "If the limit stops a session, FORGE sends a message itself after the reset. At most three times without your input, and only while FORGE is running.",
+    limitWarningsLabel: "Warn before the usage limit",
+    limitWarningsDescription:
+      "\"Limit almost reached\" in the composer, forecast notices and hints telling Claude to check the limit before big efforts. Off: Claude no longer checks the limit on its own, FORGE only shows a reached limit.",
     uiCompareLabel: "Before and after images for UI changes",
     uiCompareDescription:
       "If Claude changes files like .tsx or .css while the dev server is running, the chat shows screenshots of the web app from before and after the run. The images are not sent to Claude and are deleted after 14 days.",

@@ -294,6 +294,7 @@ export const phoneTools: typeof De = {
       desktop_notifications: "Windows notifications",
       enter_to_send: "Enter sends the message",
       auto_continue: "Continue automatically after a usage limit",
+      limit_warnings: "warnings before the usage limit is reached (badge in the composer, forecast notices, hints to Claude); off only shows a reached limit",
       idle_close_minutes:
         "After how many minutes without activity FORGE closes the Claude process of a session (the session stays); 0 switches this off. Choices in the settings: 15, 30, 60, 120, 240",
       long_session_tokens:

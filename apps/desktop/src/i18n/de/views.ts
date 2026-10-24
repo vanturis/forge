@@ -217,6 +217,9 @@ export const views = {
     behaviorTitle: "Verhalten",
     autoContinueLabel: "Nach Nutzungslimit weitermachen",
     autoContinueDescription: "Stoppt das Limit eine Session, schickt FORGE nach dem Reset selbst eine Nachricht. Höchstens dreimal ohne deine Eingabe, nur solange FORGE läuft.",
+    limitWarningsLabel: "Vor dem Nutzungslimit warnen",
+    limitWarningsDescription:
+      "Hinweis „Limit fast erreicht“ im Eingabefeld, Prognose-Hinweise und Hinweise an Claude, das Limit vor großem Aufwand zu prüfen. Aus: Claude prüft das Limit nicht mehr von sich aus, FORGE zeigt nur noch ein erreichtes Limit.",
     uiCompareLabel: "Vorher-Nachher-Bilder bei UI-Änderungen",
     uiCompareDescription:
       "Ändert Claude Dateien wie .tsx oder .css, während der Dev-Server läuft, zeigt der Chat Screenshots der Web-App von vor und nach dem Durchlauf. Die Bilder gehen nicht an Claude und werden nach 14 Tagen gelöscht.",

@@ -28,4 +28,15 @@ describe("FORGE tools language", () => {
     expect(de.context).toMatch(/^Du läufst in FORGE, einer Desktop-Oberfläche für Claude Code/);
     expect(de.tools.find((t) => t.name === "start_agent")?.description).toMatch(/^Startet einen parallelen Agenten/);
   });
+
+  it("stops asking Claude to check the limit when the limit warnings are off", () => {
+    const withUsage = (limitWarnings: boolean) =>
+      forgeSessionTools(rec, { ...deps, usage: async () => "", db: { getSettings: () => ({ limitWarnings }) } } as unknown as ForgeToolDeps);
+    const on = withUsage(true);
+    expect(on.context).toContain("vor großem Aufwand (mehrere Agenten, lange Läufe) prüfen");
+    const off = withUsage(false);
+    expect(off.context).not.toContain("vor großem Aufwand");
+    expect(off.context).toContain("prüfe das Limit nicht von dir aus");
+    expect(off.tools.find((t) => t.name === "usage_status")?.description).toContain("Nur aufrufen, wenn der Nutzer danach fragt");
+  });
 });

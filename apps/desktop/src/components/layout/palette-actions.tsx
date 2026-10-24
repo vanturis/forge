@@ -138,6 +138,7 @@ const SETTING_TOGGLES: Record<Exclude<BooleanSetting, keyof typeof UNLISTED_SETT
   screenshotKey: { label: t.layout.actions.toggles.screenshotKey, section: "general", keywords: "screenshot bildschirmfoto snipping druck print taste key screen capture" },
   sounds: { label: t.layout.actions.toggles.sounds, section: "general", keywords: "töne ton sound sounds signal klang audio klingel crew anfrage beitritt doorbell request" },
   autoContinueAfterLimit: { label: t.layout.actions.toggles.autoContinueAfterLimit, section: "claude", keywords: "auto weitermachen nutzungslimit limit reset continue usage" },
+  limitWarnings: { label: t.layout.actions.toggles.limitWarnings, section: "claude", keywords: "limit warnung warnungen nutzungslimit fast voll bald voll prognose hinweis abfragen nerven usage warning forecast nearly full" },
   askPushOnClose: { label: t.layout.actions.toggles.askPushOnClose, section: "general", keywords: "schließen beenden pushen push github ungepusht commit andere gerät weiterarbeiten close quit unpushed other device" },
   learnTemplates: { label: t.layout.actions.toggles.learnTemplates, section: "templates", keywords: "prompt vorlagen templates wiederkehrende nachrichten shortcuts textvorschläge selbst anlegen lernen learn automatic recurring messages suggestions" },
   uiCompare: { label: t.layout.actions.toggles.uiCompare, section: "claude", keywords: "screenshot vergleich vorschau dev-server ui oberfläche bild vorher nachher before after compare preview image" },

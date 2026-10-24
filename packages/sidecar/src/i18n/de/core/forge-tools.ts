@@ -125,11 +125,14 @@ export const forgeTools = {
   // usage_status, daily_report
   usageStatusDescription:
     "Nutzung des Claude-Abos des Nutzers: 5-Stunden- und Wochenfenster in Prozent mit Reset-Zeit, die Prognose nach dem bisherigen Tempo (Limit vor dem Reset erreicht oder reicht bis zum Reset) und ob ein Limit erreicht ist. Vor großem Aufwand prüfen (mehrere Agenten, lange Läufe), damit die Arbeit nicht am Limit abbricht.",
+  usageStatusDescriptionQuiet:
+    "Nutzung des Claude-Abos des Nutzers: 5-Stunden- und Wochenfenster in Prozent mit Reset-Zeit, die Prognose nach dem bisherigen Tempo und ob ein Limit erreicht ist. Nur aufrufen, wenn der Nutzer danach fragt.",
   dailyReportDescription:
     "Tagesbericht von FORGE: Sessions mit Durchläufen, parallele Agenten (gestartet, zusammengeführt, verworfen, wartend), Commits (Auto-Commits markiert), was gerade offen ist (Rückfragen, Freigaben, Fehler, geplantes Weitermachen nach dem Nutzungslimit), bei allen Projekten auch Telefonate. Für Fragen wie „Was ist heute passiert?“ oder „Was haben die Agenten gestern geschafft?“.",
   dailyReportDate: "Tag im Format JJJJ-MM-TT; weglassen für heute",
   dailyReportAllProjects: "true: alle Projekte; sonst nur dieses Projekt mit seinen Agenten",
   usageLine: "- usage_status: Abo-Nutzung und Limits; vor großem Aufwand (mehrere Agenten, lange Läufe) prüfen.",
+  usageLineQuiet: "- usage_status: Abo-Nutzung und Limits; nur auf Nachfrage des Nutzers. Der Nutzer hat Limit-Warnungen ausgeschaltet: prüfe das Limit nicht von dir aus und weise nicht auf ein knappes Limit hin.",
   dailyReportLine: "- daily_report: was an einem Tag passiert ist (Sessions, Agenten, Commits, Offenes); für Rückblicke und „Was ist heute passiert?“.",
   // session context
   introNoGit: "Du läufst in FORGE, einer Desktop-Oberfläche für Claude Code. Neben deinen Werkzeugen gibt es FORGE-Werkzeuge (mcp__forge__…).",

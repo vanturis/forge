@@ -112,11 +112,14 @@ export const forgeTools: typeof De = {
   notified: "The user was notified.",
   usageStatusDescription:
     "Usage of the user's Claude subscription: 5-hour and weekly window in percent with reset time, the forecast at the current pace (limit reached before the reset or lasts until the reset) and whether a limit is reached. Check before big efforts (several agents, long runs) so the work doesn't stop at the limit.",
+  usageStatusDescriptionQuiet:
+    "Usage of the user's Claude subscription: 5-hour and weekly window in percent with reset time, the forecast at the current pace and whether a limit is reached. Only call it when the user asks for it.",
   dailyReportDescription:
     "FORGE daily report: sessions with runs, parallel agents (started, merged, discarded, waiting), commits (auto-commits marked), what is open right now (questions, approvals, errors, planned continuation after the usage limit), for all projects also phone calls. For questions like \"What happened today?\" or \"What did the agents get done yesterday?\".",
   dailyReportDate: "Day in the format YYYY-MM-DD; omit for today",
   dailyReportAllProjects: "true: all projects; otherwise only this project with its agents",
   usageLine: "- usage_status: subscription usage and limits; check before big efforts (several agents, long runs).",
+  usageLineQuiet: "- usage_status: subscription usage and limits; only when the user asks. The user turned limit warnings off: don't check the limit on your own and don't point out a tight limit.",
   dailyReportLine: "- daily_report: what happened on a day (sessions, agents, commits, open items); for reviews and \"What happened today?\".",
   introNoGit: "You are running in FORGE, a desktop interface for Claude Code. Besides your own tools there are FORGE tools (mcp__forge__…).",
   noGit: (cwd) =>

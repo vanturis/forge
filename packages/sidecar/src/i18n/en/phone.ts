@@ -943,6 +943,7 @@ Security:
     enterSends: "Enter sends",
     enterNewLine: "Enter makes a new line",
     autoContinue: (v: boolean) => `continue automatically after a limit ${on(v)}`,
+    limitWarnings: (v: boolean) => `warnings before the usage limit ${on(v)}`,
     idleClose: (m: number) => `idle Claude processes close after ${m} ${m === 1 ? "minute" : "minutes"}`,
     idleOpen: "idle Claude processes stay open",
     longSession: (thousands) => `long session hint from ${thousands} thousand tokens of context`,

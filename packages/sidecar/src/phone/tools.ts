@@ -262,6 +262,8 @@ export interface ForgeSettingsPatch {
   desktopNotifications?: boolean;
   enterToSend?: boolean;
   autoContinueAfterLimit?: boolean;
+  /** warnings before the usage limit is reached */
+  limitWarnings?: boolean;
   /** minutes until an idle session's process ends; 0 never */
   idleCloseMinutes?: number;
   /** context tokens from which FORGE suggests a new session; 0 never */
@@ -963,6 +965,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
       desktop_notifications: { type: "boolean", optional: true },
       enter_to_send: { type: "boolean", optional: true },
       auto_continue: { type: "boolean", optional: true },
+      limit_warnings: { type: "boolean", optional: true },
       idle_close_minutes: { type: "number", optional: true, min: 0, max: 1440 },
       long_session_tokens: { type: "number", optional: true, min: 0, max: 2000000 },
       update_checks: { type: "boolean", optional: true },
@@ -988,6 +991,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
         desktopNotifications: optBool(a.desktop_notifications),
         enterToSend: optBool(a.enter_to_send),
         autoContinueAfterLimit: optBool(a.auto_continue),
+        limitWarnings: optBool(a.limit_warnings),
         idleCloseMinutes: optNum(a.idle_close_minutes),
         longSessionTokens: optNum(a.long_session_tokens),
         updateChecks: optBool(a.update_checks),

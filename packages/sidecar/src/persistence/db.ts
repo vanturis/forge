@@ -464,6 +464,7 @@ export const DEFAULT_SETTINGS: Settings = {
   debugLogs: false,
   defaultProjectDir: null,
   autoContinueAfterLimit: true,
+  limitWarnings: true,
   idleCloseMinutes: 60,
   longSessionTokens: 600_000,
   updateChecks: true,

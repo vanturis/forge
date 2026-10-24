@@ -566,6 +566,9 @@ export const Settings = z.object({
   defaultProjectDir: z.string().nullable(),
   /** continue a session on its own once a usage limit that stopped it has reset */
   autoContinueAfterLimit: z.boolean(),
+  /** warnings before the limit is reached (composer badge, forecast notices, hints to Claude on start_agent and in the
+   * system prompt); off, only a reached limit is shown */
+  limitWarnings: z.boolean(),
   /** minutes without activity after which FORGE ends the idle CLI process of a session; 0 never */
   idleCloseMinutes: z.number().int().min(0).max(1440),
   /** context size (tokens) from which the composer suggests going on in a new session; 0 never */

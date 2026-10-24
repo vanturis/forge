@@ -265,6 +265,12 @@ function ClaudeSection({ s, save }: { s: Settings; save: Save }) {
           onChange={(v) => void save({ autoContinueAfterLimit: v })}
         />
         <SwitchRow
+          label={sv.limitWarningsLabel}
+          description={sv.limitWarningsDescription}
+          checked={s.limitWarnings}
+          onChange={(v) => void save({ limitWarnings: v })}
+        />
+        <SwitchRow
           label={sv.uiCompareLabel}
           description={sv.uiCompareDescription}
           checked={s.uiCompare}

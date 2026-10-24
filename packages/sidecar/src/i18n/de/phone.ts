@@ -946,6 +946,7 @@ Sicherheit:
     enterSends: "Enter sendet",
     enterNewLine: "Enter macht eine neue Zeile",
     autoContinue: (v: boolean) => `automatisch weitermachen nach einem Limit ${on(v)}`,
+    limitWarnings: (v: boolean) => `Warnungen vor dem Nutzungslimit ${on(v)}`,
     idleClose: (m: number) => `untätige Claude-Prozesse schließen nach ${m} Minuten`,
     idleOpen: "untätige Claude-Prozesse bleiben offen",
     longSession: (thousands: number) => `Hinweis auf lange Sessions ab ${thousands} Tausend Tokens Kontext`,

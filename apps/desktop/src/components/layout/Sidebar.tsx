@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { UsageWindow } from "@forge/protocol";
 import { usageItems } from "@/components/usage/UsageWindows";
 import { forecastLabel, forecastSentence } from "@/lib/usage-forecast";
-import { call,useClaudeSetup, useClaudeUpdate, useDiagnostics, useGitHubAccount, useLiveSessions, useProjects, useUsage } from "@/lib/queries";
+import { call,useClaudeSetup, useClaudeUpdate, useDiagnostics, useGitHubAccount, useLiveSessions, useProjects, useSettings, useUsage } from "@/lib/queries";
 import { AuthorAvatar } from "@/components/git/AuthorAvatar";
 import { errorMessage } from "@/lib/rpc";
 import { toast } from "@/stores/toast";
@@ -251,7 +251,8 @@ function UsageBar({ w }: { w: UsageWindow }) {
   const { label, utilization: value, resetsAt } = w;
   const tone = value >= 95 ? "bg-danger" : value >= 80 ? "bg-warning" : "bg-accent";
   const width = Math.min(100, Math.max(0, value));
-  const forecast = forecastLabel(w);
+  const warn = useSettings().data?.limitWarnings ?? true;
+  const forecast = warn ? forecastLabel(w) : null;
   const title = [resetsAt ? resetText(resetsAt) : null, forecastSentence(w)].filter(Boolean).join("\n");
   return (
     <div title={title}>

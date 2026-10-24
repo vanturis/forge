@@ -21,10 +21,11 @@ const warning: RateLimitState = { status: "warning", limitType: "five_hour", res
 
 const noUsage: PlanUsage = { available: false, subscriptionType: null, windows: [], fetchedAt: new Date(NOW).toISOString(), error: null };
 
-function setup(state: RateLimitState, autoContinueAt: string | null = null, usage: PlanUsage = noUsage) {
+function setup(state: RateLimitState, autoContinueAt: string | null = null, usage: PlanUsage = noUsage, limitWarnings = true) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
   qc.setQueryData(keys.rateLimit, state);
   qc.setQueryData(keys.usage, usage);
+  qc.setQueryData(keys.settings, { limitWarnings });
   render(
     <QueryClientProvider client={qc}>
       <TooltipProvider>
@@ -53,6 +54,14 @@ describe("RateLimitBadge", () => {
       await vi.advanceTimersByTimeAsync(30 * 60_000 + 2000);
     });
     expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("shows no warning with the limit warnings off, but still a reached limit", () => {
+    setup(warning, null, noUsage, false);
+    expect(screen.queryByRole("status")).toBeNull();
+    cleanup();
+    setup({ ...warning, status: "reached" }, null, noUsage, false);
+    expect(screen.getByRole("status")).toBeTruthy();
   });
 
   it("disappears when Claude Code reports the limit as fine again", async () => {

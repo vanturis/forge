@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { useRateLimit, useUsage } from "@/lib/queries";
+import { useRateLimit, useSettings, useUsage } from "@/lib/queries";
 import { activeRateLimit, limitDateTime, limitLabel, limitTime } from "@/lib/rate-limit";
 import { relativeTime } from "@/lib/utils";
 import { Badge, Tooltip } from "@/components/ui/misc";
@@ -12,11 +12,13 @@ const MAX_TIMER_MS = 2_000_000_000;
 /**
  * Account-wide plan limit, shown as long as it applies: close to the limit, or reached. `autoContinueAt`
  * of the shown session replaces the reset time, since that is when work goes on. The details open on
- * hover and also on click, so they can be read without holding the mouse still.
+ * hover and also on click, so they can be read without holding the mouse still. With the limit warnings
+ * switched off (settings.limitWarnings) only a reached limit shows.
  */
 export function RateLimitBadge({ autoContinueAt }: { autoContinueAt: string | null }) {
   const { data } = useRateLimit();
   const usage = useUsage();
+  const warn = useSettings().data?.limitWarnings ?? true;
   const [now, setNow] = useState(() => Date.now());
   const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
@@ -32,6 +34,7 @@ export function RateLimitBadge({ autoContinueAt }: { autoContinueAt: string | nu
 
   if (!state) return null;
   const reached = state.status === "reached";
+  if (!reached && !warn) return null;
   const goOn = reached ? (autoContinueAt ?? resetsAt) : resetsAt;
   const text = reached ? t.chat.rateLimit.reached(goOn ? limitTime(goOn, now) : null) : t.chat.rateLimit.nearly(resetsAt ? limitTime(resetsAt, now) : null);
   return (

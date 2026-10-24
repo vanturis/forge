@@ -295,6 +295,7 @@ export const layout = {
       sounds: "Töne",
       autoContinueAfterLimit: "Nach Nutzungslimit weitermachen",
       learnTemplates: "Vorlagen automatisch lernen",
+      limitWarnings: "Vor dem Nutzungslimit warnen",
       askPushOnClose: "Beim Schließen nach Ungepushtem fragen",
       uiCompare: "Vorher-Nachher-Bilder bei UI-Änderungen",
       stripApiKey: "ANTHROPIC_API_KEY ausblenden",

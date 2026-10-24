@@ -294,6 +294,7 @@ export const layout: typeof De = {
       sounds: "Sounds",
       autoContinueAfterLimit: "Continue after usage limit",
       learnTemplates: "Learn templates automatically",
+      limitWarnings: "Warn before the usage limit",
       askPushOnClose: "Ask about unpushed work when closing",
       uiCompare: "Before and after images for UI changes",
       stripApiKey: "Hide ANTHROPIC_API_KEY",

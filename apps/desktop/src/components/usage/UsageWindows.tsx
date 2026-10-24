@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
 import type { PlanUsage, UsageWindow } from "@forge/protocol";
 import type { MenuItem } from "@/components/ui/dropdown";
-import { refreshUsage, useUsage } from "@/lib/queries";
+import { refreshUsage, useSettings, useUsage } from "@/lib/queries";
 import { limitTime } from "@/lib/rate-limit";
 import { Meter, MeterSkeleton, usageTone } from "@/components/ui/meter";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
@@ -61,8 +61,9 @@ export function UsageWindowsSkeleton({ windows = 2, plan = false }: { windows?: 
  */
 export function LimitForecastWarning() {
   const usage = useUsage();
+  const warn = useSettings().data?.limitWarnings ?? true;
   const full = windowsRunningOut(usage.data);
-  if (!full.length) return null;
+  if (!warn || !full.length) return null;
   return (
     <div role="alert" className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-body">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />

@@ -379,10 +379,12 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
   };
 
   const usage = d.usage;
+  // Limit warnings off: the tool stays for questions, but nothing asks Claude to check the limit on its own.
+  const limitWarnings = usage ? d.db.getSettings().limitWarnings : true;
   const usageStatus: SessionTool | null = usage
     ? {
         name: "usage_status",
-        description: m.usageStatusDescription,
+        description: limitWarnings ? m.usageStatusDescription : m.usageStatusDescriptionQuiet,
         shape: {},
         autoAllow: true,
         run: () => usage(),
@@ -403,7 +405,7 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
     : null;
   const common = [notify, ...(usageStatus ? [usageStatus] : []), ...(dailyReport ? [dailyReport] : [])];
   const usageLine = [
-    usageStatus ? m.usageLine : "",
+    usageStatus ? (limitWarnings ? m.usageLine : m.usageLineQuiet) : "",
     dailyReport ? m.dailyReportLine : "",
   ]
     .filter(Boolean)
@@ -526,7 +528,7 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
       }
       d.agents.adopt(child.id, wt.id);
       const note = withChanges ? m.startAgentWithChangesNote : open ? m.startAgentOpenNote(open) : "";
-      const warning = d.limitWarning ? await d.limitWarning().catch(() => null) : null;
+      const warning = d.limitWarning && d.db.getSettings().limitWarnings ? await d.limitWarning().catch(() => null) : null;
       return `${m.agentStarted(short(child.id), branch, wt.path)}${note}${warning ? m.startAgentWarning(warning) : ""}`;
     },
   };

@@ -478,6 +478,8 @@ function settingText(s: Settings, key: keyof ForgeSettingsPatch | "alwaysOnTop")
       return s.enterToSend ? m.settings.enterSends : m.settings.enterNewLine;
     case "autoContinueAfterLimit":
       return m.settings.autoContinue(s.autoContinueAfterLimit);
+    case "limitWarnings":
+      return m.settings.limitWarnings(s.limitWarnings);
     case "idleCloseMinutes":
       return s.idleCloseMinutes > 0 ? m.settings.idleClose(s.idleCloseMinutes) : m.settings.idleOpen;
     case "longSessionTokens":
@@ -1832,7 +1834,7 @@ export class PhoneService {
             throw e;
           }
           a.focus = s.id;
-          const warning = await sessions.planUsage(false).then((u) => limitWarning(u), () => null);
+          const warning = db.getSettings().limitWarnings ? await sessions.planUsage(false).then((u) => limitWarning(u), () => null) : null;
           return m.agentStarted(refFor(s.id), root.name, warning);
         }),
       respond: (ref, decision, answers, feedback, scope) =>
@@ -3125,7 +3127,7 @@ export class PhoneService {
           const cur = await call("settings.get", {});
           const update: Partial<Settings> = {};
           const changed: Array<keyof ForgeSettingsPatch> = [];
-          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
+          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
           for (const k of flags) {
             const v = patch[k];
             if (v === undefined) continue;

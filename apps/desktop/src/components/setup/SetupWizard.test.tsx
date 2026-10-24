@@ -67,6 +67,7 @@ beforeEach(() => {
     uiCompare: true,
     learnTemplates: true,
     askPushOnClose: true,
+    limitWarnings: true,
     disabledPolicyRules: [],
     setupDone: false,
     syncEnabled: false,
