@@ -108,6 +108,9 @@ describe("usage statistics", () => {
     const db = new Db(path.join(dir, "forge.db"));
     try {
       expect(db.getSettings()).toMatchObject({ usageStats: true, usageStatsAsked: false });
+      // The old default "off" arrived by sync or backup, nobody answered.
+      db.updateSettings({ usageStats: false, usageStatsAsked: false });
+      expect(db.getSettings()).toMatchObject({ usageStats: true, usageStatsAsked: false });
       db.updateSettings({ usageStats: false, usageStatsAsked: true });
       expect(db.getSettings()).toMatchObject({ usageStats: false, usageStatsAsked: true });
     } finally {

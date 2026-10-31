@@ -798,6 +798,9 @@ export class Db {
     const rows = this.sql.prepare("SELECT key, value FROM settings").all() as Array<{ key: string; value: string }>;
     const out: Record<string, unknown> = { ...DEFAULT_SETTINGS };
     for (const r of rows) if (r.key in DEFAULT_SETTINGS) out[r.key] = JSON.parse(r.value);
+    // Sync and backups copy every setting, also the old default "off" of someone who never answered. Only an
+    // answer counts as off, so whatever switches the statistics off has to set usageStatsAsked as well.
+    if (out.usageStats === false && out.usageStatsAsked !== true) out.usageStats = true;
     return out as Settings;
   }
 
