@@ -70,7 +70,8 @@ export function Dialog({ open, onOpenChange, title, description, children, foote
                   </D.Close>
                 )}
               </div>
-              {hasBody && <div className={cn("min-h-0 flex-1 overflow-y-auto px-5 py-4", bodyClassName)}>{children}</div>}
+              {/* flex-auto, not flex-1: older WebKit (macOS) takes the 0% basis literally in an h-fit parent and the body collapses to its padding. */}
+              {hasBody && <div className={cn("min-h-0 flex-auto overflow-y-auto px-5 py-4", bodyClassName)}>{children}</div>}
             </>
           )}
           {footer && <div className="flex justify-end gap-2 border-t border-border px-5 py-3">{footer}</div>}
