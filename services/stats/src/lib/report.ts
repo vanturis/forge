@@ -74,7 +74,7 @@ export const reportSchema = z.object({
   counters: z.object(counterShape),
   // Cumulative per model since installation; app versions before it do not send it.
   models: modelsSchema,
-  // Claude plan of the account ("max_20x", "pro" ...); null without a claude.ai login or from older app versions.
+  // Claude plan of the account ("ultra", "pro" ...; older app versions "max_20x", "max_5x"); null without a claude.ai login or from older app versions.
   plan: z.string().regex(PLAN_PATTERN).nullable().default(null),
   // Language of the FORGE interface; null from older app versions.
   language: z.string().regex(LANGUAGE_PATTERN).nullable().default(null),

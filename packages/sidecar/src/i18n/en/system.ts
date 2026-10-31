@@ -355,7 +355,7 @@ export const system: typeof De = {
     noConnection: "No connection to Claude's speech service. Check the network; otherwise the service changed with a Claude Code update.",
     loginRejected: "The speech service rejects the Claude sign-in.",
     loginExpiring: "The Claude sign-in is expiring and is only renewed when recording.",
-    needsLogin: "Voice input needs a Claude sign-in (Pro or Max).",
+    needsLogin: "Voice input needs a Claude sign-in (Pro, Max or Ultra).",
     loginExpired: "The Claude sign-in has expired. Sign in again under Settings, Claude Code.",
   },
   paths: {

@@ -9,7 +9,7 @@ export const lib = {
     justNow: "gerade eben",
   },
   tokensUnknown: "k. A.",
-  /** "Max 20x Abo" */
+  /** "Ultra Abo" */
   plan: (name: string) => `${name} Abo`,
   notifications: {
     autoResumed: "Automatisch fortgesetzt",

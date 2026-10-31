@@ -1715,7 +1715,7 @@ describe("PhoneService end to end with a test PBX", () => {
     };
     const { conv, end } = await openCall("c-diag");
     expect(await conv.tools.forgeSystem("diagnostics")).toBe(
-      "Claude Code 2.1.300 (Claude Code) ist da, angemeldet mit Abo max, Git git version 2.56.0.windows.2 ist da, die GitHub-CLI ist da, Python 3.14.8 ist da (mitgeliefert).",
+      "Claude Code 2.1.300 (Claude Code) ist da, angemeldet mit Abo Max, Git git version 2.56.0.windows.2 ist da, die GitHub-CLI ist da, Python 3.14.8 ist da (mitgeliefert).",
     );
     python = tool(null, false);
     expect(await conv.tools.forgeSystem("diagnostics")).toMatch(/, Python fehlt\.$/);

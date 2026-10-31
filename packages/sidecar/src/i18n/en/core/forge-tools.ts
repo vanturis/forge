@@ -111,9 +111,9 @@ export const forgeTools: typeof De = {
   notifiedUrgent: "The user was notified urgently.",
   notified: "The user was notified.",
   usageStatusDescription:
-    "Usage of the user's Claude subscription: 5-hour and weekly window in percent with reset time, the forecast at the current pace (limit reached before the reset or lasts until the reset) and whether a limit is reached. Check before big efforts (several agents, long runs) so the work doesn't stop at the limit.",
+    "Usage of the user's Claude subscription: the plan's limit windows in percent with reset time (weekly, more depending on model and plan; verified Ultra accounts have no 5-hour limit), the forecast at the current pace (limit reached before the reset or lasts until the reset) and whether a limit is reached. Check before big efforts (several agents, long runs) so the work doesn't stop at the limit.",
   usageStatusDescriptionQuiet:
-    "Usage of the user's Claude subscription: 5-hour and weekly window in percent with reset time, the forecast at the current pace and whether a limit is reached. Only call it when the user asks for it.",
+    "Usage of the user's Claude subscription: the plan's limit windows in percent with reset time (weekly, more depending on model and plan; verified Ultra accounts have no 5-hour limit), the forecast at the current pace and whether a limit is reached. Only call it when the user asks for it.",
   dailyReportDescription:
     "FORGE daily report: sessions with runs, parallel agents (started, merged, discarded, waiting), commits (auto-commits marked), what is open right now (questions, approvals, errors, planned continuation after the usage limit), for all projects also phone calls. For questions like \"What happened today?\" or \"What did the agents get done yesterday?\".",
   dailyReportDate: "Day in the format YYYY-MM-DD; omit for today",

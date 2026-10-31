@@ -201,9 +201,11 @@ describe("readPlan", () => {
     return readPlan(file);
   }
 
-  it("reads the plan with the Max multiplier, nothing identifying", async () => {
-    expect(await plan({ organizationType: "claude_max", organizationRateLimitTier: "default_claude_max_5x", userRateLimitTier: null })).toBe("max_5x");
-    expect(await plan({ organizationType: "claude_max", userRateLimitTier: "default_claude_max_20x" })).toBe("max_20x");
+  it("reads the plan under its current name, nothing identifying", async () => {
+    expect(await plan({ organizationType: "claude_max", organizationRateLimitTier: "default_claude_max_5x", userRateLimitTier: null })).toBe("max");
+    expect(await plan({ organizationType: "claude_max", userRateLimitTier: "default_claude_max_20x" })).toBe("ultra");
+    expect(await plan({ organizationType: "claude_ultra" })).toBe("ultra");
+    expect(await plan({ organizationType: "claude_max", userRateLimitTier: "default_claude_max_40x" })).toBe("max_40x");
     expect(await plan({ organizationType: "claude_max" })).toBe("max");
     expect(await plan({ organizationType: "claude_pro", organizationRateLimitTier: "default_claude_ai" })).toBe("pro");
     expect(await plan({ organizationType: "claude_team" })).toBe("team");

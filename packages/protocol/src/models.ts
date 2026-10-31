@@ -753,10 +753,25 @@ export const UsageWindow = z.object({
 });
 export type UsageWindow = z.infer<typeof UsageWindow>;
 
-/** Plan limits as reported by Claude Code (claude.ai usage endpoint). */
+/**
+ * Display name of a Claude plan. Since 2026-10-30 the former Max 20x is called Ultra and Max 5x just Max,
+ * but Claude Code still reports both as "max"; only the rate limit tier tells them apart.
+ */
+export function planName(subscriptionType: string, rateLimitTier: string | null | undefined): string {
+  if (subscriptionType !== "max") return subscriptionType.charAt(0).toUpperCase() + subscriptionType.slice(1);
+  const multiplier = /_(\d+)x$/.exec(rateLimitTier ?? "")?.[1];
+  if (multiplier === "20") return "Ultra";
+  return multiplier && multiplier !== "5" ? `Max ${multiplier}x` : "Max";
+}
+
+/**
+ * Plan limits as reported by Claude Code (claude.ai usage endpoint). Which windows exist depends on the
+ * plan: verified Ultra accounts have no five_hour window.
+ */
 export const PlanUsage = z.object({
   available: z.boolean(),
   subscriptionType: z.string().nullable(),
+  rateLimitTier: z.string().nullable().optional(),
   windows: z.array(UsageWindow),
   fetchedAt: z.string(),
   error: z.string().nullable(),

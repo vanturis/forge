@@ -85,7 +85,7 @@
   <tr>
     <td valign="top">
       <h3>Subscription usage</h3>
-      Usage in the 5-hour and weekly windows with a forecast, and a daily report with tokens, commits and agents.
+      Usage of your plan's limits with a forecast, and a daily report with tokens, commits and agents.
     </td>
     <td valign="top">
       <h3>Phone and sync (optional)</h3>
@@ -198,7 +198,7 @@ Projects, chat histories and settings stay on your computer: `%APPDATA%\forge` o
 - **Anonymous usage statistics (off by default):** FORGE asks once on first start and asks you to turn them on.
   The totals show us how FORGE is used. Without an answer they stay off. When on, FORGE sends totals to
   [forge.vanturis.de](https://forge.vanturis.de) every 5 minutes: a random ID for the installation,
-  the versions of FORGE and of the operating system, the interface language, the type of Claude subscription (for example Pro or Max 5x) and counters such
+  the versions of FORGE and of the operating system, the interface language, the type of Claude subscription (for example Pro or Ultra) and counters such
   as tokens per Claude model, estimated API cost, sessions, projects and agents. No content, no project names, no
   paths, no IP addresses. Turn them on or off under Settings > About FORGE > Privacy; when you turn them off,
   FORGE deletes the data already sent from the service.

@@ -124,9 +124,9 @@ export const forgeTools = {
   notified: "Der Nutzer wurde benachrichtigt.",
   // usage_status, daily_report
   usageStatusDescription:
-    "Nutzung des Claude-Abos des Nutzers: 5-Stunden- und Wochenfenster in Prozent mit Reset-Zeit, die Prognose nach dem bisherigen Tempo (Limit vor dem Reset erreicht oder reicht bis zum Reset) und ob ein Limit erreicht ist. Vor großem Aufwand prüfen (mehrere Agenten, lange Läufe), damit die Arbeit nicht am Limit abbricht.",
+    "Nutzung des Claude-Abos des Nutzers: die Limit-Fenster des Abos in Prozent mit Reset-Zeit (Woche, je nach Modell und Abo weitere; verifizierte Ultra-Konten haben kein 5-Stunden-Limit), die Prognose nach dem bisherigen Tempo (Limit vor dem Reset erreicht oder reicht bis zum Reset) und ob ein Limit erreicht ist. Vor großem Aufwand prüfen (mehrere Agenten, lange Läufe), damit die Arbeit nicht am Limit abbricht.",
   usageStatusDescriptionQuiet:
-    "Nutzung des Claude-Abos des Nutzers: 5-Stunden- und Wochenfenster in Prozent mit Reset-Zeit, die Prognose nach dem bisherigen Tempo und ob ein Limit erreicht ist. Nur aufrufen, wenn der Nutzer danach fragt.",
+    "Nutzung des Claude-Abos des Nutzers: die Limit-Fenster des Abos in Prozent mit Reset-Zeit (Woche, je nach Modell und Abo weitere; verifizierte Ultra-Konten haben kein 5-Stunden-Limit), die Prognose nach dem bisherigen Tempo und ob ein Limit erreicht ist. Nur aufrufen, wenn der Nutzer danach fragt.",
   dailyReportDescription:
     "Tagesbericht von FORGE: Sessions mit Durchläufen, parallele Agenten (gestartet, zusammengeführt, verworfen, wartend), Commits (Auto-Commits markiert), was gerade offen ist (Rückfragen, Freigaben, Fehler, geplantes Weitermachen nach dem Nutzungslimit), bei allen Projekten auch Telefonate. Für Fragen wie „Was ist heute passiert?“ oder „Was haben die Agenten gestern geschafft?“.",
   dailyReportDate: "Tag im Format JJJJ-MM-TT; weglassen für heute",

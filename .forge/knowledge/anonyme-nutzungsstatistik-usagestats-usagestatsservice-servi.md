@@ -2,7 +2,7 @@
 title: "Anonyme Nutzungsstatistik und Token-Erfassung (usageStats, modelUsage, services/stats)"
 summary: "Wie FORGE Tokens erfasst (modelUsage statt usage), welche Summen (ab Stichtag 17.10.2026) und welches Abo anonym an forge-stats.vanturis.de gehen, wie Zustimmung und Abschalten laufen; nötig vor Änderungen an Token-Zählung, Zählern oder dem Dienst."
 tags: ["sidecar","tokens","sdk","stolperfalle","einstellungen","telefon"]
-updated: "2026-10-18T10:11:05.833Z"
+updated: "2026-10-31T10:50:45.724Z"
 ---
 
 ## Token-Erfassung: modelUsage, nicht usage (Stolperfalle, behoben 2026-10-18)
@@ -22,7 +22,7 @@ updated: "2026-10-18T10:11:05.833Z"
 ## Client (`packages/sidecar/src/stats/usage-stats.ts`)
 - Nur in der installierten App (`FORGE_RUNTIME_DIR`). Tick jede Minute, Versand wenn der letzte mindestens 5 Minuten her ist: `POST /api/v1/report` mit kumulativen `counters`, `models` ({ Modell-ID: { tokens, costUsdCents } }) und `plan`. Aus und schon gesendet: einmal `DELETE`. 429 gilt als gesendet.
 - `models`: nur IDs, die das Muster des Dienstes erfüllen (`MODEL_ID`), die 20 mit den meisten Tokens. Grund: eine ungültige ID (z. B. `<synthetic>`) ließe den Dienst die ganze Meldung mit 400 ablehnen, und zwar bei jedem Versuch. Kosten je Modell werden erst am Ende auf Cent gerundet.
-- `plan` (seit 2026-10-18) kommt aus `readPlan()` in `claude/diagnostics.ts`: `oauthAccount.organizationType` (`claude_max` → `max`) plus Multiplikator aus `userRateLimitTier ?? organizationRateLimitTier` (`default_claude_max_20x` → `max_20x`), null ohne claude.ai-Anmeldung. Bewusst aus `.claude.json` statt `claude auth status`: kein Prozess alle 5 Minuten, keine E-Mail/Org-Namen.
+- `plan` (seit 2026-10-18) kommt aus `readPlan()` in `claude/diagnostics.ts`: `oauthAccount.organizationType` (`claude_max` → `max`) plus Tier aus `userRateLimitTier ?? organizationRateLimitTier` über `planName` (`default_claude_max_20x` → `ultra`, `default_claude_max_5x` → `max`), null ohne claude.ai-Anmeldung. Ältere App-Versionen senden `max_20x` und `max_5x`, der Dienst zählt sie beim Lesen um (`CURRENT_PLAN` in `services/stats/src/lib/db.ts`). Bewusst aus `.claude.json` statt `claude auth status`: kein Prozess alle 5 Minuten, keine E-Mail/Org-Namen.
 - Installations-ID in `<dataDir>/usage-stats.json`, bewusst nicht in den Einstellungen (Backup und Sync würden sie auf andere PCs kopieren).
 - `Db.usageTotals()`: Tokens, Durchläufe, Arbeitszeit, Sessions aus `claude_usage`; `userTurns` = Session-Durchläufe ohne `purpose`; `costUsdCents` und `models` nur aus Zeilen mit `modelUsage`; Projekte aus `stats_counters.projectsCreated` (nicht für Worktrees und Backup-Restore); gestartete Agenten = `agent_log` ∪ vorhandene Worktree-Projekte (laufende zählen mit), zusammengeführte aus `agent_log`. Alles ab Stichtag.
 - Prüfen mit echten Daten: Kopie von `%APPDATA%\forge\forge.db` plus `-wal` in einen Temp-Ordner, `new Db(kopie).usageTotals()` in einer temporären Vitest-Datei; Ausgabe in eine Datei schreiben (console.log erscheint im Vitest-Lauf nicht).

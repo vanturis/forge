@@ -18,8 +18,8 @@ import { locale, t } from "@/i18n";
 const percent = (n: number) => n.toLocaleString(locale, { maximumFractionDigits: 1 });
 
 /**
- * Next to the context meter: the session's estimated share of the first usage window (5 hours), or its
- * tokens without a plan. Hovering lists every window, a click opens the details.
+ * Next to the context meter: the session's estimated share of the first usage window (5 hours, the week
+ * on plans without a 5-hour limit), or its tokens without a plan. Hovering lists every window, a click opens the details.
  */
 export function SessionUsageMeter({ sessionId, title }: { sessionId: string; title: string | null }) {
   const qc = useQueryClient();

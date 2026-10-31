@@ -23,6 +23,7 @@ import {
 import type { Capability, ContextUsage, EffortLevel, ExternalSession, ForgeUsagePurpose, PermissionMode, PlanUsage, RewindResult, SlashCommand } from "@forge/protocol";
 import type { z } from "zod";
 import type { ContentBlock } from "./attachments.js";
+import { readRateLimitTier } from "./diagnostics.js";
 import { toPlanUsage } from "./usage.js";
 import { AsyncQueue } from "./async-queue.js";
 import { meterKey, tokenMeter } from "./token-meter.js";
@@ -655,7 +656,8 @@ export class AgentSdkRuntime implements ClaudeRuntime {
       q.close();
       throw new Error(tr().core.claude.usageUnavailable);
     }
-    return this.oneShot(tr().core.claude.oneShotUsage, q, ac, usage.call(q, { skipBehaviors: true }).then(toPlanUsage), () => input.end());
+    const planUsage = usage.call(q, { skipBehaviors: true }).then(async (raw: unknown) => ({ ...toPlanUsage(raw), rateLimitTier: await readRateLimitTier() }));
+    return this.oneShot(tr().core.claude.oneShotUsage, q, ac, planUsage, () => input.end());
   }
 
   async probe(opts: Pick<StartOptions, "cwd" | "env" | "claudePath">): Promise<SDKControlInitializeResponse> {

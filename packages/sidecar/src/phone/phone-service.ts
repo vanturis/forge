@@ -14,6 +14,7 @@ import {
   redactRemoteUrl,
   remoteKind,
   isUsageLimitText,
+  planName,
   type Crew,
   type DeskPhoneConfig,
   type MethodName,
@@ -3181,7 +3182,7 @@ export class PhoneService {
             const d = await call("system.diagnostics", { refresh: true });
             const facts = [
               d.claude.found ? sy.claudeThere(d.claude.version || null) : sy.claudeMissing(d.claude.error || null),
-              !d.auth.checked ? "" : d.auth.loggedIn ? sy.signedIn(d.auth.subscriptionType || null) : sy.notSignedIn(d.auth.error || null),
+              !d.auth.checked ? "" : d.auth.loggedIn ? sy.signedIn(d.auth.subscriptionType ? planName(d.auth.subscriptionType, d.auth.rateLimitTier) : null) : sy.notSignedIn(d.auth.error || null),
               d.apiKeyEnvPresent ? (d.apiKeyStripped ? sy.apiKeyHidden : sy.apiKeyPassed) : "",
               d.git.found ? sy.gitThere(d.git.version || null) : sy.gitMissing,
               d.gh.found ? (d.gh.authenticated === false ? sy.ghNotSignedIn : sy.ghThere) : sy.ghMissing,

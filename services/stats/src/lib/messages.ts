@@ -63,7 +63,7 @@ const de = {
         },
         {
           q: "Ist FORGE kostenlos?",
-          a: "Ja. FORGE ist Open Source unter der Lizenz AGPL-3.0 und kostet nichts. Für Claude selbst brauchst du ein Claude-Abo mit Zugang zu Claude Code, zum Beispiel Pro oder Max. Einen API-Schlüssel brauchst du nicht.",
+          a: "Ja. FORGE ist Open Source unter der Lizenz AGPL-3.0 und kostet nichts. Für Claude selbst brauchst du ein Claude-Abo mit Zugang zu Claude Code, zum Beispiel Pro, Max oder Ultra. Einen API-Schlüssel brauchst du nicht.",
         },
         {
           q: "Was brauche ich, um FORGE zu nutzen?",
@@ -300,7 +300,7 @@ const en: Messages = {
         },
         {
           q: "Is FORGE free?",
-          a: "Yes. FORGE is open source under the AGPL-3.0 license and costs nothing. For Claude itself you need a Claude subscription with access to Claude Code, for example Pro or Max. You do not need an API key.",
+          a: "Yes. FORGE is open source under the AGPL-3.0 license and costs nothing. For Claude itself you need a Claude subscription with access to Claude Code, for example Pro, Max or Ultra. You do not need an API key.",
         },
         {
           q: "What do I need to use FORGE?",

@@ -1,4 +1,4 @@
-import { localeOf, type PlanUsage, type RateLimitState, type UsageWindow } from "@forge/protocol";
+import { localeOf, planName, type PlanUsage, type RateLimitState, type UsageWindow } from "@forge/protocol";
 import { language, tr } from "../i18n/index.js";
 
 interface RawWindow {
@@ -53,7 +53,7 @@ export function describeUsage(usage: PlanUsage, limit: RateLimitState, now = Dat
   if (!u.available || !u.windows.length) lines.push(t.usageUnavailableLine(u.error));
   for (const w of u.windows) lines.push(t.windowLine(w.label, w.utilization, w.resetsAt ? at(w.resetsAt) : null, forecastText(w, at)));
   if (u.windows.length && !u.windows.some((w) => w.forecast)) lines.push(t.noForecast);
-  if (u.subscriptionType) lines.push(t.subscription(u.subscriptionType));
+  if (u.subscriptionType) lines.push(t.subscription(planName(u.subscriptionType, u.rateLimitTier)));
   return lines.join("\n");
 }
 

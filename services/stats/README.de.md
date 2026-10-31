@@ -55,11 +55,11 @@ Body der Meldung:
   "models": {
     "claude-opus-4-7": { "tokens": 123, "costUsdCents": 45 }
   },
-  "plan": "max_20x"
+  "plan": "ultra"
 }
 ```
 
-`userTurns` sind die Durchläufe, die Nutzer selbst gestartet haben, `costUsdCents` die geschätzten API-Kosten aller Claude-Aufrufe in US-Cent. `models` enthält je Modell-ID alle vier Token-Arten zusammen und die geschätzten Kosten, kumulativ seit dem Stichtag. `plan` ist das Abo des in Claude Code angemeldeten Kontos (`max_20x`, `max_5x`, `max`, `pro`, `team`, `enterprise` ...), gelesen aus `organizationType` und dem Rate-Limit-Tier in `.claude.json`; `null` ohne claude.ai-Anmeldung. Ältere App-Versionen schicken diese Felder nicht; dann gelten 0, `{}` und `null`.
+`userTurns` sind die Durchläufe, die Nutzer selbst gestartet haben, `costUsdCents` die geschätzten API-Kosten aller Claude-Aufrufe in US-Cent. `models` enthält je Modell-ID alle vier Token-Arten zusammen und die geschätzten Kosten, kumulativ seit dem Stichtag. `plan` ist das Abo des in Claude Code angemeldeten Kontos (`ultra`, `max`, `pro`, `team`, `enterprise` ...), gelesen aus `organizationType` und dem Rate-Limit-Tier in `.claude.json`; `null` ohne claude.ai-Anmeldung. Ältere App-Versionen schicken `max_20x` und `max_5x`; die Gesamtzahlen zählen sie als `ultra` und `max`. Ältere App-Versionen schicken diese Felder nicht; dann gelten 0, `{}` und `null`.
 
 Regeln (siehe `src/lib/report.ts`):
 
@@ -82,7 +82,7 @@ Antwort von `GET /api/v1/totals`:
   "updatedAt": "2026-10-18T00:00:00.000Z",
   "models": { "claude-opus-4-7": { "tokens": 803400000, "costUsdCents": 315000 } },
   "versions": [{ "version": "0.1.81", "installs": 3 }],
-  "plans": [{ "plan": "max_20x", "installs": 4, "online": 1 }, { "plan": null, "installs": 3, "online": 1 }],
+  "plans": [{ "plan": "ultra", "installs": 4, "online": 1 }, { "plan": null, "installs": 3, "online": 1 }],
   "platforms": [{ "platform": "windows", "installs": 7 }],
   "history": [{ "day": "2026-10-17", "tokens": 64420000, "claudeTurns": 55, "sessions": 12, "claudeWorkMs": 5400000, "costUsdCents": 4200, "activeInstalls": 7 }]
 }

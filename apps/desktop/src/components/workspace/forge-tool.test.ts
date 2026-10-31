@@ -19,7 +19,8 @@ describe("forgeToolView in both languages", () => {
   it("recognizes errors, the reached limit and an aborted interaction", () => {
     expect(forgeToolView("knowledge_read", {}, done("Error: no entry")).tone).toBe("danger");
     expect(forgeToolView("usage_status", {}, done("Limit reached. New turns fail until then.\n5 hours: 100% used")).tone).toBe("warning");
-    expect(forgeToolView("usage_status", {}, done("5 Stunden: 23 % genutzt")).ref).toBe("23 %");
+    expect(forgeToolView("usage_status", {}, done("5 Stunden: 23 % genutzt\nWoche: 40 % genutzt")).ref).toBe("23 %");
+    expect(forgeToolView("usage_status", {}, done("Week: 40% used\nWeek Fable: 7% used\nSubscription: Ultra")).ref).toBe("40%");
     expect(forgeToolView("preview_screenshot", {}, done("Address: http://localhost:3000\nConsole: 2 errors")).tone).toBe("warning");
     expect(forgeToolView("preview_screenshot", {}, done("Adresse: http://localhost:3000\nKonsole: keine Meldungen")).tone).toBe("accent");
   });

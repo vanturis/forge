@@ -1,17 +1,16 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { planName } from "@forge/protocol";
 import { language, locale, t } from "@/i18n";
 
 export function capitalize(s: string): string {
   return s ? s[0]!.toUpperCase() + s.slice(1) : s;
 }
 
-/** "Max 20x Abo" for a Max plan with its tier, "Pro Abo" otherwise; null without a plan. */
+/** "Ultra Abo", "Max Abo", "Pro Abo"; null without a plan. */
 export function planLabel(auth: { subscriptionType: string | null; rateLimitTier: string | null }): string | null {
   if (!auth.subscriptionType) return null;
-  const multiplier = /_(\d+)x$/.exec(auth.rateLimitTier ?? "")?.[1];
-  const tier = multiplier && auth.subscriptionType === "max" ? ` ${multiplier}x` : "";
-  return t.lib.plan(`${capitalize(auth.subscriptionType)}${tier}`);
+  return t.lib.plan(planName(auth.subscriptionType, auth.rateLimitTier));
 }
 
 export function cn(...inputs: ClassValue[]) {

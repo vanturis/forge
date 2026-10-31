@@ -666,7 +666,7 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
   if (settings?.syncEnabled) act("sync-now", t.layout.actions.syncNow, icon(RefreshCcw), () => void syncNow(qc), { keywords: "jetzt github abgleichen sync synchronisieren andere pc now other computers" });
   act("setup-wizard", t.layout.actions.setupWizard, icon(Wand2), () => ui.setSetupWizard(true), { keywords: "einrichtungsassistent einrichten erster start setup onboarding assistant wizard first start" });
   act("usage-forecast", t.layout.actions.usageForecast, icon(Gauge), () => ui.openSettings("claude"), {
-    keywords: "nutzung limit-prognose usage limit abo verbrauch prognose reicht reset 5 stunden woche tempo forecast subscription consumption hours week pace",
+    keywords: "nutzung limit-prognose usage limit abo verbrauch prognose reicht reset 5 stunden woche tempo forecast subscription consumption hours week pace ultra",
   });
   act("usage-refresh", t.layout.actions.usageRefresh, icon(RefreshCw), () => void refreshUsage(qc), { keywords: "nutzung aktualisieren usage limit abo verbrauch prognose neu laden refresh reload subscription forecast" });
   act("claude-login", t.layout.actions.claudeLogin, icon(LogIn), () => ui.openClaudeLogin("manual"), { keywords: "claude anmelden login anmeldung abgelaufen konto abo neu anmelden oauth log in sign in expired account subscription" });

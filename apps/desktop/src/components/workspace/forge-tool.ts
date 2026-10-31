@@ -218,7 +218,7 @@ export function forgeToolView(tool: string, input: Record<string, unknown>, resu
       return view({
         title: !result ? t.chat.forgeTools.usageQuerying : reached ? t.chat.forgeTools.usageLimitReached : t.chat.forgeTools.usageQueried,
         failedTitle: t.chat.forgeTools.usageFailed,
-        ref: /^(?:5 Stunden|5 hours): (\d+ ?%)/m.exec(text)?.[1] ?? null,
+        ref: /^(?:5 Stunden|5 hours|Woche|Week): (\d+ ?%)/m.exec(text)?.[1] ?? null,
         icon: "usage",
         tone: reached ? "warning" : "accent",
         target: null,

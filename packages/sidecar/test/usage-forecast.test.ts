@@ -141,17 +141,17 @@ describe("forecast texts", () => {
 
   it("names the forecast in usage_status and warns before more agents", () => {
     const limit = usage({ outcome: "limit", limitAt: iso(T0 + 100 * MIN), perHour: 30 });
-    expect(describeUsage(limit, ok, T0)).toMatch(/^5 Stunden: 50 % genutzt, Reset .+\. Prognose: bei diesem Tempo ist das Limit gegen .+\d\d:\d\d erreicht, vor dem Reset\nAbo: max$/);
+    expect(describeUsage(limit, ok, T0)).toMatch(/^5 Stunden: 50 % genutzt, Reset .+\. Prognose: bei diesem Tempo ist das Limit gegen .+\d\d:\d\d erreicht, vor dem Reset\nAbo: Max$/);
     expect(limitWarning(limit, T0)).toMatch(/^Bei diesem Tempo ist das Nutzungslimit vor dem Reset erreicht: 5 Stunden gegen .+ \(Reset .+\)\. Weitere Agenten verbrauchen es schneller\.$/);
     expect(spokenForecast(limit.windows[0]!)).toMatch(/^Bei diesem Tempo ist das Limit .+ um \d\d:\d\d erreicht, vor dem Reset\.$/);
 
     const enough = usage({ outcome: "enough", limitAt: null, perHour: 5 });
-    expect(describeUsage(enough, ok, T0)).toMatch(/Prognose: reicht bis zum Reset\nAbo: max$/);
+    expect(describeUsage(enough, ok, T0)).toMatch(/Prognose: reicht bis zum Reset\nAbo: Max$/);
     expect(limitWarning(enough, T0)).toBeNull();
     expect(spokenForecast(enough.windows[0]!)).toBe("Bei diesem Tempo reicht es bis zum Reset.");
 
     const none = usage(undefined);
-    expect(describeUsage(none, ok, T0)).toMatch(/\nPrognose: noch zu wenig Messwerte oder kein Anstieg\.\nAbo: max$/);
+    expect(describeUsage(none, ok, T0)).toMatch(/\nPrognose: noch zu wenig Messwerte oder kein Anstieg\.\nAbo: Max$/);
     expect(limitWarning(none, T0)).toBeNull();
   });
 
@@ -159,7 +159,7 @@ describe("forecast texts", () => {
     const limit = usage({ outcome: "limit", limitAt: iso(T0 + 100 * MIN), perHour: 30 });
     setLanguage("en");
     try {
-      expect(describeUsage(limit, ok, T0)).toMatch(/: 50% used, resets .+\. Forecast: at this pace the limit is reached around .+, before the reset\nSubscription: max$/);
+      expect(describeUsage(limit, ok, T0)).toMatch(/: 50% used, resets .+\. Forecast: at this pace the limit is reached around .+, before the reset\nSubscription: Max$/);
       expect(limitWarning(limit, T0)).toMatch(/^At this pace the usage limit is reached before the reset: .+ around .+ \(resets .+\)\. More agents use it up faster\.$/);
     } finally {
       setLanguage("de");

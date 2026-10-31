@@ -55,12 +55,12 @@ Body of the report:
   "models": {
     "claude-opus-4-7": { "tokens": 123, "costUsdCents": 45 }
   },
-  "plan": "max_20x",
+  "plan": "ultra",
   "language": "de"
 }
 ```
 
-`userTurns` are the runs that users started themselves, `costUsdCents` the estimated API cost of all Claude calls in US cents. `models` contains, per model ID, all four token types combined and the estimated cost, cumulative since the cutoff date. `plan` is the subscription of the account logged in to Claude Code (`max_20x`, `max_5x`, `max`, `pro`, `team`, `enterprise` ...), read from `organizationType` and the rate limit tier in `.claude.json`; `null` without a claude.ai login. `language` is the language of the FORGE interface (`de`, `en`). Older app versions do not send these fields; then 0, `{}` and `null` apply.
+`userTurns` are the runs that users started themselves, `costUsdCents` the estimated API cost of all Claude calls in US cents. `models` contains, per model ID, all four token types combined and the estimated cost, cumulative since the cutoff date. `plan` is the subscription of the account logged in to Claude Code (`ultra`, `max`, `pro`, `team`, `enterprise` ...), read from `organizationType` and the rate limit tier in `.claude.json`; `null` without a claude.ai login. Older app versions send `max_20x` and `max_5x`; the totals count them as `ultra` and `max`. `language` is the language of the FORGE interface (`de`, `en`). Older app versions do not send these fields; then 0, `{}` and `null` apply.
 
 Rules (see `src/lib/report.ts`):
 
@@ -85,7 +85,7 @@ Response of `GET /api/v1/totals`:
   "updatedAt": "2026-10-18T00:00:00.000Z",
   "models": { "claude-opus-4-7": { "tokens": 803400000, "costUsdCents": 315000 } },
   "versions": [{ "version": "0.1.81", "installs": 3 }],
-  "plans": [{ "plan": "max_20x", "installs": 4, "online": 1 }, { "plan": null, "installs": 3, "online": 1 }],
+  "plans": [{ "plan": "ultra", "installs": 4, "online": 1 }, { "plan": null, "installs": 3, "online": 1 }],
   "platforms": [{ "platform": "windows", "installs": 7 }],
   "languages": [{ "language": "de", "installs": 5 }, { "language": null, "installs": 2 }],
   "history": [{ "day": "2026-10-17", "tokens": 64420000, "claudeTurns": 55, "sessions": 12, "claudeWorkMs": 5400000, "costUsdCents": 4200, "activeInstalls": 7 }]

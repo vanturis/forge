@@ -85,7 +85,7 @@
   <tr>
     <td valign="top">
       <h3>Abo im Blick</h3>
-      Nutzung im 5-Stunden- und Wochenfenster mit Prognose, Tagesbericht mit Tokens, Commits und Agenten.
+      Nutzung der Limits deines Abos mit Prognose, Tagesbericht mit Tokens, Commits und Agenten.
     </td>
     <td valign="top">
       <h3>Telefon und Sync (optional)</h3>
@@ -202,7 +202,7 @@ unter macOS in `~/Library/Application Support/forge` und unter Linux in `~/.conf
 - **Anonyme Nutzungsstatistik (standardmäßig aus):** FORGE fragt beim ersten Start einmal danach und bittet
   darum, sie einzuschalten. Die Gesamtzahlen zeigen uns, wie FORGE genutzt wird. Ohne Antwort ist sie aus.
   Eingeschaltet gehen alle 5 Minuten Summen an [forge.vanturis.de](https://forge.vanturis.de): eine
-  zufällige Kennung der Installation, Version von FORGE und vom Betriebssystem, die Sprache der Oberfläche, die Art des Claude-Abos (z. B. Pro oder Max 5x)
+  zufällige Kennung der Installation, Version von FORGE und vom Betriebssystem, die Sprache der Oberfläche, die Art des Claude-Abos (z. B. Pro oder Ultra)
   und Zählerstände wie Tokens je Claude-Modell, geschätzte API-Kosten, Sessions, Projekte und Agenten. Keine
   Inhalte, keine Projektnamen, keine Pfade, keine IP-Adressen. Ein- und ausschalten unter Einstellungen > Über
   FORGE > Datenschutz; beim Ausschalten löscht FORGE die gesendeten Daten beim Dienst.

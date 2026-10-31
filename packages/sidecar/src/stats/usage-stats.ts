@@ -25,7 +25,7 @@ export interface UsageStatsDeps {
   /** whether the statistics are on (settings.usageStats) */
   enabled(): boolean;
   totals(): UsageTotals;
-  /** Claude plan of the account, e.g. "max_20x"; null when unknown */
+  /** Claude plan of the account, e.g. "ultra"; null when unknown */
   plan?(): Promise<string | null>;
   /** language of the interface (settings.language) */
   language?(): string;

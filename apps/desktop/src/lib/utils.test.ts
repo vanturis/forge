@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 import { planLabel } from "./utils";
 
 describe("planLabel", () => {
-  it("names the Max tier when Claude Code knows it", () => {
-    expect(planLabel({ subscriptionType: "max", rateLimitTier: "default_claude_max_20x" })).toBe("Max 20x Abo");
-    expect(planLabel({ subscriptionType: "max", rateLimitTier: "default_claude_max_5x" })).toBe("Max 5x Abo");
+  it("uses the current plan names for what Claude Code still reports as max", () => {
+    expect(planLabel({ subscriptionType: "max", rateLimitTier: "default_claude_max_20x" })).toBe("Ultra Abo");
+    expect(planLabel({ subscriptionType: "max", rateLimitTier: "default_claude_max_5x" })).toBe("Max Abo");
+    expect(planLabel({ subscriptionType: "ultra", rateLimitTier: null })).toBe("Ultra Abo");
+  });
+
+  it("keeps an unknown multiplier visible", () => {
+    expect(planLabel({ subscriptionType: "max", rateLimitTier: "default_claude_max_40x" })).toBe("Max 40x Abo");
   });
 
   it("falls back to the plan alone", () => {

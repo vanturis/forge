@@ -445,7 +445,7 @@ describe("SessionService", () => {
     expect(db.listEvents(s.id).at(-1)?.body).toEqual({ type: "notify", message: "Export fertig, bitte prüfen", urgent: true });
 
     // Within a minute the same reading, with its forecast.
-    expect(await tool("usage_status").run({})).toMatch(/^5 Stunden: 50 % genutzt, Reset .+\. Prognose: bei diesem Tempo ist das Limit gegen .+ erreicht, vor dem Reset\nAbo: max$/);
+    expect(await tool("usage_status").run({})).toMatch(/^5 Stunden: 50 % genutzt, Reset .+\. Prognose: bei diesem Tempo ist das Limit gegen .+ erreicht, vor dem Reset\nAbo: Max$/);
 
     // After a restart the agent still belongs to its session.
     rt.replay(0);

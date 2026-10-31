@@ -168,14 +168,17 @@ async function queryVersions(p: Pool): Promise<VersionCount[]> {
   return res.rows.map((r) => ({ version: r.version, installs: Number(r.installs) }));
 }
 
+// App versions before the rename to Ultra and Max keep reporting the old names.
+const CURRENT_PLAN = `CASE plan WHEN 'max_20x' THEN 'ultra' WHEN 'max_5x' THEN 'max' ELSE plan END`;
+
 async function queryPlans(p: Pool): Promise<PlanCount[]> {
   const res = await p.query<{ plan: string | null; installs: string; online: string }>(
-    `SELECT plan, COUNT(*)::text AS installs,
+    `SELECT ${CURRENT_PLAN} AS plan, COUNT(*)::text AS installs,
        COUNT(*) FILTER (WHERE last_seen > now() - make_interval(mins => $1))::text AS online
      FROM installs
      WHERE last_seen > now() - interval '30 days'
-     GROUP BY plan
-     ORDER BY COUNT(*) DESC, plan NULLS LAST`,
+     GROUP BY 1
+     ORDER BY COUNT(*) DESC, 1 NULLS LAST`,
     [ONLINE_MINUTES],
   );
   return res.rows.map((r) => ({ plan: r.plan, installs: Number(r.installs), online: Number(r.online) }));
@@ -286,9 +289,9 @@ export async function getOnline(): Promise<Online> {
   if (onlineCached && Date.now() - onlineCached.at < ONLINE_MAX_AGE_MS) return onlineCached.online;
   const p = await db();
   const res = await p.query<{ plan: string | null; online: string }>(
-    `SELECT plan, COUNT(*)::text AS online FROM installs
+    `SELECT ${CURRENT_PLAN} AS plan, COUNT(*)::text AS online FROM installs
      WHERE last_seen > now() - make_interval(mins => $1)
-     GROUP BY plan`,
+     GROUP BY 1`,
     [ONLINE_MINUTES],
   );
   const plans = res.rows.map((r) => ({ plan: r.plan, online: Number(r.online) }));

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import os from "node:os";
-import type { Capability, Diagnostics, ToolCheck } from "@forge/protocol";
+import { planName, type Capability, type Diagnostics, type ToolCheck } from "@forge/protocol";
 import { run } from "../util/proc.js";
 import { tr } from "../i18n/index.js";
 import { resolveTool } from "../util/tools.js";
@@ -41,7 +41,7 @@ export async function readRateLimitTier(file = claudeJsonPath()): Promise<string
 }
 
 /**
- * Claude plan of the signed-in account for the usage statistics ("max_20x", "max_5x", "pro", "team" ...),
+ * Claude plan of the signed-in account for the usage statistics ("ultra", "max", "pro", "team" ...),
  * from `oauthAccount` of .claude.json; null without a claude.ai login. Reads no identifying fields and
  * starts no process, so it can run with every report.
  */
@@ -53,8 +53,7 @@ export async function readPlan(file = claudeJsonPath()): Promise<string | null> 
     if (!/^[a-z0-9_]{1,24}$/.test(type)) return null;
     if (type !== "max") return type;
     const tier = a.userRateLimitTier ?? a.organizationRateLimitTier;
-    const multiplier = typeof tier === "string" ? /_(\d{1,3})x$/.exec(tier)?.[1] : undefined;
-    return multiplier ? `max_${multiplier}x` : "max";
+    return planName("max", typeof tier === "string" ? tier : null).toLowerCase().replace(" ", "_");
   } catch {
     return null;
   }

@@ -357,7 +357,7 @@ export const system = {
     noConnection: "Keine Verbindung zum Sprachdienst von Claude. Netzwerk prüfen, sonst hat sich der Dienst mit einem Claude-Code-Update geändert.",
     loginRejected: "Der Sprachdienst lehnt die Claude-Anmeldung ab.",
     loginExpiring: "Die Claude-Anmeldung läuft ab und wird erst bei der Aufnahme erneuert.",
-    needsLogin: "Die Spracheingabe braucht die Anmeldung bei Claude (Pro oder Max).",
+    needsLogin: "Die Spracheingabe braucht die Anmeldung bei Claude (Pro, Max oder Ultra).",
     loginExpired: "Die Claude-Anmeldung ist abgelaufen. Unter Einstellungen, Claude Code neu anmelden.",
   },
   paths: {

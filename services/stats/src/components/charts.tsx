@@ -295,7 +295,7 @@ function Versions({ totals }: { totals: Totals }) {
   return <ShareList rows={[...own, ...rows.filter((r) => r.key === "other")]} />;
 }
 
-/** "max_20x" is "Max 20x", "pro" "Pro". */
+/** "ultra" is "Ultra", "max_40x" "Max 40x". */
 export const planName = (plan: string) => plan.split("_").map((p, i) => (i === 0 ? p.charAt(0).toUpperCase() + p.slice(1) : p)).join(" ");
 
 function Plans({ totals }: { totals: Totals }) {
