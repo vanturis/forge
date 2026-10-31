@@ -286,7 +286,11 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     log: (m) => opts.log?.(m),
   });
   const usageStats = new UsageStatsService({
-    enabled: () => db.getSettings().usageStats,
+    // Not before the setup assistant is through: right after it, UsageStatsPrompt tells the user about them.
+    enabled: () => {
+      const s = db.getSettings();
+      return s.usageStats && s.setupDone;
+    },
     totals: () => db.usageTotals(),
     plan: () => readPlan(),
     language: () => db.getSettings().language,

@@ -479,7 +479,7 @@ export const DEFAULT_SETTINGS: Settings = {
   setupDone: false,
   syncEnabled: false,
   syncAsked: false,
-  usageStats: false,
+  usageStats: true,
   usageStatsAsked: false,
   language: "en",
 };

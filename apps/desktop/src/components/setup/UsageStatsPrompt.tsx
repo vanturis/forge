@@ -13,9 +13,9 @@ import { t } from "@/i18n";
 const tu = t.setup.usageStats;
 
 /**
- * Asks once about the anonymous usage statistics, after the setup assistant and the sync question.
- * Unanswered they stay off (DEFAULT_SETTINGS.usageStats); closing asks again on the next start.
- * Recommends switching on, without pressure: declining is a full button of its own.
+ * Tells once about the anonymous usage statistics, after the setup assistant and the sync question.
+ * They are on by default (DEFAULT_SETTINGS.usageStats); closing shows this again on the next start.
+ * Switching off is a full button of its own, and an earlier "no" stays stored as usageStats false.
  */
 export function UsageStatsPrompt() {
   const s = useSettings().data;
@@ -49,10 +49,10 @@ function Prompt({ onLater }: { onLater: () => void }) {
       footer={
         <>
           <Button variant="ghost" onClick={() => void answer(false)} loading={busy === false} disabled={busy !== null}>
-            {tu.noThanks}
+            {tu.turnOff}
           </Button>
           <Button variant="primary" onClick={() => void answer(true)} loading={busy === true} disabled={busy !== null}>
-            {tu.enable}
+            {tu.keepOn}
           </Button>
         </>
       }

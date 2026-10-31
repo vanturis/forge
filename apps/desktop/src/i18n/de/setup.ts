@@ -110,16 +110,16 @@ export const setup = {
 
   usageStats: {
     title: "Anonyme Nutzungsstatistik",
-    description: "Eingeschaltet schickt FORGE alle 5 Minuten Summen an den Statistik-Dienst von FORGE. Daraus entstehen die öffentlichen Gesamtzahlen aller Nutzer.",
-    noThanks: "Nein danke",
-    enable: "Einschalten (empfohlen)",
+    description: "FORGE schickt alle 5 Minuten Summen an den Statistik-Dienst von FORGE. Daraus entstehen die öffentlichen Gesamtzahlen aller Nutzer.",
+    turnOff: "Ausschalten",
+    keepOn: "Eingeschaltet lassen",
     sentTitle: "Gesendet wird",
     sent: `Eine zufällige Kennung dieser Installation, die FORGE-Version, die ${osName}-Version, die Sprache der Oberfläche, die Art des Claude-Abos (z. B. Pro oder Ultra) und Zählerstände: verbrauchte Tokens je Claude-Modell, geschätzte API-Kosten, Claude-Arbeitszeit, Durchläufe, Sessions, angelegte Projekte, gestartete und zusammengeführte Agenten, Telefonate.`,
     notSentTitle: "Nicht gesendet wird",
     notSent: "Keine Inhalte aus Chats oder Dateien, keine Projektnamen, keine Pfade, nichts über dein Claude- oder GitHub-Konto. Der Dienst speichert keine IP-Adressen.",
-    why: "Wenn du magst, schalte sie ein: Die öffentlichen Gesamtzahlen zeigen, wie FORGE genutzt wird, und helfen bei der Entscheidung, woran weiter gearbeitet wird.",
+    why: "Die öffentlichen Gesamtzahlen zeigen, wie FORGE genutzt wird, und helfen bei der Entscheidung, woran weiter gearbeitet wird.",
     fineprint:
-      "Ohne Antwort bleibt sie aus. Ein- und ausschalten geht jederzeit unter Einstellungen, Über FORGE, Datenschutz. Beim Ausschalten löscht FORGE die gesendeten Daten beim Dienst.",
+      "Die Statistik ist standardmäßig an. Ein- und ausschalten geht jederzeit unter Einstellungen, Über FORGE, Datenschutz. Beim Ausschalten löscht FORGE die gesendeten Daten beim Dienst.",
     viewTotals: "Gesamtzahlen ansehen",
     notSaved: "Nicht gespeichert",
   },

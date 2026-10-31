@@ -599,7 +599,7 @@ export const Settings = z.object({
   syncAsked: z.boolean(),
   /** every 5 minutes anonymous totals (tokens, projects, agents ...) go to USAGE_STATS_URL */
   usageStats: z.boolean(),
-  /** the user answered the question about the usage statistics; unanswered they stay off */
+  /** the user answered the notice about the usage statistics; unanswered they stay on and it comes again */
   usageStatsAsked: z.boolean(),
   /** language of the interface, the sidecar's texts and the phone; switching reloads the windows */
   language: Language,

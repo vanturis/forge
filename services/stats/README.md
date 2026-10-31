@@ -4,7 +4,7 @@
 
 Small service at https://forge.vanturis.de. It shows the FORGE start page (`/`), receives the anonymous usage numbers of the FORGE desktop app and shows the totals of all installations publicly at `/stats` ("Live Stats", English and German).
 
-In the app, usage statistics are off by default. After the setup assistant and the sync question, FORGE asks once whether to turn them on; without an answer they stay off. So only installations whose users turned them on send reports. They can be switched on or off at any time under Settings > About FORGE > Privacy; when they are switched off, FORGE deletes the data already sent at the service (`DELETE /api/v1/report/<installId>`).
+In the app, usage statistics are on by default. Nothing is sent before the setup assistant is through. After it and the sync question, FORGE tells once about them and offers to turn them off; users who declined earlier stay off. They can be switched on or off at any time under Settings > About FORGE > Privacy; when they are switched off, FORGE deletes the data already sent at the service (`DELETE /api/v1/report/<installId>`).
 
 The folder is not part of the FORGE pnpm workspace. It has its own `package.json` and its own `pnpm-lock.yaml`.
 

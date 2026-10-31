@@ -199,8 +199,8 @@ installierst mit einem Klick. Jedes Update ist signiert, FORGE prüft die Signat
 Projekte, Chatverläufe und Einstellungen bleiben auf deinem Rechner: unter Windows in `%APPDATA%\forge`,
 unter macOS in `~/Library/Application Support/forge` und unter Linux in `~/.config/forge` (bzw. `$XDG_CONFIG_HOME/forge`).
 
-- **Anonyme Nutzungsstatistik (standardmäßig aus):** FORGE fragt beim ersten Start einmal danach und bittet
-  darum, sie einzuschalten. Die Gesamtzahlen zeigen uns, wie FORGE genutzt wird. Ohne Antwort ist sie aus.
+- **Anonyme Nutzungsstatistik (standardmäßig an):** FORGE weist nach der Einrichtung einmal darauf hin und
+  lässt dich sie ausschalten. Die Gesamtzahlen zeigen uns, wie FORGE genutzt wird.
   Eingeschaltet gehen alle 5 Minuten Summen an [forge.vanturis.de](https://forge.vanturis.de): eine
   zufällige Kennung der Installation, Version von FORGE und vom Betriebssystem, die Sprache der Oberfläche, die Art des Claude-Abos (z. B. Pro oder Ultra)
   und Zählerstände wie Tokens je Claude-Modell, geschätzte API-Kosten, Sessions, Projekte und Agenten. Keine

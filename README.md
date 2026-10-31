@@ -195,8 +195,8 @@ with one click. Every update is signed, and FORGE verifies the signature before 
 Projects, chat histories and settings stay on your computer: `%APPDATA%\forge` on Windows,
 `~/Library/Application Support/forge` on macOS and `~/.config/forge` on Linux (or `$XDG_CONFIG_HOME/forge`).
 
-- **Anonymous usage statistics (off by default):** FORGE asks once on first start and asks you to turn them on.
-  The totals show us how FORGE is used. Without an answer they stay off. When on, FORGE sends totals to
+- **Anonymous usage statistics (on by default):** FORGE tells you about them once after setup and lets you turn
+  them off. The totals show us how FORGE is used. When on, FORGE sends totals to
   [forge.vanturis.de](https://forge.vanturis.de) every 5 minutes: a random ID for the installation,
   the versions of FORGE and of the operating system, the interface language, the type of Claude subscription (for example Pro or Ultra) and counters such
   as tokens per Claude model, estimated API cost, sessions, projects and agents. No content, no project names, no

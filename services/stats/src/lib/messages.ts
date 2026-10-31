@@ -79,7 +79,7 @@ const de = {
         },
         {
           q: "Bleiben meine Daten auf meinem Rechner?",
-          a: "Projekte, Chatverläufe und Einstellungen liegen lokal auf deinem Rechner: unter Windows in %APPDATA%\\forge, unter macOS in ~/Library/Application Support/forge, unter Linux in ~/.config/forge. Die anonyme Nutzungsstatistik ist standardmäßig aus. Eingeschaltet sendet sie nur Zählerstände, nie Inhalte, Dateien oder Projektnamen.",
+          a: "Projekte, Chatverläufe und Einstellungen liegen lokal auf deinem Rechner: unter Windows in %APPDATA%\\forge, unter macOS in ~/Library/Application Support/forge, unter Linux in ~/.config/forge. Die anonyme Nutzungsstatistik ist standardmäßig an und lässt sich jederzeit ausschalten. Sie sendet nur Zählerstände, nie Inhalte, Dateien oder Projektnamen.",
         },
         {
           q: "Gibt es FORGE für macOS oder Linux?",
@@ -166,9 +166,9 @@ const de = {
     },
     privacy: {
       title: "Was erfasst wird",
-      text: "In FORGE standardmäßig aus. Ein- und ausschalten unter Einstellungen > Über FORGE > Datenschutz.",
+      text: "In FORGE standardmäßig an. Ein- und ausschalten unter Einstellungen > Über FORGE > Datenschutz.",
       items: {
-        off: { title: "Standardmäßig aus", text: "FORGE fragt einmal nach. Solange die Statistik aus ist, sendet die App nichts." },
+        off: { title: "Standardmäßig an", text: "FORGE weist nach der Einrichtung einmal darauf hin. Ist die Statistik aus, sendet die App nichts." },
         anonymous: { title: "Anonym", text: "Alle 5 Minuten die Gesamtzähler mit einer zufälligen Installations-ID, Version, Betriebssystem, Sprache und Art des Claude-Abos." },
         notCollected: { title: "Nicht erfasst", text: "Keine Inhalte von Nachrichten, keine Dateien, Projektnamen oder IP-Adressen." },
         delete: { title: "Abschalten löscht", text: "Wer die Statistik abschaltet, löscht damit den gespeicherten Datensatz seiner Installation." },
@@ -316,7 +316,7 @@ const en: Messages = {
         },
         {
           q: "Does my data stay on my computer?",
-          a: "Projects, chat history and settings stay on your computer: on Windows in %APPDATA%\\forge, on macOS in ~/Library/Application Support/forge, on Linux in ~/.config/forge. The anonymous usage statistics are off by default. When on, they send only counter values, never contents, files or project names.",
+          a: "Projects, chat history and settings stay on your computer: on Windows in %APPDATA%\\forge, on macOS in ~/Library/Application Support/forge, on Linux in ~/.config/forge. The anonymous usage statistics are on by default and can be turned off at any time. They send only counter values, never contents, files or project names.",
         },
         {
           q: "Is FORGE available for macOS or Linux?",
@@ -403,9 +403,9 @@ const en: Messages = {
     },
     privacy: {
       title: "What is collected",
-      text: "Off by default in FORGE. Turn it on or off under Settings > About FORGE > Privacy.",
+      text: "On by default in FORGE. Turn it on or off under Settings > About FORGE > Privacy.",
       items: {
-        off: { title: "Off by default", text: "FORGE asks once. While the statistics are off, the app sends nothing." },
+        off: { title: "On by default", text: "FORGE tells you once after setup. While the statistics are off, the app sends nothing." },
         anonymous: { title: "Anonymous", text: "Every 5 minutes the running totals with a random installation ID, version, operating system, language and type of Claude plan." },
         notCollected: { title: "Not collected", text: "No message contents, files, project names or IP addresses." },
         delete: { title: "Turning off deletes", text: "Turning the statistics off also deletes the stored record of that installation." },
