@@ -157,7 +157,7 @@ export const forgeTools: typeof De = {
     ` Note: ${open} ${open === 1 ? "file is" : "files are"} uncommitted on your side, it doesn't see ${open === 1 ? "it" : "them"} (with_changes=true would have passed ${open === 1 ? "it" : "them"} along).`,
   startAgentWarning: (warning) => ` Note: ${warning}`,
   agentStarted: (id, branch, dir) =>
-    `Agent ${id} started, branch ${branch}, folder ${dir}. It works independently; agent_status gives its state. Its changes are only on its branch.`,
+    `Agent ${id} started, branch ${branch}, folder ${dir}. It works independently, its changes are only on its branch. When it is done, FORGE brings you its result in a turn of its own; you don't need to wait or ask. agent_status gives its state meanwhile.`,
   agentStatusDescription:
     "State of the agents this session started: status, branch and their last answer. Without agent also the project's other agents (from the Agents tab, the phone or other sessions).",
   agentStatusAgent: "Short ID of an agent; omit for all",
@@ -178,7 +178,8 @@ export const forgeTools: typeof De = {
     "- start_agent: starts a parallel agent in its own Git worktree on its own branch. Only for subtasks that are truly independent and can run at the same time; the task must be understandable on its own. The agent starts at the last commit of your branch; it only gets your uncommitted state with with_changes=true.",
   agentsOffLine:
     "- The user switched off parallel agents in this project: no start_agent, and no subagents with worktree isolation either. Work through tasks one after another in this session, independent subtasks included.",
-  agentStatusLine: "- agent_status and message_agent: track and guide agents. Their work is on their branches.",
+  agentStatusLine:
+    "- agent_status and message_agent: track and guide agents. Their work is on their branches. When an agent is done, FORGE starts a turn of yours with its final answer (FORGE note): evaluate it and report to the user.",
   finishAgentLine: (autoMerge) =>
     `- finish_agent: merge (merge) or discard (discard) an agent of the project, also someone else's; afterwards session, worktree, FORGE entry and branch are gone. Only after checking with the user. ${
       autoMerge

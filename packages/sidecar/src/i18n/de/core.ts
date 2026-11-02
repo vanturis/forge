@@ -1,3 +1,4 @@
+import { agentReturn } from "./core/agent-return.js";
 import { app } from "./core/app.js";
 import { automation } from "./core/automation.js";
 import { claude } from "./core/claude.js";
@@ -10,4 +11,4 @@ import { sessions } from "./core/sessions.js";
 import { templates } from "./core/templates.js";
 
 /** German texts (core), one file per area under core/. Source of the keys: the English file is typed against this one. */
-export const core = { app, automation, claude, crew, forgeTools, knowledge, preview, reports, sessions, templates };
+export const core = { agentReturn, app, automation, claude, crew, forgeTools, knowledge, preview, reports, sessions, templates };

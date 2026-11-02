@@ -134,6 +134,19 @@ export const TaskMessageRef = z.object({
 });
 export type TaskMessageRef = z.infer<typeof TaskMessageRef>;
 
+/**
+ * A parallel agent (start_agent) whose job is done, as FORGE told the session that started it.
+ * done: no auto-merge, its branch waits; merged / skipped / waiting: what auto-merge did with it.
+ */
+export const AgentReturnRef = z.object({
+  /** the agent's session; gone once its work is merged */
+  sessionId: z.string(),
+  title: z.string().nullable(),
+  branch: z.string().nullable(),
+  outcome: z.enum(["done", "merged", "skipped", "waiting"]),
+});
+export type AgentReturnRef = z.infer<typeof AgentReturnRef>;
+
 /** A subagent working in the foreground of the current turn (Task tool), with its latest progress. */
 export const SubagentProgress = z.object({
   taskId: z.string(),
@@ -257,6 +270,8 @@ export const SessionEventBody = z.discriminatedUnion("type", [
     source: z.enum(["forge", "remote", "auto"]).optional(),
     /** written to a background task: Claude got it with a note naming the task (and passes it on to a subagent) */
     task: TaskMessageRef.optional(),
+    /** sent by FORGE ("auto") because parallel agents of this session were done; Claude got their results with it */
+    agents: z.array(AgentReturnRef).optional(),
   }),
   z.object({
     type: z.literal("check.result"),

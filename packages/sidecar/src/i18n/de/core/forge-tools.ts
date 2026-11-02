@@ -173,7 +173,7 @@ export const forgeTools = {
     ` Hinweis: ${open} ${open === 1 ? "Datei ist" : "Dateien sind"} bei dir nicht committet, die sieht er nicht (with_changes=true hätte sie mitgegeben).`,
   startAgentWarning: (warning: string) => ` Hinweis: ${warning}`,
   agentStarted: (id: string, branch: string, dir: string) =>
-    `Agent ${id} gestartet, Branch ${branch}, Ordner ${dir}. Er arbeitet unabhängig; den Stand gibt agent_status. Seine Änderungen liegen nur auf seinem Branch.`,
+    `Agent ${id} gestartet, Branch ${branch}, Ordner ${dir}. Er arbeitet unabhängig, seine Änderungen liegen nur auf seinem Branch. Wenn er fertig ist, bringt FORGE dir sein Ergebnis in einem eigenen Durchlauf; du musst nicht warten oder nachfragen. Den Zwischenstand gibt agent_status.`,
   // agent_status
   agentStatusDescription:
     "Stand der Agenten, die diese Session gestartet hat: Status, Branch und ihre letzte Antwort. Ohne agent auch die übrigen Agenten des Projekts (aus dem Agenten-Reiter, vom Telefon oder aus anderen Sessions).",
@@ -200,7 +200,8 @@ export const forgeTools = {
     "- start_agent: startet einen parallelen Agenten in einem eigenen Git-Worktree auf eigenem Branch. Nur für Teilaufgaben, die wirklich unabhängig und gleichzeitig laufen können; der Auftrag muss für sich allein verständlich sein. Der Agent startet beim letzten Commit deines Branches; deinen nicht committeten Stand bekommt er nur mit with_changes=true.",
   agentsOffLine:
     "- Parallele Agenten hat der Nutzer in diesem Projekt ausgeschaltet: kein start_agent, auch keine Subagenten mit Worktree-Isolation. Arbeite Aufgaben nacheinander in dieser Session ab, auch unabhängige Teilaufgaben.",
-  agentStatusLine: "- agent_status und message_agent: Agenten verfolgen und anleiten. Ihre Arbeit liegt auf ihren Branches.",
+  agentStatusLine:
+    "- agent_status und message_agent: Agenten verfolgen und anleiten. Ihre Arbeit liegt auf ihren Branches. Ist ein Agent fertig, startet FORGE bei dir einen Durchlauf mit seiner Schlussantwort (FORGE-Hinweis): Werte ihn aus und berichte dem Nutzer.",
   finishAgentLine: (autoMerge: boolean) =>
     `- finish_agent: einen Agenten des Projekts zusammenführen (merge) oder verwerfen (discard), auch einen fremden; danach sind Session, Worktree, FORGE-Eintrag und Branch weg. Nur nach Rücksprache mit dem Nutzer. ${
       autoMerge

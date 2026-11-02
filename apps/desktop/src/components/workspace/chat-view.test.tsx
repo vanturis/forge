@@ -6,7 +6,7 @@ import { ChatViewToggle, chatView, filterChatItems, setChatView } from "./chat-v
 
 afterEach(cleanup);
 
-const user = (key: string, text: string): ChatItem => ({ kind: "user", key, seq: 1, text, ts: "", uuid: null, attachments: [], remote: false, auto: false, edited: false, task: null });
+const user = (key: string, text: string): ChatItem => ({ kind: "user", key, seq: 1, text, ts: "", uuid: null, attachments: [], remote: false, auto: false, edited: false, task: null, agents: null });
 const answer = (key: string, text: string): ChatItem => ({ kind: "assistant", key, seq: 2, text, streaming: false, ts: "" });
 const tool = (key: string): ChatItem =>
   ({ kind: "tool", key, ts: "", use: { type: "tool.use", toolUseId: key, name: "Bash", input: {}, parentToolUseId: null }, result: null, approval: null, blocked: null, todos: null, superseded: false }) as ChatItem;

@@ -21,9 +21,18 @@ export interface AgentAutoMergeDeps {
   parentOf(sessionId: string): string | null;
   /** background tasks of the session still running; their results start a new turn */
   hasBackground(sessionId: string): boolean;
+  /** a later try (after another turn, or by the timer) settled an agent that was waiting */
+  settled?(sessionId: string, result: AutoMergeResult): void;
 }
 
 type Outcome = "merged" | "conflict" | "skipped" | "waiting";
+
+/** What auto-merge did with a finished agent; conflict: handed back, the agent works on. */
+export interface AutoMergeResult {
+  outcome: Outcome;
+  message: string;
+  branch: string | null;
+}
 
 /** Whether finished agents of this project are merged automatically. The main project decides: worktrees only copied its tags when they started. */
 export function autoMergeOn(projects: ProjectManager, project: Project): boolean {
@@ -45,33 +54,35 @@ export class AgentAutoMerge {
 
   constructor(private readonly d: AgentAutoMergeDeps) {}
 
-  async turnDone(sessionId: string, testsOk: boolean): Promise<void> {
+  /** What happened to this session's agent; null when it is no agent with auto-merge, or nothing was decided. */
+  async turnDone(sessionId: string, testsOk: boolean): Promise<AutoMergeResult | null> {
     // Beside the rest: deleting a big leftover folder must not hold up this agent's own merge.
     const remains = this.clearRemains().catch(() => null);
     try {
-      await this.afterTurn(sessionId, testsOk);
+      return await this.afterTurn(sessionId, testsOk);
     } finally {
       await remains;
     }
   }
 
-  private async afterTurn(sessionId: string, testsOk: boolean) {
+  private async afterTurn(sessionId: string, testsOk: boolean): Promise<AutoMergeResult | null> {
     const rec = this.d.db.getSession(sessionId);
     const project = rec ? this.d.projects.all().find((p) => p.id === rec.projectId) : null;
     // Any turn that ends (its auto-commit done) may have made room for a waiting agent.
     await this.retryWaiting(sessionId);
-    if (!project?.parentId || !autoMergeOn(this.d.projects, project)) return;
+    if (!project?.parentId || !autoMergeOn(this.d.projects, project)) return null;
     if (this.d.hasBackground(sessionId)) {
       // Its background tasks start another turn when they end; until then it waits, and says so once.
       // Before, such an agent was never merged when the task was a server that keeps running.
+      const message = tr().core.automation.waitingBackground;
       if (!this.waiting.has(project.id)) {
-        this.report(sessionId, this.d.parentOf(sessionId), project, null, "waiting", tr().core.automation.waitingBackground);
+        this.report(sessionId, this.d.parentOf(sessionId), project, null, "waiting", message);
       }
       this.waiting.set(project.id, sessionId);
       this.syncTimer();
-      return;
+      return { outcome: "waiting", message, branch: null };
     }
-    await this.attempt(sessionId, project, testsOk);
+    return this.attempt(sessionId, project, testsOk);
   }
 
   /** Agents of this list are still waiting for the project; for the UI and tests. */
@@ -79,11 +90,11 @@ export class AgentAutoMerge {
     return [...this.waiting.keys()];
   }
 
-  private async attempt(sessionId: string, worktree: Project, testsOk: boolean) {
-    if (this.running.has(worktree.id)) return;
+  private async attempt(sessionId: string, worktree: Project, testsOk: boolean): Promise<AutoMergeResult | null> {
+    if (this.running.has(worktree.id)) return null;
     this.running.add(worktree.id);
     try {
-      await this.run(sessionId, worktree, testsOk);
+      return await this.run(sessionId, worktree, testsOk);
     } finally {
       this.running.delete(worktree.id);
     }
@@ -99,7 +110,8 @@ export class AgentAutoMerge {
         continue;
       }
       if (sessionId === except || this.d.hasBackground(sessionId)) continue;
-      await this.attempt(sessionId, worktree, true);
+      const result = await this.attempt(sessionId, worktree, true);
+      if (result && result.outcome !== "waiting") this.d.settled?.(sessionId, result);
     }
     this.syncTimer();
   }
@@ -140,7 +152,7 @@ export class AgentAutoMerge {
     this.retryTimer = null;
   }
 
-  private async run(sessionId: string, worktree: Project, testsOk: boolean) {
+  private async run(sessionId: string, worktree: Project, testsOk: boolean): Promise<AutoMergeResult | null> {
     // Read before the merge: afterwards the agent's session and worktree are gone.
     const parentId = this.d.parentOf(sessionId);
     const sessionIds = this.d.db.listSessions(worktree.id).map((s) => s.id);
@@ -148,16 +160,17 @@ export class AgentAutoMerge {
       // Remains of an agent whose merge went through but whose folder would not go: there is
       // nothing left to merge, only folder, entry and the merged branch to clear away.
       await this.d.finisher.clearRemains(worktree.id).catch(() => null);
-      return;
+      return null;
     }
     const review = await this.d.finisher.review(worktree.id);
     // A new turn started meanwhile; its end tries again.
-    if (review.busy) return;
-    const skip = (reason: string) => {
+    if (review.busy) return null;
+    const skip = (reason: string): AutoMergeResult => {
       this.settle(worktree.id);
       const message = tr().core.automation.notAutoMerged(reason);
       this.logSkipped(sessionId, parentId, worktree, review.branch, message);
       this.report(sessionId, parentId, worktree, review.branch, "skipped", message);
+      return { outcome: "skipped", message, branch: review.branch };
     };
     if (!testsOk) return skip(tr().core.automation.testsFailed);
     if (review.mergeBlocker) return skip(review.mergeBlocker);
@@ -175,20 +188,22 @@ export class AgentAutoMerge {
       const told = this.waiting.has(worktree.id);
       this.waiting.set(worktree.id, sessionId);
       this.syncTimer();
-      if (!told) {
-        const prefix = tr().core.automation.notMergedYet("");
-        const why = r.message.startsWith(prefix) ? r.message.slice(prefix.length) : r.message;
-        this.report(sessionId, parentId, worktree, r.branch, "waiting", tr().core.automation.waitingMerge(why));
-      }
-      return;
+      const prefix = tr().core.automation.notMergedYet("");
+      const why = r.message.startsWith(prefix) ? r.message.slice(prefix.length) : r.message;
+      const message = tr().core.automation.waitingMerge(why);
+      if (!told) this.report(sessionId, parentId, worktree, r.branch, "waiting", message);
+      return { outcome: "waiting", message, branch: r.branch };
     }
     this.settle(worktree.id);
     if (r.outcome === "conflict") {
       this.conflicts.set(worktree.id, rounds + 1);
-      return this.report(sessionId, parentId, worktree, r.branch, "conflict", r.message);
+      this.report(sessionId, parentId, worktree, r.branch, "conflict", r.message);
+      return { outcome: "conflict", message: r.message, branch: r.branch };
     }
     this.conflicts.delete(worktree.id);
-    this.report(null, parentId, worktree, r.branch, "merged", tr().core.automation.autoMerged(r.message), sessionIds);
+    const message = tr().core.automation.autoMerged(r.message);
+    this.report(null, parentId, worktree, r.branch, "merged", message, sessionIds);
+    return { outcome: "merged", message, branch: r.branch };
   }
 
   private settle(worktreeId: string) {

@@ -10,7 +10,7 @@ interface Fake {
 
 const task: BackgroundTask = { taskId: "t1", description: "Build", taskType: "local_bash", toolUseId: null, startedAt: "2026-10-13T10:00:00Z", summary: null };
 
-function setup(sessions: Record<string, Partial<Fake>>) {
+function setup(sessions: Record<string, Partial<Fake>>, opts: { wakes?: (id: string) => boolean; expects?: (id: string) => boolean } = {}) {
   const all = new Map<string, Fake>(Object.entries(sessions).map(([id, s]) => [id, { status: "idle", background: [], parent: null, ...s }]));
   const done: string[] = [];
   const watcher = new JobWatcher({
@@ -23,6 +23,7 @@ function setup(sessions: Record<string, Partial<Fake>>) {
     emit: (e: ServerEvent) => {
       if (e.event === "session.done") done.push(e.payload.sessionId);
     },
+    ...opts,
   });
   /** a turn ends; the session's status still says running when turn.result is recorded */
   const turnEnds = (id: string, isError = false) => {
@@ -90,6 +91,25 @@ describe("JobWatcher", () => {
     const { done, turnEnds } = setup({ p: {}, a: { parent: "p", status: "running" } });
     turnEnds("a");
     expect(done).toEqual(["a"]);
+  });
+
+  it("leaves it to the starter's turn on the agent's result when the agent's end brings it back", () => {
+    let expected = false;
+    const { done, turnEnds } = setup({ p: {}, a: { parent: "p", status: "running" }, b: { parent: "p", status: "running" } }, { wakes: (id) => id !== "p", expects: () => expected });
+    turnEnds("p");
+    turnEnds("a");
+    // Neither the agent nor the waiting starter: a turn of p on a's result follows.
+    expect(done).toEqual([]);
+    turnEnds("p");
+    expect(done).toEqual([]);
+    // b is done, but its result still waits to reach p (p was busy): no done yet.
+    turnEnds("b");
+    expected = true;
+    turnEnds("p");
+    expect(done).toEqual([]);
+    expected = false;
+    turnEnds("p");
+    expect(done).toEqual(["p"]);
   });
 
   it("forgets a waiting job after a failed turn", () => {

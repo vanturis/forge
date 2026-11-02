@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ForgeError, type Attachment, type Session, type TaskMessageRef } from "@forge/protocol";
+import { ForgeError, type AgentReturnRef, type Attachment, type Session, type TaskMessageRef } from "@forge/protocol";
 import { buildAttachmentBlocks, fitMessageText, type Spill } from "../claude/attachments.js";
 import type { OutgoingMessage } from "../claude/runtime.js";
 import { BUSY, endLive, isRemotePlaceholderTitle, titleFrom, type LiveSession } from "./live-session.js";
@@ -22,9 +22,13 @@ export interface TurnHost {
 /** "auto": FORGE continues after a usage limit; the timeline marks the message as automatic. */
 export type MessageSource = "auto";
 
-/** A message written to a background task: the timeline names the task, Claude reads `note` before the text. */
+/**
+ * Claude reads `note` before the text; the timeline shows only the text, and names what it is about:
+ * a message written to a background task (`ref`), or finished parallel agents FORGE reports (`agents`).
+ */
 export interface TaskTurn {
-  ref: TaskMessageRef;
+  ref?: TaskMessageRef;
+  agents?: AgentReturnRef[];
   note: string;
 }
 
@@ -34,6 +38,7 @@ export interface BuiltTurn {
   meta: Array<{ name: string; mediaType: string; size: number }>;
   source?: MessageSource;
   task?: TaskMessageRef;
+  agents?: AgentReturnRef[];
 }
 
 /**
@@ -80,7 +85,13 @@ export class TurnDispatch {
     // The timeline shows what Claude got: a shortened text names the file with the full one.
     const fitted = await fitMessageText(text, this.host.spill);
     const withTask = task ? [{ type: "text" as const, text: task.note }, ...blocks] : blocks;
-    return { msg: { text: fitted, blocks: withTask, uuid: randomUUID() }, meta, ...(source ? { source } : {}), ...(task ? { task: task.ref } : {}) };
+    return {
+      msg: { text: fitted, blocks: withTask, uuid: randomUUID() },
+      meta,
+      ...(source ? { source } : {}),
+      ...(task?.ref ? { task: task.ref } : {}),
+      ...(task?.agents?.length ? { agents: task.agents } : {}),
+    };
   }
 
   /**
@@ -94,7 +105,7 @@ export class TurnDispatch {
 
   record(sessionId: string, t: BuiltTurn) {
     this.core.live.get(sessionId)?.seenUuids.add(t.msg.uuid);
-    this.core.record(sessionId, { type: "user.message", text: t.msg.text, uuid: t.msg.uuid, ...(t.meta.length ? { attachments: t.meta } : {}), ...(t.source ? { source: t.source } : {}), ...(t.task ? { task: t.task } : {}) });
+    this.core.record(sessionId, { type: "user.message", text: t.msg.text, uuid: t.msg.uuid, ...(t.meta.length ? { attachments: t.meta } : {}), ...(t.source ? { source: t.source } : {}), ...(t.task ? { task: t.task } : {}), ...(t.agents ? { agents: t.agents } : {}) });
     this.sinceResult.set(sessionId, [...(this.sinceResult.get(sessionId) ?? []), t]);
     this.titleFromFirstMessage(sessionId, t.msg.text);
     this.host.userMessage(sessionId, t.msg.text, t.source);

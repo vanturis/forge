@@ -43,7 +43,8 @@ import { AgentRegistry, forgeSessionTools, type DailyReportText, type ProjectToo
 import { WorktreeService } from "../automation/worktrees.js";
 import type { WorktreeSetup } from "../automation/worktree-setup.js";
 import type { AgentFinisher } from "../automation/agent-finish.js";
-import { AgentAutoMerge } from "../automation/agent-auto-merge.js";
+import { AgentAutoMerge, autoMergeOn } from "../automation/agent-auto-merge.js";
+import { AgentReturn } from "./agent-return.js";
 import { pruneSubagentWorktrees } from "../automation/subagent-worktrees.js";
 import { UiCompareService, type UiCompareDeps } from "../preview/ui-compare.js";
 import { PermissionModes } from "./permission-mode.js";
@@ -88,6 +89,8 @@ export class SessionService {
   private readonly agents: AgentRegistry;
   private readonly worktrees: WorktreeService;
   private readonly idle: IdleClose;
+  /** brings the session that started parallel agents back when they are done */
+  private readonly agentReturn: AgentReturn;
   /** the session a phone call is about; set by app.ts once the phone exists */
   private callFocus: () => string | null = () => null;
   /** every message that reached a session, from FORGE or the Claude app (template learning) */
@@ -130,7 +133,9 @@ export class SessionService {
       suggestCommitMessage: (projectId, paths) => this.assist.suggestCommitMessage(projectId, paths),
       testEnv: (projectId) => this.projectDeps?.dev.testCommandEnv(projectId) ?? {},
       turnDone: async (id, testsOk) => {
-        await this.agentAutoMerge?.turnDone(id, testsOk);
+        await this.agentTurnDone(id, testsOk);
+        // Agents done while this session worked come in now, after its own commit and the merges it made room for.
+        this.agentReturn.turnDone(id);
         await this.pruneSubagents(git, id);
       },
       turnStarted: (id) => this.uiCompare?.turnStarted(id),
@@ -155,7 +160,30 @@ export class SessionService {
         this.messageSeen(source);
       },
       spill: (name, data) => uploads.write(name, data),
-      note: (id) => this.crew?.takeNews(id, false) ?? null,
+      note: (id) => [this.agentReturn.takeNote(id), this.crew?.takeNews(id, false) ?? null].filter(Boolean).join("\n\n") || null,
+    });
+    this.agentReturn = new AgentReturn({
+      db,
+      parentOf: (id) => {
+        const rec = db.getSession(id);
+        return rec ? this.agents.parent(rec) : null;
+      },
+      children: (id) => this.agents.children(id),
+      busy: (id) => {
+        const live = core.live.get(id);
+        return (
+          [...BUSY, "stopping"].includes(db.getSession(id)?.status ?? "stopped") ||
+          this.automation.isBusy(id) ||
+          this.turns.isSending(id) ||
+          this.lifecycle.isAttaching(id) ||
+          (live?.pending.size ?? 0) > 0
+        );
+      },
+      hasBackground: (id) => (core.live.get(id)?.background.size ?? 0) > 0,
+      send: (id, text, turn) => this.turns.send(id, text, [], "auto", turn),
+      record,
+      done: (id) => emit({ event: "session.done", payload: { sessionId: id } }),
+      track: (p) => this.automation.track(p),
     });
     this.modes = new PermissionModes(core, projects, { reopen: (id) => this.lifecycle.resume(id, null) });
     this.approvals = new ApprovalGate(core, git, {
@@ -305,6 +333,38 @@ ${crew.context}` } : own;
     this.dailyReport = report;
   }
 
+  /**
+   * The end of an agent's turn: auto-merge (in projects with it), then the agent's result to the session
+   * that started it. Read before the merge, which removes the agent's session.
+   */
+  private async agentTurnDone(id: string, testsOk: boolean) {
+    const rec = this.db.getSession(id);
+    const parent = rec ? this.agents.parent(rec) : null;
+    const project = rec ? this.projects.all().find((p) => p.id === rec.projectId) : null;
+    const branch = parent && rec ? await this.worktrees.branchOf(rec.cwd).catch(() => null) : null;
+    const snap = parent ? this.agentReturn.snapshot(id, branch) : null;
+    const merge = (await this.agentAutoMerge?.turnDone(id, testsOk)) ?? null;
+    if (!snap) return;
+    // With auto-merge, no result means it did not decide: a new turn of the agent started meanwhile.
+    if (!merge && this.agentAutoMerge && project?.parentId && autoMergeOn(this.projects, project)) return;
+    // A message to the agent arrived meanwhile: its next end is reported.
+    if (this.db.getSession(id) && this.agentReturnBusy(id)) return;
+    this.agentReturn.finished(snap, merge, parent);
+  }
+
+  /** For the "done" notice: an agent's end brings its session back, so that turn's end tells. */
+  agentWakes(id: string): boolean {
+    return this.agentReturn.wakes(id);
+  }
+
+  agentsExpected(id: string): boolean {
+    return this.agentReturn.expects(id);
+  }
+
+  private agentReturnBusy(id: string): boolean {
+    return [...BUSY, "stopping"].includes(this.db.getSession(id)?.status ?? "stopped") || this.automation.isBusy(id) || this.turns.isSending(id);
+  }
+
   private readonly pruning = new Set<string>();
 
   /** After a turn in a main project: Claude Code subagent worktrees whose work is merged go away. */
@@ -337,6 +397,7 @@ ${crew.context}` } : own;
         return rec ? this.agents.parent(rec) : null;
       },
       hasBackground: (id) => (core.live.get(id)?.background.size ?? 0) > 0,
+      settled: (id, result) => this.agentReturn.settled(id, result),
     });
     // Remains of merges from before the start; later ones are cleared after every turn.
     const autoMerge = this.agentAutoMerge;
@@ -638,6 +699,7 @@ ${crew.context}` } : own;
     this.externalCache.clear();
     this.autoContinue.forget(sessionId);
     this.titles.forget(sessionId);
+    this.agentReturn.forget(sessionId);
     this.uiCompare?.drop(sessionId);
     return this.lifecycle.delete(sessionId, deleteTranscript);
   }

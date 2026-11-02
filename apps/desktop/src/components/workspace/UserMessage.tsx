@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Bot, Copy, FilePlus2, FileText, GitBranch, ImageIcon, Pencil, Smartphone, SquareSlash, SquareTerminal, TimerReset, Undo2 } from "lucide-react";
+import { Bot, Copy, ExternalLink, FilePlus2, FileText, GitBranch, ImageIcon, Pencil, Smartphone, SquareSlash, SquareTerminal, TimerReset, Undo2 } from "lucide-react";
 import { contextItems, copyText } from "@/lib/context-menu";
-import type { RewindResult, TaskMessageRef } from "@forge/protocol";
+import type { AgentReturnRef, RewindResult, TaskMessageRef } from "@forge/protocol";
 import { useQueryClient } from "@tanstack/react-query";
 import { call, keys, useGitHubAccount, useSession, useSettings } from "@/lib/queries";
 import { draftKey, useDrafts } from "@/stores/drafts";
@@ -72,6 +72,7 @@ export function UserMessage({ item, sessionId }: { item: Extract<ChatItem, { kin
   const chips = item.attachments;
   const hasMeta = chips.length > 0 || item.auto || item.edited;
   if (!chips.length && isSlashCommand(item.text) && !editing) return <CommandMessage item={item} />;
+  if (item.agents) return <AgentReturnMessage item={item} agents={item.agents} />;
   return (
     <div
       className={cn("group -mx-3 rounded-md px-3 py-2.5", item.remote ? "border border-accent/30 bg-accent-soft" : "bg-surface-2")}
@@ -227,6 +228,59 @@ function CommandMessage({ item }: { item: Extract<ChatItem, { kind: "user" }> })
           </span>
         )}
         <HoverTime time={clockTime(item.ts)} />
+      </div>
+    </ChatRow>
+  );
+}
+
+/**
+ * FORGE brought the session back because parallel agents it started are done: one slim row per agent
+ * with what happened to its branch, like a background task's end in Claude Code. No bubble, nobody typed it.
+ */
+function AgentReturnMessage({ item, agents }: { item: Extract<ChatItem, { kind: "user" }>; agents: AgentReturnRef[] }) {
+  return (
+    <div
+      className="group"
+      title={t.chat.user.agentReturnTitle}
+      onContextMenu={contextItems(() => [{ label: t.chat.user.copy, icon: <Copy className="h-3.5 w-3.5" />, onSelect: () => copyText(item.text) }])}
+    >
+      {agents.map((a, i) => (
+        <AgentReturnRow key={a.sessionId} agent={a} time={i === 0 ? clockTime(item.ts) : null} />
+      ))}
+    </div>
+  );
+}
+
+function AgentReturnRow({ agent, time }: { agent: AgentReturnRef; time: string | null }) {
+  const slot = useChatSlot();
+  // A merged agent's session is gone with its worktree.
+  const session = useSession(agent.outcome === "merged" ? null : agent.sessionId).data ?? null;
+  const name = agent.title ?? agent.branch ?? agent.sessionId.slice(0, 8);
+  const open = session ? () => slot.select(session.projectId, session.id) : null;
+  return (
+    <ChatRow
+      className="text-body"
+      marker={<Bot className="h-3.5 w-3.5 text-subtle" />}
+    >
+      <div
+        className="flex min-w-0 items-baseline gap-2"
+        onContextMenu={open ? contextItems(() => [{ label: t.chat.user.openAgent, icon: <ExternalLink className="h-3.5 w-3.5" />, onSelect: open }]) : undefined}
+      >
+        <span className="min-w-0 truncate text-muted">
+          {open ? (
+            <button type="button" className="font-medium text-fg underline-offset-2 hover:underline" onClick={open} title={t.chat.user.openAgent}>
+              {name}
+            </button>
+          ) : (
+            <span className="font-medium text-fg">{name}</span>
+          )}{" "}
+          {t.chat.user.agentReturnDone}
+        </span>
+        <span className="shrink-0 text-caption text-subtle">
+          {t.chat.user.agentReturnOutcome[agent.outcome]}
+          {agent.branch && agent.title ? ` · ${agent.branch}` : ""}
+        </span>
+        {time && <HoverTime time={time} />}
       </div>
     </ChatRow>
   );

@@ -115,6 +115,8 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     parent: (id) => db.getSessionParent(id),
     children: (id) => db.listSessionChildren(id),
     emit,
+    wakes: (id) => sessions.agentWakes(id),
+    expects: (id) => sessions.agentsExpected(id),
   });
   sessions.startBackgroundChecks();
   const github = new GitHubService((payload) => {

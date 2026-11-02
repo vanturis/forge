@@ -814,6 +814,34 @@ describe("turn automation via project tags", () => {
     expect(existsSync(wt.path)).toBe(false);
   }, 30_000);
 
+  it("brings the starting session back with a turn of its own when its agent is done and merged", async () => {
+    const repo = projects.get(projectId).path;
+    await initRepo(repo);
+    await git(repo, "commit", "-m", "init", "--allow-empty");
+    const engine = new GitEngine();
+    const worktrees = new WorktreeService(engine, projects);
+    svc.useAgentFinisher(new AgentFinisher({ db, git: engine, projects, sessions: svc, worktrees, devServers: { forget: async () => {} }, notifyProject: () => {} }));
+    projects.update(projectId, { tags: ["auto-merge"] });
+    const s = await svc.start({ projectId, prompt: "Plane den Export" });
+    await rt.started[0]!.tools!.find((x) => x.name === "start_agent")!.run({ task: "Baue den CSV-Export in src/export.ts", name: "csv" });
+    rt.sinks[0]!.onMessage({ type: "result", subtype: "success", is_error: false, result: "Agent läuft", usage: {} });
+    await svc.drain();
+    expect(svc.agentsExpected(s.id)).toBe(false);
+
+    const agent = rt.started[1]!;
+    writeFileSync(path.join(agent.cwd, "export.ts"), "export {};\n");
+    rt.sinks[1]!.onMessage({ type: "result", subtype: "success", is_error: false, result: "CSV-Export gebaut. Offen: Doku.", usage: {} });
+    await svc.drain();
+
+    const msg = db.listEvents(s.id).map((e) => e.body).find((b) => b.type === "user.message" && b.source === "auto");
+    expect(msg).toMatchObject({ type: "user.message", source: "auto", agents: [{ outcome: "merged", branch: expect.stringMatching(/^agent\/csv-/) }] });
+    expect(rt.sent.at(-1)).toMatch(/^Agent „.+“ ist fertig\.$/);
+    expect(rt.sentNotes.at(-1)).toMatch(/Parallele Agenten, die du mit start_agent gestartet hast, sind fertig/);
+    expect(rt.sentNotes.at(-1)).toContain("CSV-Export gebaut. Offen: Doku.");
+    expect(rt.sentNotes.at(-1)).toContain("Automatisch zusammengeführt");
+    expect(svc.get(s.id).status).toBe("running");
+  }, 30_000);
+
   it("connects open sessions to the Claude app and shows messages typed there", async () => {
     const s = await svc.start({ projectId, prompt: "Lies a.txt" });
     rt.replay();

@@ -8,13 +8,18 @@ export interface JobWatcherDeps {
   parent(id: string): string | null;
   children(id: string): string[];
   emit(e: ServerEvent): void;
+  /** the end of this agent brings the session that started it back with a turn of its own (AgentReturn) */
+  wakes?(id: string): boolean;
+  /** finished agents wait to be told to this session: a turn of it follows */
+  expects?(id: string): boolean;
 }
 
 /**
  * Tells when a whole job is done (`session.done`), not every turn: a turn that leaves background
  * tasks running, or parallel agents it started, is only a step. Background tasks bring Claude back
- * with a new turn of their own; agents do not, so the last agent to finish settles the session that
- * started it. An agent's own end is part of that job and is not announced.
+ * with a new turn of their own, and so do agents (AgentReturn): the end of that turn decides. An
+ * agent whose session cannot be told settles it instead. An agent's own end is part of that job and
+ * is not announced.
  */
 export class JobWatcher {
   /** turn ended successfully, but background tasks or agents were still at work */
@@ -37,6 +42,8 @@ export class JobWatcher {
       return;
     }
     this.waiting.delete(id);
+    // The session that started this agent gets its result in a turn; that turn's end tells.
+    if (id === finished && this.d.wakes?.(id)) return;
     const parent = this.d.parent(id);
     const p = parent ? this.d.session(parent) : null;
     if (parent && this.waiting.has(parent)) this.settle(parent, finished);
@@ -47,7 +54,7 @@ export class JobWatcher {
   /** Nothing of the job is left: no background task, no agent at work. */
   private open(id: string, finished: string): boolean {
     const s = this.d.session(id);
-    if (!s || s.background.length) return false;
+    if (!s || s.background.length || this.d.expects?.(id)) return false;
     if (id !== finished && BUSY.has(s.status)) return false;
     return this.d.children(id).every((c) => c === finished || !this.busy(c));
   }

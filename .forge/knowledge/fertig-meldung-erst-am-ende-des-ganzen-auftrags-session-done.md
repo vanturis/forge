@@ -1,22 +1,30 @@
 ---
-title: "Fertig-Meldung erst am Ende des ganzen Auftrags (session.done)"
-summary: "Wann FORGE Ton, Windows-Benachrichtigung und Telefon-Anruf für „Claude ist fertig“ auslöst: nicht pro Durchlauf, sondern wenn Hintergrund-Aufgaben und gestartete Agenten auch durch sind."
-tags: ["benachrichtigung","telefon","agenten","hintergrund","sessions"]
-updated: "2026-10-13T12:55:06.784Z"
+title: "Fertig-Meldung und fertige Agenten: Hauptsession macht weiter (session.done, AgentReturn)"
+summary: "Wann FORGE „Claude ist fertig“ meldet (erst am Ende des ganzen Auftrags) und wie ein fertiger paralleler Agent die startende Session mit einem eigenen Durchlauf zurückholt (AgentReturn)."
+tags: ["agenten","sessions","hintergrund","telefon","stolperfalle"]
+updated: "2026-11-02T18:10:14.192Z"
 ---
 
-## Entscheidung (2026-10-13)
-Der Nutzer will „fertig“ erst hören, wenn der gesamte Auftrag fertig ist, nicht nach jedem Durchlauf, der Hintergrund-Aufgaben oder Agenten weiterlaufen lässt. Im Chat stehen die Teilschritte weiter als fertig.
+## Entscheidungen
+- 2026-10-13: „Fertig“ (Ton, Windows-Benachrichtigung, Anruf) erst, wenn der ganze Auftrag fertig ist, nicht nach jedem Durchlauf mit laufenden Hintergrund-Aufgaben oder Agenten.
+- 2026-11-02: Die Hauptsession soll wie im echten Claude Code auf fertige Agenten reagieren. Vorher gab es nur eine Zeile im Chat (nur UI); Claude erfuhr nichts, nicht einmal mit der nächsten Nachricht.
 
-## Umsetzung
-- `packages/sidecar/src/sessions/job-done.ts` (`JobWatcher`), in `app.ts` an `emit` gehängt. Sendet ServerEvent `session.done { sessionId }`.
-- Erfolgreiches `turn.result` mit laufenden Hintergrund-Aufgaben (`session.background`) oder beschäftigten Kind-Sessions (Agenten aus `start_agent`, `parent_session_id` in der DB): die Session wartet (`waiting`), kein done.
-- Hintergrund-Aufgaben: Claude Code startet nach ihrem Ende selbst einen neuen Durchlauf; dessen `turn.result` entscheidet. Deshalb wird beim Leeren von `background` nicht neu geprüft, sonst käme done doppelt.
-- Agenten: lösen bei der startenden Session keinen Durchlauf aus. Das Ende des letzten Agenten „settled“ die wartende Elternsession. Das eigene Ende eines Agenten wird nicht gemeldet; nur wenn die Elternsession nicht auf ihn wartet und nicht arbeitet (z. B. später direkt mit dem Agenten gesprochen), meldet er sich selbst.
-- Beim `turn.result` steht der Status der Session selbst noch auf running (setStatus idle kommt danach); deshalb wird die gerade fertige Session (`finished`) beim Prüfen ausgenommen.
-- Fehler und Unterbrechungen löschen `waiting`; Fehler werden wie bisher sofort gemeldet.
+## Fertige Agenten → Durchlauf der Elternsession (`sessions/agent-return.ts`, `AgentReturn`)
+- Auslöser: `TurnAutomation.turnDone` → `SessionService.agentTurnDone`: erst Snapshot (Titel, `lastAnswer`, Branch), denn auto-merge löscht die Agent-Session; dann `AgentAutoMerge.turnDone` (gibt jetzt `AutoMergeResult` zurück); dann `AgentReturn.finished`.
+- Nicht gemeldet: Agent mit Hintergrund-Aufgaben, Konflikt (geht an den Agenten zurück, er arbeitet weiter), auto-merge ohne Ergebnis (neuer Durchlauf des Agenten), fehlgeschlagene Durchläufe (Fehler meldet FORGE eh sofort), Elternsession gelöscht oder Crew-Spiegel.
+- Elternsession frei → sofort `turns.send(parent, "Agent „X“ ist fertig.", [], "auto", { agents, note })`. Der Hinweis (`core.agentReturn`, Schlussantwort bis 6000 Zeichen, Merge-Ergebnis, Zahl noch laufender Agenten) geht als Block vor dem Text an Claude, die Timeline zeigt nur den Text + `user.message.agents` (`AgentReturnRef`).
+- Elternsession beschäftigt → gesammelt; nach ihrem `turnDone` (nach Auto-Commit und den Merges, die dadurch möglich wurden, `retryWaiting` → `settled`) ein gemeinsamer Durchlauf. Schreibt der Nutzer vorher, gehen sie per `TurnHost.note` → `takeNote` mit seiner Nachricht mit (kein extra Durchlauf).
+- Merge „waiting“ schon gemeldet → späteres „merged“ kommt nur als Hinweis mit der nächsten Nachricht (`late`), kein zweites Wecken. `forget()` beim Löschen der Agent-Session (Merge) behält das absichtlich.
+- Senden scheitert → Fehler in der Elternsession + `session.done`.
+- Desktop: `AgentReturnMessage` in `UserMessage.tsx` (schlanke Zeile je Agent, Bot-Icon, Klick/Rechtsklick öffnet die Agent-Session, solange sie existiert).
+
+## session.done (`sessions/job-done.ts`, `JobWatcher`, in `app.ts`)
+- Erfolgreiches `turn.result` mit laufenden Hintergrund-Aufgaben oder beschäftigten Kind-Sessions: Session wartet (`waiting`), kein done. Hintergrund-Aufgaben starten selbst einen neuen Durchlauf; dessen Ende entscheidet.
+- Agenten: `wakes(agent)` true → weder Agent noch Elternsession werden beim Agent-Ende gemeldet; der Durchlauf auf das Ergebnis entscheidet. `expects(parent)` (wartende Agent-Ergebnisse) hält die Elternsession offen. Agent ohne meldbare Elternsession meldet sich wie früher selbst bzw. settled die wartende Elternsession.
+- Beim `turn.result` steht die Session selbst noch auf running; deshalb wird `finished` beim Prüfen ausgenommen. Fehler/Unterbrechungen löschen `waiting`.
+- Restlücke: Endet die Elternsession genau zwischen Agent-`turn.result` und dessen Merge, kann done zweimal kommen.
 
 ## Abnehmer
-- Desktop: `apps/desktop/src/lib/server-events.ts` (case `session.done`: Ton + `notifyDone`). `notifyKind` liefert für erfolgreiche `turn.result` nichts mehr.
-- Telefon: `PhoneService.onServerEvent` ruft für done nur bei `session.done` an und erzählt das Ergebnis des letzten erfolgreichen Durchlaufs (`lastTurn`).
-- Tests: `packages/sidecar/test/job-done.test.ts`.
+- Desktop: `apps/desktop/src/lib/server-events.ts` (`session.done`: Ton + `notifyDone`).
+- Telefon: `PhoneService.onServerEvent` ruft bei `session.done` an und erzählt `lastTurn`, jetzt also Claudes Auswertung der Agenten.
+- Tests: `test/job-done.test.ts`, `test/agent-return.test.ts`, `session-service.test.ts` „brings the starting session back…“.

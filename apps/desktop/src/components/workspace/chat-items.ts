@@ -1,4 +1,4 @@
-import { isIdleClosedDetail, isUsageLimitText, type SessionEvent, type SessionEventBody, type TaskMessageRef } from "@forge/protocol";
+import { isIdleClosedDetail, isUsageLimitText, type SessionEvent, type SessionEventBody, type TaskMessageRef, type AgentReturnRef } from "@forge/protocol";
 import { pathInside } from "@/lib/platform";
 import { limitLabel, limitTime } from "@/lib/rate-limit";
 import { t } from "@/i18n";
@@ -14,7 +14,7 @@ export interface TodoEntry {
 }
 
 export type ChatItem =
-  | { kind: "user"; key: string; seq: number; text: string; ts: string; uuid: string | null; attachments: Array<{ name: string; mediaType: string; size: number }>; remote: boolean; auto: boolean; edited: boolean; task: TaskMessageRef | null }
+  | { kind: "user"; key: string; seq: number; text: string; ts: string; uuid: string | null; attachments: Array<{ name: string; mediaType: string; size: number }>; remote: boolean; auto: boolean; edited: boolean; task: TaskMessageRef | null; agents: AgentReturnRef[] | null }
   | { kind: "assistant"; key: string; seq: number | null; text: string; streaming: boolean; ts: string | null }
   | {
       kind: "tool";
@@ -199,6 +199,7 @@ function itemFolder(thread: string | null = null) {
           auto: b.source === "auto",
           edited: editedNext,
           task: b.task ?? null,
+          agents: b.agents?.length ? b.agents : null,
         });
         editedNext = false;
         break;
