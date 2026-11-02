@@ -935,8 +935,32 @@ export const McpServer = z.object({
   headerNames: z.array(z.string()).optional(),
   envNames: z.array(z.string()).optional(),
   oauthClientId: z.boolean().optional(),
+  /** brought along by a plugin or by claude.ai: FORGE can sign in to it, but not edit or remove it */
+  origin: z.enum(["plugin", "claude.ai"]).optional(),
+  /** reached over the network, so it may ask for a sign-in */
+  remote: z.boolean().optional(),
 });
 export type McpServer = z.infer<typeof McpServer>;
+
+/** One setting of an installed plugin. A secret's value never leaves Claude Code. */
+export const PluginOption = z.object({
+  key: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  /** string, number, boolean, directory, file */
+  type: z.string(),
+  sensitive: z.boolean(),
+  required: z.boolean(),
+  /** as text; empty for secrets */
+  value: z.string(),
+  /** the user set it, as opposed to a default */
+  isSet: z.boolean(),
+  choices: z.array(z.string()),
+});
+export type PluginOption = z.infer<typeof PluginOption>;
+
+export const PluginMarketplaceSource = z.object({ name: z.string(), source: z.string(), location: z.string() });
+export type PluginMarketplaceSource = z.infer<typeof PluginMarketplaceSource>;
 
 /** A configured server with its values, for editing. */
 export const McpServerConfig = z.object({

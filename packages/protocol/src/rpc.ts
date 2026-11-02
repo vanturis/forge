@@ -64,6 +64,8 @@ import {
   McpServerConfig,
   McpTransport,
   MarketplacePlugin,
+  PluginMarketplaceSource,
+  PluginOption,
   MemoryFile,
   MemoryScope,
   PermissionMode,
@@ -114,6 +116,8 @@ import {
 
 const id = z.string().min(1).max(100);
 const mcpName = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+/** also servers of plugins and claude.ai ("plugin:stripe:stripe", "claude.ai Trello"); never starts like a CLI option */
+const mcpAnyName = z.string().regex(/^[^\r\n-][^\r\n]{0,199}$/);
 const knowledgeFields = {
   title: z.string().trim().min(1).max(120),
   summary: z.string().trim().max(300),
@@ -239,6 +243,21 @@ export const methods = {
   /** approves a server from the project's .mcp.json for this computer (enabledMcpjsonServers) */
   "mcp.approve": { params: z.object({ projectId: id, name: mcpName }), result: z.object({ ok: z.boolean() }) },
 
+  /** starts the sign-in at a server; the browser opens through the event mcp.login. url null: nothing to do */
+  "mcp.login": { params: z.object({ projectId: id.optional(), name: mcpAnyName }), result: z.object({ url: z.string().nullable() }) },
+  "mcp.loginCancel": { params: z.object({ name: mcpAnyName }), result: z.object({ ok: z.boolean() }) },
+  "mcp.logout": { params: z.object({ projectId: id.optional(), name: mcpAnyName }), result: z.object({ ok: z.boolean(), output: z.string() }) },
+
+  /** the settings of an installed plugin */
+  "plugins.options": { params: z.object({ id: pluginId }), result: z.array(PluginOption) },
+  /** saves single-line values; options left out keep theirs */
+  "plugins.configure": { params: z.object({ id: pluginId, values: z.record(z.string(), z.string().max(8000).regex(/^[^\r\n]*$/)) }), result: z.array(PluginOption) },
+  "plugins.update": { params: z.object({ id: pluginId }), result: z.array(MarketplacePlugin) },
+  "plugins.marketplaces": { params: empty, result: z.array(PluginMarketplaceSource) },
+  /** source: GitHub repository (owner/name), URL or local path */
+  "plugins.addMarketplace": { params: z.object({ source: z.string().regex(/^[^\r\n-][^\r\n]{0,499}$/) }), result: z.array(PluginMarketplaceSource) },
+  /** also removes the plugins installed from it */
+  "plugins.removeMarketplace": { params: z.object({ name: z.string().regex(/^[A-Za-z0-9._-]{1,128}$/) }), result: z.array(PluginMarketplaceSource) },
   /** all plugins of the added marketplaces plus the installed ones (user scope) */
   "plugins.catalog": { params: z.object({ refresh: z.boolean().optional() }), result: z.array(MarketplacePlugin) },
   "plugins.install": { params: z.object({ id: pluginId }), result: z.array(MarketplacePlugin) },
@@ -944,6 +963,9 @@ export type ServerEvent =
   /** dictation: the text of a running recording so far (finished utterances plus the current one) */
   | { event: "voice.transcript"; payload: { id: string; text: string } }
   /** Claude Code's model list changed; `added`: models FORGE has not seen before (empty on the first run) */
+  /** plugins, skills, commands, agents or MCP servers changed, also outside FORGE */
+  | { event: "extensions.changed"; payload: Record<string, never> }
+  | { event: "mcp.login"; payload: { name: string; state: "waiting" | "done" | "expired" | "cancelled"; url: string | null } }
   | { event: "runtime.models"; payload: { added: Array<{ value: string; displayName: string }> } }
   | { event: "log"; payload: { level: "info" | "warn" | "error"; message: string } };
 

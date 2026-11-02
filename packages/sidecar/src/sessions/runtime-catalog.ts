@@ -1,6 +1,6 @@
 import type { SDKControlInitializeResponse } from "@anthropic-ai/claude-agent-sdk";
 import type { PlanUsage, RuntimeInfo, SlashCommand } from "@forge/protocol";
-import type { ClaudeRuntime } from "../claude/runtime.js";
+import type { ClaudeRuntime, McpLogin } from "../claude/runtime.js";
 import { locateClaude, sessionEnv } from "../claude/environment.js";
 import { resetSince, settleUsage } from "../claude/usage.js";
 import { SAMPLE_MAX_AGE_MS, samplesOf, withForecasts } from "../claude/usage-forecast.js";
@@ -79,6 +79,20 @@ export class RuntimeCatalog {
     const added = known ? models.filter((m) => !known.includes(m.value)) : [];
     if (!known || added.length) this.core.db.setKnownModels([...new Set([...(known ?? []), ...values])]);
     if (!first || added.length) this.core.emit({ event: "runtime.models", payload: { added: added.map((m) => ({ value: m.value, displayName: m.displayName || m.value })) } });
+  }
+
+  /** After a change of plugins, skills or MCP servers; models and usage stay. */
+  extensionsChanged(servers?: Array<{ name: string; status: string }>) {
+    this.commandCache.clear();
+    if (servers) this.mcpServers = servers;
+  }
+
+  /** Signs in at an MCP server from a short-lived CLI process, which does not need a session. */
+  mcpLogin(dir: string, name: string): Promise<McpLogin> {
+    const settings = this.core.db.getSettings();
+    const claudePath = locateClaude(settings.claudePath);
+    if (!claudePath) throw new Error(tr().core.sessions.claudeNotFoundShort);
+    return this.runtime.mcpLogin({ cwd: dir, env: sessionEnv(settings.stripApiKey), claudePath }, name);
   }
 
   cliSupports(capability: string): boolean {

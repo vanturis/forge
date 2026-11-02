@@ -11,6 +11,7 @@ export const automation: typeof De = {
   snapshotFailed: (detail) => `Uncommitted changes not carried over: ${detail}`,
   gitStepFailed: (command) => `git ${command} failed`,
   snapshotCommit: (branch) => `FORGE: uncommitted changes${branch ? ` of ${branch}` : ""} for the agent`,
+  logoutFailed: "Signing out did not work.",
   removeFailed: "Could not remove the worktree",
   notWorktreeProject: "This is not a worktree project.",
   uncommittedChanges: (n) => `The worktree has ${n} uncommitted ${n === 1 ? "change" : "changes"}.`,

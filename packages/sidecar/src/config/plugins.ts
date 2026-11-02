@@ -1,5 +1,5 @@
 import os from "node:os";
-import { ForgeError, type MarketplacePlugin } from "@forge/protocol";
+import { ForgeError, type MarketplacePlugin, type PluginMarketplaceSource, type PluginOption } from "@forge/protocol";
 import { tr } from "../i18n/index.js";
 import { run } from "../util/proc.js";
 
@@ -45,6 +45,55 @@ export function parsePluginList(json: string): MarketplacePlugin[] {
   );
 }
 
+interface ConfigureJson {
+  schema?: Record<string, { type?: unknown; title?: unknown; description?: unknown; sensitive?: unknown; required?: unknown }>;
+  inputs?: Record<string, unknown>;
+  choices?: Record<string, unknown>;
+  configured?: unknown;
+}
+
+/** `claude plugin configure --json`; the value of a secret is dropped here and never reaches the UI. */
+export function parsePluginOptions(json: string): PluginOption[] {
+  let d: ConfigureJson;
+  try {
+    d = JSON.parse(json) as ConfigureJson;
+  } catch {
+    throw new ForgeError("CLAUDE_RUNTIME", tr().system.claudeConfig.pluginsUnreadable);
+  }
+  const configured = new Set(Array.isArray(d.configured) ? d.configured : []);
+  return Object.entries(d.schema ?? {}).map(([key, o]) => {
+    const sensitive = o.sensitive === true;
+    const choices = d.choices?.[key];
+    const input = d.inputs?.[key];
+    return {
+      key,
+      title: typeof o.title === "string" && o.title ? o.title : key,
+      description: typeof o.description === "string" && o.description ? o.description : null,
+      type: typeof o.type === "string" ? o.type : "string",
+      sensitive,
+      required: o.required === true,
+      value: sensitive || typeof input !== "string" ? "" : input,
+      isSet: configured.has(key),
+      choices: Array.isArray(choices) ? choices.filter((c): c is string => typeof c === "string") : [],
+    };
+  });
+}
+
+/** `claude plugin marketplace list --json`. */
+export function parseMarketplaces(json: string): PluginMarketplaceSource[] {
+  let list: unknown;
+  try {
+    list = JSON.parse(json);
+  } catch {
+    throw new ForgeError("CLAUDE_RUNTIME", tr().system.claudeConfig.pluginsUnreadable);
+  }
+  return (Array.isArray(list) ? (list as Array<Record<string, unknown>>) : []).flatMap((m) =>
+    typeof m?.name === "string"
+      ? [{ name: m.name, source: typeof m.source === "string" ? m.source : "", location: [m.repo, m.url, m.path, m.installLocation].find((x): x is string => typeof x === "string") ?? "" }]
+      : [],
+  );
+}
+
 /** Marketplace plugins through the Claude Code CLI, always in user scope. */
 export class PluginService {
   private cache: { at: number; list: MarketplacePlugin[] } | null = null;
@@ -54,10 +103,15 @@ export class PluginService {
     private readonly env: () => Record<string, string>,
   ) {}
 
-  private async cli(args: string[], timeoutMs: number) {
+  /** Something changed, possibly outside FORGE: the next catalog reads the list again. */
+  invalidate() {
+    this.cache = null;
+  }
+
+  private async cli(args: string[], timeoutMs: number, input?: string) {
     const bin = this.claude();
     if (!bin) throw new ForgeError("CLAUDE_NOT_INSTALLED", tr().system.claudeConfig.claudeNotInstalled);
-    const r = await run(bin, args, { cwd: os.homedir(), env: this.env(), timeoutMs });
+    const r = await run(bin, args, { cwd: os.homedir(), env: this.env(), timeoutMs, ...(input !== undefined ? { input } : {}) });
     if (r.spawnError) throw new ForgeError("CLAUDE_RUNTIME", r.spawnError.message);
     return r;
   }
@@ -85,6 +139,46 @@ export class PluginService {
     if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.removeFailed).trim());
     this.cache = null;
     return this.catalog();
+  }
+
+  async options(id: string): Promise<PluginOption[]> {
+    const r = await this.cli(["plugin", "configure", "--json", id], 60_000);
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.pluginsUnreadable).trim());
+    return parsePluginOptions(r.stdout);
+  }
+
+  /** Values go over stdin: a key must not show up in the process list. */
+  async configure(id: string, values: Record<string, string>): Promise<PluginOption[]> {
+    const r = await this.cli(["plugin", "configure", "--values-stdin", "--json", id], 60_000, JSON.stringify(values));
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.pluginsUnreadable).trim());
+    return this.options(id);
+  }
+
+  async update(id: string): Promise<MarketplacePlugin[]> {
+    const r = await this.cli(["plugin", "update", "--scope", "user", id], 300_000);
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.pluginsUnreadable).trim());
+    this.cache = null;
+    return this.catalog();
+  }
+
+  async marketplaces(): Promise<PluginMarketplaceSource[]> {
+    const r = await this.cli(["plugin", "marketplace", "list", "--json"], 60_000);
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.pluginsUnreadable).trim());
+    return parseMarketplaces(r.stdout);
+  }
+
+  async addMarketplace(source: string): Promise<PluginMarketplaceSource[]> {
+    const r = await this.cli(["plugin", "marketplace", "add", source], 300_000);
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.pluginsUnreadable).trim());
+    this.cache = null;
+    return this.marketplaces();
+  }
+
+  async removeMarketplace(name: string): Promise<PluginMarketplaceSource[]> {
+    const r = await this.cli(["plugin", "marketplace", "remove", name], 120_000);
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", (r.stderr || r.stdout || tr().system.claudeConfig.pluginsUnreadable).trim());
+    this.cache = null;
+    return this.marketplaces();
   }
 
   async setEnabled(id: string, enabled: boolean): Promise<MarketplacePlugin[]> {

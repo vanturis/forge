@@ -881,9 +881,32 @@ ${crew.context}` } : own;
     }
   }
 
-  /** After a plugin change: running sessions pick it up where that costs nothing, the rest at their next start. */
-  reloadPlugins() {
-    for (const live of this.core.live.values()) void live.rt.reloadPlugins().catch(() => {});
+  /**
+   * Plugins, skills or MCP servers changed. `apply`: the user just did it, running sessions load it even
+   * though that costs them the prompt cache. Noticed in the background, they only load it where it costs nothing.
+   */
+  extensionsChanged(apply: boolean) {
+    this.catalog.extensionsChanged();
+    for (const live of this.core.live.values()) {
+      if (live.closing) continue;
+      void live.rt.reloadPlugins(apply).then(
+        (servers) => this.catalog.extensionsChanged(servers),
+        () => {},
+      );
+    }
+  }
+
+  reconnectMcp(name: string) {
+    for (const live of this.core.live.values()) if (!live.closing) void live.rt.reconnectMcp(name).catch(() => {});
+  }
+
+  mcpLogin(dir: string, name: string) {
+    return this.catalog.mcpLogin(dir, name);
+  }
+
+  /** folders of running sessions */
+  liveDirs(): string[] {
+    return [...new Set([...this.core.live.values()].map((l) => l.projectDir))];
   }
 
   // ---------- approvals

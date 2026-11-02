@@ -11,7 +11,8 @@ export function parseMcpList(out: string): McpServer[] {
   const servers: McpServer[] = [];
   for (const raw of out.split(/\r?\n/)) {
     const line = raw.trim();
-    const m = /^([A-Za-z0-9_.-]+):\s+(.+?)\s+-\s+(.+)$/.exec(line);
+    // Names may hold spaces and colons: "plugin:stripe:stripe", "claude.ai Trello". The name ends at the first ": ".
+    const m = /^(.+?):\s+(.+?)\s+-\s+(.+)$/.exec(line);
     if (!m) continue;
     const statusText = m[3]!.trim();
     const status: McpServer["status"] = /connected/i.test(statusText) && !/fail/i.test(statusText)
@@ -23,7 +24,9 @@ export function parseMcpList(out: string): McpServer[] {
           : /fail|error/i.test(statusText)
             ? "failed"
             : "unknown";
-    servers.push({ name: m[1]!, target: m[2]!, status, statusText: statusText.replace(/^[^\p{L}]+/u, "") });
+    const name = m[1]!;
+    const origin = name.startsWith("plugin:") ? ("plugin" as const) : name.startsWith("claude.ai ") ? ("claude.ai" as const) : undefined;
+    servers.push({ name, target: m[2]!, status, statusText: statusText.replace(/^[^\p{L}]+/u, ""), remote: /^https?:\/\//i.test(m[2]!), ...(origin ? { origin } : {}) });
   }
   return servers;
 }
@@ -192,6 +195,14 @@ export class McpService {
     const r = await this.cli(["mcp", "remove", "--scope", where, name], cwd);
     const output = (r.stdout + r.stderr).trim();
     if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", output || tr().system.claudeConfig.removeFailed);
+    return { ok: true, output };
+  }
+
+  /** Forgets the sign-in; the keys stay in Claude Code's own storage until then. */
+  async logout(cwd: string, name: string) {
+    const r = await this.cli(["mcp", "logout", name], cwd);
+    const output = (r.stdout + r.stderr).trim();
+    if (r.code !== 0) throw new ForgeError("CLAUDE_RUNTIME", output || tr().system.claudeConfig.logoutFailed);
     return { ok: true, output };
   }
 

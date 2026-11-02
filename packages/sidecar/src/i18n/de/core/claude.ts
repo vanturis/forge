@@ -100,6 +100,8 @@ export const claude = {
   windowLine: (label: string, percent: number, reset: string | null, outlook: string | null) =>
     `${label}: ${percent} % genutzt${reset ? `, Reset ${reset}` : ""}${outlook ? `. Prognose: ${outlook}` : ""}`,
   adviceLine: (pct: number, title: string, detail: string | null) => `Tipp (${pct} % des Verbrauchs): ${title}${detail ? `, ${detail}` : ""}`,
+  mcpLoginWhat: "Anmeldung am MCP-Server",
+  mcpLoginUnavailable: "Diese Claude-Code-Version kann sich nicht ohne Terminal an MCP-Servern anmelden. Bitte Claude Code aktualisieren.",
   noForecast: "Prognose: noch zu wenig Messwerte oder kein Anstieg.",
   subscription: (type: string) => `Abo: ${type}`,
   today: (time: string) => `heute ${time}`,

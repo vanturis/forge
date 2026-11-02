@@ -6,6 +6,8 @@ import { GitEngine } from "./git/git.js";
 import { GitHubService } from "./github/github.js";
 import { ClaudeSetupService } from "./claude/setup.js";
 import { McpService } from "./config/mcp.js";
+import { ExtensionWatch } from "./config/extension-watch.js";
+import { McpLoginService } from "./config/mcp-login.js";
 import { PluginService } from "./config/plugins.js";
 import { WorktreeService } from "./automation/worktrees.js";
 import { claudeHome } from "./config/claude-config.js";
@@ -35,7 +37,7 @@ import { UsageStatsService, usageStatsFile } from "./stats/usage-stats.js";
 import { modelTokens } from "./claude/normalize.js";
 import { SecretStore } from "./phone/secrets.js";
 import { hasOwnClaude, locateClaude, sessionEnv } from "./claude/environment.js";
-import { readAuth, readPlan } from "./claude/diagnostics.js";
+import { readAuth, readPlanOrAuth } from "./claude/diagnostics.js";
 import { ASSIST_MODEL } from "./sessions/claude-assist.js";
 import { BackupService } from "./backup/backup.js";
 import { SyncService } from "./sync/sync.js";
@@ -134,6 +136,21 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     () => locateClaude(db.getSettings().claudePath),
     () => sessionEnv(db.getSettings().stripApiKey),
   );
+  const mcpLogins = new McpLoginService({
+    start: (cwd, name) => sessions.mcpLogin(cwd, name),
+    emit,
+    connected: (name) => {
+      sessions.reconnectMcp(name);
+      extensionsChanged(true);
+    },
+  });
+  const extensionsChanged = (apply: boolean) => {
+    plugins.invalidate();
+    sessions.extensionsChanged(apply);
+    emit({ event: "extensions.changed", payload: {} });
+  };
+  const extensionWatch = new ExtensionWatch({ liveDirs: () => sessions.liveDirs(), claudeJson: claudeJsonPath, onChange: () => extensionsChanged(false) });
+  extensionWatch.start();
   const worktrees = new WorktreeService(git, projects);
   const devTools = new DevToolsService(db, projects);
   const testDb = new TestDbService({ dataDir: opts.dataDir, devTools, emit: (payload) => emit({ event: "testdb.updated", payload }), log: (m) => opts.log?.(m) });
@@ -292,7 +309,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
       return s.usageStats && s.setupDone;
     },
     totals: () => db.usageTotals(),
-    plan: () => readPlan(),
+    plan: () => readPlanOrAuth(locateClaude(db.getSettings().claudePath), sessionEnv(db.getSettings().stripApiKey)),
     language: () => db.getSettings().language,
     log: (m) => opts.log?.(m),
     file: usageStatsFile(opts.dataDir),
@@ -429,6 +446,15 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     installs,
     mcp,
     plugins,
+    mcpLogins,
+    extensions: {
+      changed: () => {
+        // Its own check would report the same change once more.
+        void extensionWatch.check().catch(() => {});
+        extensionsChanged(true);
+      },
+      watch: (dir) => extensionWatch.watch(dir),
+    },
     worktrees,
     worktreeSetup,
     agentFinish,

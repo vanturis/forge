@@ -50,13 +50,27 @@ export async function readPlan(file = claudeJsonPath()): Promise<string | null> 
     const j = JSON.parse(await readFile(file, "utf8")) as { oauthAccount?: Record<string, unknown> };
     const a = j.oauthAccount ?? {};
     const type = typeof a.organizationType === "string" ? a.organizationType.toLowerCase().replace(/^claude_/, "") : "";
-    if (!/^[a-z0-9_]{1,24}$/.test(type)) return null;
-    if (type !== "max") return type;
     const tier = a.userRateLimitTier ?? a.organizationRateLimitTier;
-    return planName("max", typeof tier === "string" ? tier : null).toLowerCase().replace(" ", "_");
+    return planKey(type, typeof tier === "string" ? tier : null);
   } catch {
     return null;
   }
+}
+
+function planKey(type: string, tier: string | null): string | null {
+  if (!/^[a-z0-9_]{1,24}$/.test(type)) return null;
+  return type === "max" ? planName("max", tier).toLowerCase().replace(" ", "_") : type;
+}
+
+/**
+ * The plan for the statistics. .claude.json only has it once Claude Code fetched the profile, and many
+ * Pro and Team accounts have the field empty; `claude auth status` knows it from the login itself.
+ */
+export async function readPlanOrAuth(claudeBin: string | null, env: Record<string, string>, file = claudeJsonPath()): Promise<string | null> {
+  const plan = await readPlan(file);
+  if (plan || !claudeBin) return plan;
+  const auth = await readAuth(claudeBin, env);
+  return auth.subscriptionType ? planKey(auth.subscriptionType.toLowerCase(), auth.rateLimitTier ?? null) : null;
 }
 
 /** Sign-in state as `claude auth status` reports it. */

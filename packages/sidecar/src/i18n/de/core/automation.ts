@@ -11,6 +11,7 @@ export const automation = {
   snapshotFailed: (detail: string) => `Nicht committeter Stand nicht übernommen: ${detail}`,
   gitStepFailed: (command: string) => `git ${command} fehlgeschlagen`,
   snapshotCommit: (branch: string | null) => `FORGE: nicht committeter Stand${branch ? ` von ${branch}` : ""} für den Agenten`,
+  logoutFailed: "Abmelden hat nicht geklappt.",
   removeFailed: "Worktree konnte nicht entfernt werden",
   notWorktreeProject: "Das ist kein Worktree-Projekt.",
   uncommittedChanges: (n: number) => `Der Worktree hat ${n} nicht committete Änderungen.`,

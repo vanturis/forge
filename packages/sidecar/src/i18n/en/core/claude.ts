@@ -97,6 +97,8 @@ export const claude: typeof De = {
   usageUnavailableLine: (error) => `Usage not available${error ? `: ${error}` : ""}.`,
   windowLine: (label, percent, reset, outlook) => `${label}: ${percent}% used${reset ? `, resets ${reset}` : ""}${outlook ? `. Forecast: ${outlook}` : ""}`,
   adviceLine: (pct: number, title: string, detail: string | null) => `Tip (${pct}% of usage): ${title}${detail ? `, ${detail}` : ""}`,
+  mcpLoginWhat: "Sign-in at the MCP server",
+  mcpLoginUnavailable: "This version of Claude Code cannot sign in to MCP servers without a terminal. Please update Claude Code.",
   noForecast: "Forecast: not enough readings yet, or no increase.",
   subscription: (type) => `Subscription: ${type}`,
   today: (time) => `today ${time}`,

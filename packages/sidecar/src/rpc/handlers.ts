@@ -50,6 +50,8 @@ export interface Services {
   claudeSetup: ClaudeSetupService;
   mcp: McpService;
   plugins: PluginService;
+  mcpLogins: McpLoginService;
+  extensions: { changed(): void; watch(dir: string | null): void };
   worktrees: WorktreeService;
   worktreeSetup: WorktreeSetup;
   agentFinish: AgentFinisher;
@@ -88,8 +90,9 @@ export async function invokeHandler<M extends MethodName>(handlers: Handlers, me
 }
 
 export function createHandlers(s: Services): Handlers {
-  const pluginChanged = <T,>(result: T): T => {
-    s.sessions.reloadPlugins();
+  /** The user changed something: everything that shows extensions, and running sessions, get it right away. */
+  const extensionsChanged = <T,>(result: T): T => {
+    s.extensions.changed();
     return result;
   };
   let diagCache: ResultOf<"system.diagnostics"> | null = null;
@@ -189,15 +192,31 @@ export function createHandlers(s: Services): Handlers {
     },
     "config.hooksRead": ({ scope, projectId }) => cfg.readHooks(scope, dirOf(projectId)),
     "config.hooksWrite": ({ scope, projectId, hooks, expectedMtimeMs }) => cfg.writeHooks(scope, dirOf(projectId), hooks, expectedMtimeMs),
-    "mcp.list": ({ projectId }) => s.mcp.list(dirOf(projectId) ?? os.homedir()),
+    "mcp.list": ({ projectId }) => {
+      s.extensions.watch(dirOf(projectId));
+      return s.mcp.list(dirOf(projectId) ?? os.homedir());
+    },
+    "mcp.login": ({ projectId, name }) => s.mcpLogins.start(dirOf(projectId) ?? os.homedir(), name),
+    "mcp.loginCancel": ({ name }) => s.mcpLogins.cancel(name),
+    "mcp.logout": async ({ projectId, name }) => {
+      const r = await s.mcp.logout(dirOf(projectId) ?? os.homedir(), name);
+      s.sessions.reconnectMcp(name);
+      return extensionsChanged(r);
+    },
     "mcp.get": ({ projectId, name }) => s.mcp.get(dirOf(projectId) ?? os.homedir(), name),
-    "mcp.add": ({ projectId, ...input }) => s.mcp.add(dirOf(projectId) ?? os.homedir(), input),
-    "mcp.remove": ({ projectId, name, scope }) => s.mcp.remove(dirOf(projectId) ?? os.homedir(), name, scope),
-    "mcp.approve": ({ projectId, name }) => s.mcp.approve(dirOf(projectId) ?? os.homedir(), name),
+    "mcp.add": async ({ projectId, ...input }) => extensionsChanged(await s.mcp.add(dirOf(projectId) ?? os.homedir(), input)),
+    "mcp.remove": async ({ projectId, name, scope }) => extensionsChanged(await s.mcp.remove(dirOf(projectId) ?? os.homedir(), name, scope)),
+    "mcp.approve": async ({ projectId, name }) => extensionsChanged(await s.mcp.approve(dirOf(projectId) ?? os.homedir(), name)),
     "plugins.catalog": ({ refresh }) => s.plugins.catalog(refresh),
-    "plugins.install": async ({ id }) => pluginChanged(await s.plugins.install(id)),
-    "plugins.uninstall": async ({ id }) => pluginChanged(await s.plugins.uninstall(id)),
-    "plugins.setEnabled": async ({ id, enabled }) => pluginChanged(await s.plugins.setEnabled(id, enabled)),
+    "plugins.install": async ({ id }) => extensionsChanged(await s.plugins.install(id)),
+    "plugins.uninstall": async ({ id }) => extensionsChanged(await s.plugins.uninstall(id)),
+    "plugins.setEnabled": async ({ id, enabled }) => extensionsChanged(await s.plugins.setEnabled(id, enabled)),
+    "plugins.options": ({ id }) => s.plugins.options(id),
+    "plugins.configure": async ({ id, values }) => extensionsChanged(await s.plugins.configure(id, values)),
+    "plugins.update": async ({ id }) => extensionsChanged(await s.plugins.update(id)),
+    "plugins.marketplaces": () => s.plugins.marketplaces(),
+    "plugins.addMarketplace": async ({ source }) => extensionsChanged(await s.plugins.addMarketplace(source)),
+    "plugins.removeMarketplace": async ({ name }) => extensionsChanged(await s.plugins.removeMarketplace(name)),
 
     "worktrees.create": ({ projectId, branch }) => s.worktrees.create(s.projects.requireAgents(projectId), branch),
     "worktrees.remove": async ({ projectId, force, deleteBranch }) => {
@@ -304,7 +323,10 @@ export function createHandlers(s: Services): Handlers {
     "sessions.resume": ({ sessionId, prompt, attachments }) => s.sessions.resume(sessionId, prompt, attachments),
     "sessions.rewind": ({ sessionId, messageUuid, dryRun }) => s.sessions.rewind(sessionId, messageUuid, dryRun),
     "sessions.edit": ({ sessionId, seq, text }) => s.sessions.edit(sessionId, seq, text),
-    "system.commands": ({ projectId }) => s.sessions.commands(projectId),
+    "system.commands": ({ projectId }) => {
+      s.extensions.watch(dirOf(projectId));
+      return s.sessions.commands(projectId);
+    },
     "sessions.stop": ({ sessionId }) => s.sessions.stop(sessionId),
     "sessions.cancelAutoContinue": ({ sessionId }) => s.sessions.cancelAutoContinue(sessionId),
     "sessions.close": ({ sessionId }) => s.sessions.close(sessionId),

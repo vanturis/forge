@@ -162,8 +162,13 @@ export interface RuntimeSession {
   setPermissionMode(mode: PermissionMode): Promise<void>;
   /** null returns to the model's default effort */
   setEffort(effort: EffortLevel | null): Promise<void>;
-  /** loads installed or changed plugins into the running session */
-  reloadPlugins(): Promise<void>;
+  /**
+   * Loads changed plugins and MCP servers into the running session and returns its servers. Without
+   * `apply` it holds back when that would invalidate the prompt cache; the next start picks it up then.
+   */
+  reloadPlugins(apply: boolean): Promise<Array<{ name: string; status: string }>>;
+  /** connects an MCP server again, e.g. after a sign-in */
+  reconnectMcp(name: string): Promise<void>;
   /** context window usage estimated from the last response (cheap, no token-count calls) */
   contextUsage(): Promise<ContextUsage>;
   /** connects this session to claude.ai / the Claude app (Remote Control); returns the session link */
@@ -176,6 +181,15 @@ export interface RuntimeSession {
    */
   rename(title: string, claudeSessionId: string | null): Promise<void>;
   initialization(): Promise<SDKControlInitializeResponse>;
+}
+
+/** A running sign-in at an MCP server. The CLI process receives the callback, so it lives until `finished`. */
+export interface McpLogin {
+  /** page to open; null when the server is connected already */
+  url: string | null;
+  /** true once the server is connected, false when the time ran out or it was cancelled */
+  finished: Promise<boolean>;
+  cancel(): void;
 }
 
 export interface ClaudeRuntime {
@@ -202,6 +216,8 @@ export interface ClaudeRuntime {
   complete(prompt: string, opts: CompleteOptions): Promise<string>;
   /** one-shot answer as JSON matching `schema` (structured output); the caller validates the shape */
   completeJson(prompt: string, schema: Record<string, unknown>, opts: CompleteOptions): Promise<unknown>;
+  /** starts the sign-in at an MCP server; rejects with the CLI's reason */
+  mcpLogin(opts: Pick<StartOptions, "cwd" | "env" | "claudePath">, name: string): Promise<McpLogin>;
   /** plan rate-limit windows; uses an experimental SDK call, so callers must tolerate failure */
   planUsage(opts: Pick<StartOptions, "cwd" | "env" | "claudePath">): Promise<PlanUsage>;
 }
@@ -222,6 +238,11 @@ interface TaskOutputQuery {
   getTaskOutput?: (taskId: string) => Promise<{ output?: unknown; total_bytes?: unknown; truncated?: unknown } | undefined>;
 }
 
+/** Not in the SDK typings (0.3.x) but used by the official IDE hosts; checked at runtime before use. */
+interface McpAuthQuery {
+  mcpAuthenticate?: (serverName: string, redirectUri?: string) => Promise<{ authUrl?: unknown } | undefined>;
+}
+
 /** Experimental in SDK 0.3.x and announced to be renamed; checked at runtime before use. */
 interface UsageQuery {
   usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET?: Query["usage_EXPERIMENTAL_MAY_CHANGE_DO_NOT_RELY_ON_THIS_API_YET"];
@@ -234,6 +255,9 @@ export const USAGE_UNAVAILABLE = de.core.claude.usageUnavailable;
 
 /** Upper bound for one-shot CLI calls (probe, commands, completions, usage); a hung CLI must not block the UI. */
 const ONE_SHOT_TIMEOUT_MS = 45_000;
+/** How long a sign-in at an MCP server may wait for the person in the browser. */
+const MCP_LOGIN_TIMEOUT_MS = 5 * 60_000;
+const MCP_LOGIN_POLL_MS = 1_000;
 
 function userMessage(m: OutgoingMessage): SDKUserMessage {
   const content = m.blocks.length ? [...m.blocks, { type: "text", text: m.text }] : m.text;
@@ -552,11 +576,11 @@ export class AgentSdkRuntime implements ClaudeRuntime {
       setModel: (model) => q.setModel(model),
       setPermissionMode: (mode) => q.setPermissionMode(mode),
       setEffort: (effort) => q.applyFlagSettings({ effortLevel: effort }),
-      reloadPlugins: async () => {
-        // Held when applying would invalidate the prompt cache: then it takes effect at the next start
-        // and a plugin change does not make every running conversation expensive.
-        await q.reloadPlugins({ holdOnCacheImpact: true });
+      reloadPlugins: async (apply) => {
+        const r = await q.reloadPlugins(apply ? {} : { holdOnCacheImpact: true });
+        return (r.mcpServers ?? []).map((s) => ({ name: s.name, status: s.status }));
       },
+      reconnectMcp: (name) => q.reconnectMcpServer(name),
       contextUsage: async () => {
         const u = await q.getContextUsage({ detail: "summary" });
         return {
@@ -588,6 +612,65 @@ export class AgentSdkRuntime implements ClaudeRuntime {
       },
       initialization: () => q.initializationResult(),
     };
+  }
+
+  async mcpLogin(opts: Pick<StartOptions, "cwd" | "env" | "claudePath">, name: string): Promise<McpLogin> {
+    const input = new AsyncQueue<SDKUserMessage>();
+    const ac = new AbortController();
+    const q: Query = query({
+      prompt: input,
+      options: { cwd: opts.cwd, env: opts.env, pathToClaudeCodeExecutable: opts.claudePath, settingSources: ["user", "project", "local"], persistSession: false, abortController: ac },
+    });
+    let ended = false;
+    const end = () => {
+      if (ended) return;
+      ended = true;
+      input.end();
+      ac.abort();
+      try {
+        q.close();
+      } catch {
+        /* already closed */
+      }
+    };
+    void (async () => {
+      try {
+        for await (const _ of q) void _;
+      } catch {
+        /* ended by end(), or the process failed: the status check runs out */
+      }
+    })();
+    const status = async () => (await q.mcpServerStatus()).find((s) => s.name === name)?.status;
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    try {
+      const aq = q as unknown as McpAuthQuery;
+      if (typeof aq.mcpAuthenticate !== "function") throw new Error(tr().core.claude.mcpLoginUnavailable);
+      const start = async (): Promise<string | null> => {
+        // A server is "pending" until the CLI has tried it; only then is it clear whether it wants a sign-in.
+        for (let i = 0; i < 20 && (await status()) === "pending"; i++) await sleep(500);
+        if ((await status()) === "connected") return null;
+        const r = await aq.mcpAuthenticate!.call(q, name);
+        return typeof r?.authUrl === "string" ? r.authUrl : null;
+      };
+      const url = await Promise.race([start(), sleep(this.oneShotTimeoutMs).then(() => Promise.reject(new Error(tr().core.claude.oneShotTimeout(tr().core.claude.mcpLoginWhat, Math.round(this.oneShotTimeoutMs / 1000)))))]);
+      if (!url) {
+        end();
+        return { url: null, finished: Promise.resolve(true), cancel: end };
+      }
+      const finished = (async () => {
+        const until = Date.now() + MCP_LOGIN_TIMEOUT_MS;
+        while (!ended && Date.now() < until) {
+          await sleep(MCP_LOGIN_POLL_MS);
+          if (ended) return false;
+          if ((await status().catch(() => null)) === "connected") return true;
+        }
+        return false;
+      })().finally(end);
+      return { url, finished, cancel: end };
+    } catch (e) {
+      end();
+      throw e;
+    }
   }
 
   async listSessions(dir: string): Promise<ExternalSession[]> {
