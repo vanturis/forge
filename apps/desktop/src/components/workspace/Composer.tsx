@@ -5,7 +5,7 @@ import { useRuntimeInfo, useSettings, useTemplates } from "@/lib/queries";
 import { EFFORT_LEVELS, findModel, modelLabel } from "@/lib/models";
 import { isWorking } from "@/lib/working";
 import { cn } from "@/lib/utils";
-import { composerHistory, rememberSent } from "@/stores/composer-history";
+import { COMPOSER_HISTORY_EVENT, composerHistory, rememberSent, searchComposerHistory } from "@/stores/composer-history";
 import { draftKey, useDrafts } from "@/stores/drafts";
 import { composerFocused, registerComposer } from "@/lib/screenshot";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { SessionUsageMeter } from "@/components/usage/SessionUsage";
 import { LongSessionHint } from "./handoff";
 import { RateLimitBadge } from "./RateLimitBadge";
 import { AttachmentList } from "./AttachmentList";
+import { ComposerHistoryMenu } from "./ComposerHistoryMenu";
 import { CLEAR_COMMANDS, isClearCommand, SlashCommandMenu, useSlashCommands, type Command } from "./SlashCommandMenu";
 import { InfoCommandDialog, infoCommand, INFO_COMMANDS, type InfoCommand } from "./InfoCommandDialog";
 import { useAttachments } from "./useAttachments";
@@ -357,6 +358,26 @@ export const Composer = memo(function Composer({
   const shownTemplates = dictating || filling ? NO_TEMPLATES : templateMatches;
   /** counts sends; the arrow animation restarts with each */
   const [sentTick, setSentTick] = useState(0);
+  /** Ctrl+R: earlier messages of this project containing what is typed, like the search in the terminal */
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const historyMatches = historyOpen ? searchComposerHistory(project.id, text) : [];
+  const pickHistory = (entry: string) => {
+    setHistoryOpen(false);
+    setHistoryIndex(0);
+    recall.current = null;
+    setText(entry);
+  };
+  useEffect(() => {
+    const open = () => {
+      if (slot.pane) return;
+      setHistoryIndex(0);
+      setHistoryOpen(true);
+      ref.current?.focus();
+    };
+    window.addEventListener(COMPOSER_HISTORY_EVENT, open);
+    return () => window.removeEventListener(COMPOSER_HISTORY_EVENT, open);
+  }, [slot.pane]);
   /** position in the sent messages while stepping through them with the arrow keys; `typed` comes back at the end */
   const recall = useRef<{ index: number; typed: string } | null>(null);
   const submit = () => {
@@ -420,6 +441,7 @@ export const Composer = memo(function Composer({
   return (
     // A container of its own: the bottom row drops what is not needed by the composer's width (split view, side panel), not the window's.
     <div className="@container/composer relative w-full shrink-0 px-6 pb-5 pt-2">
+      {historyOpen && <ComposerHistoryMenu matches={historyMatches} index={historyIndex} onPick={pickHistory} />}
       <SlashCommandMenu matches={matches} index={cmdIndex} onPick={pickCommand} />
       <TemplateSuggestions templates={shownTemplates} index={templateIndex} explicit={explicitTemplates} onPick={pickTemplate} />
       {filling && (
@@ -524,6 +546,31 @@ export const Composer = memo(function Composer({
               e.preventDefault();
               sendDictation();
               return;
+            }
+            if (e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "r" && !dictating) {
+              // Also stops the webview from reloading the page. Pressed again it walks on, as in the terminal.
+              e.preventDefault();
+              if (historyOpen && historyMatches.length) setHistoryIndex((i) => (i + 1) % historyMatches.length);
+              else setHistoryOpen(true);
+              return;
+            }
+            if (historyOpen) {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setHistoryOpen(false);
+                return;
+              }
+              if (historyMatches.length && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+                e.preventDefault();
+                const n = historyMatches.length;
+                setHistoryIndex((i) => (e.key === "ArrowDown" ? (i + 1) % n : (i + n - 1) % n));
+                return;
+              }
+              if (historyMatches.length && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing))) {
+                e.preventDefault();
+                pickHistory(historyMatches[Math.min(historyIndex, historyMatches.length - 1)]!);
+                return;
+              }
             }
             // Suggested templates: Tab takes the chosen (or first) one, the arrows choose, Enter takes one
             // only once chosen; otherwise Enter sends what was typed, as without a suggestion.

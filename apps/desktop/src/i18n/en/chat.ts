@@ -77,6 +77,11 @@ export const chat: typeof De = {
       resume: "Write a message to continue the session",
       idle: "Message Claude, / for commands, # for templates, drag in or paste files",
     },
+    history: {
+      label: "Earlier messages",
+      none: "No matching message in this project.",
+      hint: "Typing filters, Enter takes it, Ctrl+R moves on, Esc closes.",
+    },
     dropFiles: "Drop files here",
     messageLabel: "Message to Claude",
     attachTooltip: "Attach images, PDFs or text files (also by pasting or dragging in)",

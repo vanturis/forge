@@ -15,6 +15,22 @@ export function composerHistory(projectId: string): string[] {
   return read(projectId);
 }
 
+/** The palette asks the open composer to show the search. */
+export const COMPOSER_HISTORY_EVENT = "forge:composer-history";
+
+const MAX_MATCHES = 8;
+
+/** Every word must appear, in any order and case; empty finds the newest. */
+export function searchComposerHistory(projectId: string, query: string): string[] {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  return read(projectId)
+    .filter((entry) => {
+      const low = entry.toLowerCase();
+      return words.every((w) => low.includes(w));
+    })
+    .slice(0, MAX_MATCHES);
+}
+
 export function rememberSent(projectId: string, text: string) {
   const t = text.trim();
   if (!t) return;

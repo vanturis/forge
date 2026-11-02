@@ -384,6 +384,7 @@ export const layout: typeof De = {
     sessionHandoff: "Continue in a new session",
     handoffHint: (tokens) => `${tokens} tokens of context`,
     chatFind: "Search in chat",
+    composerHistory: "Search earlier messages (Ctrl+R)",
     editLast: "Edit last message",
     sessionDelete: "Delete session",
     switchModel: (model) => `Switch model: ${model}`,

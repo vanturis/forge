@@ -330,8 +330,9 @@ export class AgentFinisher {
 
     const stash = (await git.exec(dir, ["stash", "create"])).stdout.trim();
     if (!stash) throw new ForgeError("GIT_FAILED", msg);
-    // Dry run of "put back after the fast-forward": base HEAD, one side the agent, the other the open work.
-    const check = await git.exec(dir, ["merge-tree", "--write-tree", "--name-only", "--no-messages", "--merge-base=HEAD", own, stash]);
+    // Dry run of "put back after the fast-forward": one side the agent, the other the open work. Both
+    // descend from HEAD, so it is the merge base by itself; --merge-base would need Git 2.40, macOS ships 2.39.
+    const check = await git.exec(dir, ["merge-tree", "--write-tree", "--name-only", "--no-messages", own, stash]);
     if (check.code !== 0 && check.code !== 1) throw new ForgeError("GIT_FAILED", (check.stderr || check.stdout).trim() || tr().core.automation.dryRunFailed);
     if (check.code === 1) {
       const clashes = [...new Set(lines(check.stdout).slice(1))];

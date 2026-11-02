@@ -119,6 +119,35 @@ describe("Composer", () => {
     await waitFor(() => expect(box.value).toBe(""));
   });
 
+  it("searches earlier messages with Ctrl+R, and takes one over with Enter", async () => {
+    localStorage.clear();
+    rememberSent("p1", "Tests laufen lassen");
+    rememberSent("p1", "Build starten");
+    setup(<Composer project={project("p1")} session={session} />);
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.keyDown(box, { key: "r", ctrlKey: true });
+    expect(await screen.findByRole("listbox", { name: "Frühere Nachrichten" })).toBeTruthy();
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Build starten", "Tests laufen lassen"]);
+    fireEvent.change(box, { target: { value: "tests" } });
+    await waitFor(() => expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Tests laufen lassen"]));
+    fireEvent.keyDown(box, { key: "Enter" });
+    await waitFor(() => expect(box.value).toBe("Tests laufen lassen"));
+    expect(screen.queryByRole("listbox", { name: "Frühere Nachrichten" })).toBeNull();
+    expect(callMock).not.toHaveBeenCalledWith("sessions.send", expect.anything());
+  });
+
+  it("closes the search with Esc and says when nothing fits", async () => {
+    localStorage.clear();
+    rememberSent("p1", "alt");
+    useDrafts.getState().setText("s1", "gibtsnicht");
+    setup(<Composer project={project("p1")} session={session} />);
+    const box = screen.getByRole("textbox");
+    fireEvent.keyDown(box, { key: "r", ctrlKey: true });
+    expect(await screen.findByText("Keine passende Nachricht in diesem Projekt.")).toBeTruthy();
+    fireEvent.keyDown(box, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("listbox", { name: "Frühere Nachrichten" })).toBeNull());
+  });
+
   it("leaves the arrow keys alone in a text the user typed", () => {
     localStorage.clear();
     rememberSent("p1", "alt");

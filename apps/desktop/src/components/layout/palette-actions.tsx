@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, type LucideIcon } from "lucide-react";
+import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, type LucideIcon } from "lucide-react";
 import type {
   Crew,
   AppInstallState,
@@ -35,6 +35,7 @@ import { openChatWindow, pinChatWindow, recallChatWindow, type ChatWindowList } 
 import { setAlwaysOnTop } from "@/lib/window-options";
 import { takeScreenshot } from "@/lib/screenshot";
 import { openChatFindSoon } from "@/lib/chat-find";
+import { COMPOSER_HISTORY_EVENT } from "@/stores/composer-history";
 import { toggleDictationSoon } from "@/stores/dictation";
 import { draftKey, useDrafts } from "@/stores/drafts";
 import { lastEditablePrompt, useMessageEdit } from "@/stores/message-edit";
@@ -359,6 +360,10 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
       ui.setWorkspaceTab("chat");
       requestAnimationFrame(() => document.getElementById("composer-input")?.focus());
     }, { hint: t.layout.actions.ctrl("N"), keywords: "neue session chat starten new session start" });
+    act("composer-history", t.layout.actions.composerHistory, icon(History), () => {
+      ui.setWorkspaceTab("chat");
+      requestAnimationFrame(() => window.dispatchEvent(new Event(COMPOSER_HISTORY_EVENT)));
+    }, { keywords: "frühere nachrichten verlauf suchen wiederholen strg+r ctrl+r prompt history search earlier messages recall" });
     act("chat-find", t.layout.actions.chatFind, icon(Search), () => {
       ui.setWorkspaceTab("chat");
       openChatFindSoon();

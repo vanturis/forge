@@ -385,6 +385,7 @@ export const layout = {
     sessionHandoff: "In neuer Session weitermachen",
     handoffHint: (tokens: string) => `${tokens} Tokens Kontext`,
     chatFind: "Im Chat suchen",
+    composerHistory: "Frühere Nachrichten suchen (Strg+R)",
     editLast: "Letzte Nachricht bearbeiten",
     sessionDelete: "Session löschen",
     switchModel: (model: string) => `Modell wechseln: ${model}`,

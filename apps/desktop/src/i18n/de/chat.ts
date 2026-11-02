@@ -77,6 +77,11 @@ export const chat = {
       resume: "Nachricht schreiben, um die Session fortzusetzen",
       idle: "Nachricht an Claude, / für Befehle, # für Vorlagen, Dateien hineinziehen oder einfügen",
     },
+    history: {
+      label: "Frühere Nachrichten",
+      none: "Keine passende Nachricht in diesem Projekt.",
+      hint: "Tippen filtert, Enter übernimmt, Strg+R geht weiter, Esc schließt.",
+    },
     dropFiles: "Dateien hier ablegen",
     messageLabel: "Nachricht an Claude",
     attachTooltip: "Bilder, PDFs oder Textdateien anhängen (auch per Einfügen oder Hineinziehen)",
