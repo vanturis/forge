@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, KeyRound, Pencil, Plus, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
+import { Copy, KeyRound, LogIn, LogOut, Pencil, Plus, RefreshCw, Server, ShieldCheck, Trash2 } from "lucide-react";
 import type { McpServer } from "@forge/protocol";
 import { call } from "@/lib/queries";
 import { contextItems, copyText } from "@/lib/context-menu";
@@ -13,15 +13,23 @@ import { Field } from "@/components/ui/input";
 import { Badge, EmptyState, ErrorBanner, SectionTitle, Tooltip } from "@/components/ui/misc";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { Select } from "@/components/ui/select";
+import { McpLoginButton, startMcpLogin } from "./McpLogin";
 import { McpServerDialog } from "./McpServerDialog";
 import { authSummary, MCP_STATUS, MCP_STATUS_TONE, mcpScopeLabel, mcpScopeOptions, mcpStatusText, type McpScope } from "./mcp";
 import { t } from "@/i18n";
 
 const m = t.extensions.mcpTab;
 
+/** "plugin:stripe:stripe" is "stripe", "claude.ai Trello" is "Trello"; the badge next to it says where it comes from. */
+export function shownName(s: Pick<McpServer, "name" | "origin">): string {
+  if (s.origin === "plugin") return s.name.split(":").at(-1) ?? s.name;
+  if (s.origin === "claude.ai") return s.name.replace(/^claude\.ai\s+/, "");
+  return s.name;
+}
+
 export function McpTab({ projectId }: { projectId?: string }) {
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ["mcp", projectId ?? "global"], queryFn: () => call("mcp.list", { projectId }), staleTime: 60_000 });
+  const list = useQuery({ queryKey: ["mcp", projectId ?? "global"], queryFn: () => call("mcp.list", { projectId }), staleTime: 60_000, refetchOnMount: "always" });
   const [dialog, setDialog] = useState<{ edit: string | null } | null>(null);
   const [removing, setRemoving] = useState<McpServer | null>(null);
   // Only for servers whose config file FORGE did not find: then the user picks the scope.
@@ -43,11 +51,21 @@ export function McpTab({ projectId }: { projectId?: string }) {
     setScope(s.scope ?? "user");
     setRemoving(s);
   };
+  const signOut = async (s: McpServer) => {
+    try {
+      await call("mcp.logout", { projectId, name: s.name });
+      toast.success(m.signedOut(shownName(s)));
+    } catch (e) {
+      toast.error(m.notSignedOut(shownName(s)), errorMessage(e));
+    }
+  };
   const menu = (s: McpServer) => [
+    ...(s.status === "needs_auth" ? [{ label: m.login.signIn, icon: <LogIn className="h-3.5 w-3.5" />, onSelect: () => void startMcpLogin(s.name, projectId) }] : []),
+    ...(s.remote && s.status === "connected" && !s.headerNames?.length ? [{ label: m.signOut, icon: <LogOut className="h-3.5 w-3.5" />, onSelect: () => void signOut(s) }] : []),
     ...(canApprove(s) ? [{ label: m.approve, icon: <ShieldCheck className="h-3.5 w-3.5" />, onSelect: () => void approve(s) }] : []),
     ...(s.scope ? [{ label: m.editLabel, icon: <Pencil className="h-3.5 w-3.5" />, onSelect: () => setDialog({ edit: s.name }) }] : []),
     { label: m.copyName, icon: <Copy className="h-3.5 w-3.5" />, onSelect: () => copyText(s.name) },
-    { label: m.remove(s.name), icon: <Trash2 className="h-3.5 w-3.5" />, danger: true, onSelect: () => askRemove(s) },
+    ...(s.origin ? [] : [{ label: m.remove(s.name), icon: <Trash2 className="h-3.5 w-3.5" />, danger: true, onSelect: () => askRemove(s) }]),
   ];
 
   return (
@@ -93,7 +111,8 @@ export function McpTab({ projectId }: { projectId?: string }) {
               <Server className="h-4 w-4 shrink-0 text-muted" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate">{s.name}</span>
+                  <span className="truncate">{shownName(s)}</span>
+                  {s.origin && <Badge>{s.origin === "plugin" ? m.fromPlugin : m.fromClaudeAi}</Badge>}
                   {s.scope && <Badge>{mcpScopeLabel(s.scope)}</Badge>}
                   {auth && (
                     <Tooltip content={m.authSet(auth)}>
@@ -110,22 +129,27 @@ export function McpTab({ projectId }: { projectId?: string }) {
                   </Button>
                 </Tooltip>
               )}
+              {s.status === "needs_auth" && <McpLoginButton name={s.name} projectId={projectId} />}
               <Badge tone={MCP_STATUS_TONE[s.status]}>
                 <span title={mcpStatusText(s.statusText)}>{MCP_STATUS[s.status]}</span>
               </Badge>
-              <Button
-                size="icon-sm"
-                variant="ghost"
-                aria-label={m.edit(s.name)}
-                title={s.scope ? m.edit(s.name) : m.readOnly}
-                disabled={!s.scope}
-                onClick={() => setDialog({ edit: s.name })}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button size="icon-sm" variant="danger-ghost" aria-label={m.remove(s.name)} onClick={() => askRemove(s)}>
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              {!s.origin && (
+                <>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    aria-label={m.edit(s.name)}
+                    title={s.scope ? m.edit(s.name) : m.readOnly}
+                    disabled={!s.scope}
+                    onClick={() => setDialog({ edit: s.name })}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="icon-sm" variant="danger-ghost" aria-label={m.remove(s.name)} onClick={() => askRemove(s)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
             </div>
           );
         })}

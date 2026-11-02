@@ -725,6 +725,12 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
     const def = EXTENSION_TAB_DEFS.find((d) => d.value === id)!;
     add("Erweiterungen", `ext-${id}`, t.layout.actions.extensions(def.label), icon(def.Icon), () => ui.openExtensions(id), { keywords: "erweiterungen plugins extensions" });
   }
+  add("Erweiterungen", "mcp-login", t.layout.actions.mcpLogin, icon(Server), () => ui.openExtensions("mcp"), {
+    keywords: "mcp server anmelden login oauth abmelden logout authentifizieren sign in sign out authenticate",
+  });
+  add("Erweiterungen", "plugin-settings", t.layout.actions.pluginSettings, icon(Server), () => ui.openExtensions("skills", "marketplace"), {
+    keywords: "plugin einstellungen konfigurieren api key marketplace hinzufügen quelle settings configure source add",
+  });
   add("Erweiterungen", "mcp-add", t.layout.actions.addMcp, icon(Server), () => ctx.openDialog({ kind: "mcp-server", projectId: project?.id }), {
     keywords: "mcp server hinzufügen anlegen token bearer header oauth add new",
   });

@@ -493,6 +493,8 @@ export const layout: typeof De = {
     goTo: (view) => `Go to ${view}`,
     extensions: (label) => `Extensions: ${label}`,
     addMcp: "Add MCP server",
+    mcpLogin: "Sign in to an MCP server",
+    pluginSettings: "Set up plugins and marketplaces",
     skills: (label) => `Skills: ${label}`,
     settings: (label) => `Settings: ${label}`,
     idleCloseAfter: (time) => `Close idle sessions after ${time}`,

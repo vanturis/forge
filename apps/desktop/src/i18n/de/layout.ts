@@ -494,6 +494,8 @@ export const layout = {
     goTo: (view: string) => `Gehe zu ${view}`,
     extensions: (label: string) => `Erweiterungen: ${label}`,
     addMcp: "MCP-Server hinzufügen",
+    mcpLogin: "Bei MCP-Server anmelden",
+    pluginSettings: "Plugins und Marketplaces einrichten",
     skills: (label: string) => `Skills: ${label}`,
     settings: (label: string) => `Einstellungen: ${label}`,
     idleCloseAfter: (time: string) => `Untätige Sessions schließen nach ${time}`,

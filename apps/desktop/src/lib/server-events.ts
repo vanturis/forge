@@ -221,6 +221,20 @@ export function routeServerEvent(qc: QueryClient, git: GitRefresher, e: ServerEv
     case "install.repair":
       if (!isChatWindow()) void installFull(qc);
       break;
+    case "extensions.changed":
+      for (const queryKey of [["mcp"], ["plugins"], ["pluginMarketplaces"], ["docs"], ["hooks"], ["commands"], keys.runtimeInfo]) void qc.invalidateQueries({ queryKey });
+      break;
+    case "mcp.login": {
+      const { name, state, url } = e.payload;
+      useMcpLogin.getState().setWaiting(name, state === "waiting" ? url : null);
+      void qc.invalidateQueries({ queryKey: ["mcp"] });
+      if (isChatWindow()) break;
+      const m = t.extensions.mcpTab.login;
+      if (state === "waiting" && url) void openExternal(url);
+      else if (state === "done") toast.success(m.done(name));
+      else if (state === "expired") toast.info(m.expired(name), m.expiredHint);
+      break;
+    }
     case "runtime.models": {
       void qc.invalidateQueries({ queryKey: keys.runtimeInfo });
       if (isChatWindow()) break;

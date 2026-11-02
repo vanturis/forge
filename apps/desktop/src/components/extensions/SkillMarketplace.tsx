@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, PackageSearch, RefreshCw, Search, Trash2 } from "lucide-react";
+import { Download, PackageSearch, RefreshCw, Search, SlidersHorizontal, Store, Trash2 } from "lucide-react";
 import type { MarketplacePlugin } from "@forge/protocol";
 import { call } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
 import { cn } from "@/lib/utils";
+import { contextItems } from "@/lib/context-menu";
 import { toast } from "@/stores/toast";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -15,6 +16,8 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { locale, t } from "@/i18n";
 
+import { MarketplacesDialog } from "./MarketplacesDialog";
+import { PluginOptionsDialog } from "./PluginOptionsDialog";
 import { MARKETPLACE_LABEL, matchPlugins, type PluginShow as Show } from "./plugins";
 
 const PLUGINS_KEY = ["plugins"] as const;
@@ -32,6 +35,8 @@ export function SkillMarketplace() {
   const [busy, setBusy] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [removing, setRemoving] = useState<MarketplacePlugin | null>(null);
+  const [configuring, setConfiguring] = useState<MarketplacePlugin | null>(null);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
 
   const list = catalog.data;
   const marketplaces = useMemo(() => [...new Set((list ?? []).map((p) => p.marketplace))].sort(), [list]);
@@ -61,6 +66,18 @@ export function SkillMarketplace() {
     }
   };
 
+  const update = async (p: MarketplacePlugin) => {
+    setBusy(p.id);
+    try {
+      qc.setQueryData(PLUGINS_KEY, await call("plugins.update", { id: p.id }));
+      toast.success(m.updated(p.name));
+    } catch (e) {
+      toast.error(m.notUpdated(p.name), errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const setEnabled = async (p: MarketplacePlugin, enabled: boolean) => {
     setBusy(p.id);
     try {
@@ -80,9 +97,14 @@ export function SkillMarketplace() {
         <LabelWithInfo info={m.info}>
           <span className="text-xs text-muted">{m.intro}</span>
         </LabelWithInfo>
-        <Button size="sm" variant="ghost" onClick={() => void refresh()} loading={refreshing} disabled={catalog.isLoading}>
-          <RefreshCw className="h-3.5 w-3.5" /> {m.refresh}
-        </Button>
+        <div className="flex shrink-0 gap-1">
+          <Button size="sm" variant="ghost" onClick={() => setSourcesOpen(true)}>
+            <Store className="h-3.5 w-3.5" /> {m.manageSources}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => void refresh()} loading={refreshing} disabled={catalog.isLoading}>
+            <RefreshCw className="h-3.5 w-3.5" /> {m.refresh}
+          </Button>
+        </div>
       </div>
 
       <div className="mb-3 flex gap-2">
@@ -132,7 +154,19 @@ export function SkillMarketplace() {
       )}
       <ul className={cn("divide-y divide-border rounded-lg border border-border", !matches.length && "hidden")} aria-label={m.listAria}>
         {matches.slice(0, MAX_ROWS).map((p) => (
-          <li key={p.id} className="flex items-start gap-3 px-3 py-2.5">
+          <li
+            key={p.id}
+            className="flex items-start gap-3 px-3 py-2.5"
+            onContextMenu={contextItems(() =>
+              p.installed
+                ? [
+                    { label: m.settings(p.name), icon: <SlidersHorizontal className="h-3.5 w-3.5" />, onSelect: () => setConfiguring(p) },
+                    { label: m.update(p.name), icon: <RefreshCw className="h-3.5 w-3.5" />, onSelect: () => void update(p) },
+                    { label: m.remove(p.name), icon: <Trash2 className="h-3.5 w-3.5" />, danger: true, onSelect: () => setRemoving(p) },
+                  ]
+                : [{ label: m.install, icon: <Download className="h-3.5 w-3.5" />, onSelect: () => void install(p) }],
+            )}
+          >
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5 text-body">
                 <span className="font-medium">{p.name}</span>
@@ -144,6 +178,9 @@ export function SkillMarketplace() {
             </div>
             {p.installed ? (
               <div className="flex shrink-0 items-center gap-2">
+                <Button size="icon-sm" variant="ghost" title={m.settings(p.name)} aria-label={m.settings(p.name)} onClick={() => setConfiguring(p)}>
+                  <SlidersHorizontal className="h-3.5 w-3.5" />
+                </Button>
                 <Switch
                   checked={p.enabled !== false}
                   onChange={(v) => void setEnabled(p, v)}
@@ -168,6 +205,8 @@ export function SkillMarketplace() {
         </p>
       )}
 
+      <PluginOptionsDialog plugin={configuring} onClose={() => setConfiguring(null)} />
+      <MarketplacesDialog open={sourcesOpen} onClose={() => setSourcesOpen(false)} />
       <ConfirmDialog
         open={removing !== null}
         onOpenChange={(o) => !o && setRemoving(null)}

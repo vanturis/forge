@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/misc";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Meter, MeterSkeleton } from "@/components/ui/meter";
+import { McpLoginButton } from "@/components/extensions/McpLogin";
 import { UsageWindows, UsageWindowsSkeleton, usageUnavailableText } from "@/components/usage/UsageWindows";
 import { SessionUsageDetails } from "@/components/usage/SessionUsage";
 import { ProfileBadge } from "@/components/projects/ProfileBadge";
@@ -257,7 +258,7 @@ const MCP_STATUS: Record<string, { label: string; tone: "success" | "warning" | 
   disabled: { label: t.chat.info.mcp.disabled, tone: "neutral" },
 };
 
-function McpBody() {
+function McpBody({ project }: InfoProps) {
   const runtime = useRuntimeInfo();
   if (runtime.isLoading)
     return (
@@ -278,7 +279,8 @@ function McpBody() {
         const st = MCP_STATUS[s.status] ?? { label: s.status, tone: "neutral" as const };
         return (
           <li key={s.name} className="flex items-center justify-between gap-3 py-2 text-body">
-            <span className="min-w-0 truncate font-mono text-small">{s.name}</span>
+            <span className="min-w-0 flex-1 truncate font-mono text-small">{s.name}</span>
+            {s.status === "needs-auth" && <McpLoginButton name={s.name} projectId={project.id} />}
             <Badge tone={st.tone}>{st.label}</Badge>
           </li>
         );
