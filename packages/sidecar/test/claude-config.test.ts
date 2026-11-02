@@ -135,6 +135,23 @@ describe("hooks", () => {
 });
 
 describe("mcp", () => {
+  it("reads servers of plugins and claude.ai, whose names hold colons and spaces", () => {
+    const out = [
+      "Checking MCP server health…",
+      "",
+      "claude.ai Trello: https://mcp.trello.com/v1 - ✔ Connected",
+      "plugin:stripe:stripe: https://mcp.stripe.com (HTTP) - ! Needs authentication",
+      "vanturis: https://x.de/mcp (HTTP) - ✘ Failed to connect — Server rejected",
+      "lokal: npx -y foo - ✓ Connected",
+    ].join("\n");
+    expect(parseMcpList(out).map((s) => [s.name, s.status, s.origin, s.remote])).toEqual([
+      ["claude.ai Trello", "connected", "claude.ai", true],
+      ["plugin:stripe:stripe", "needs_auth", "plugin", true],
+      ["vanturis", "failed", undefined, true],
+      ["lokal", "connected", undefined, false],
+    ]);
+  });
+
   it("parses claude mcp list output", () => {
     const out = [
       "Checking MCP server health...",

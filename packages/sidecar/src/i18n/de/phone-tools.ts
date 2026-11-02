@@ -247,8 +247,11 @@ export const phoneTools = {
     },
   },
   extensions: {
-    description: "Erweiterungen von Claude Code, global (scope user) oder für ein Projekt. kind mcp: MCP-Server auflisten, mit read Einstellungen ansagen (ohne geheime Werte), mit add (target ist Befehl oder URL, token für Bearer-Token) hinzufügen, mit remove entfernen, mit enable einen Server aus .mcp.json im Projekt freigeben. kind skill oder agent: Skills und Subagenten auflisten, mit read vorlesen, mit add und description anlegen, mit remove löschen. kind command: eigene Slash-Befehle auflisten. kind hook: Hooks vorlesen (ändern nur in FORGE). kind plugin: installierte Plugins auflisten oder mit query im Katalog suchen, mit add installieren, remove deinstallieren, enable und disable schalten.",
+    description: "Erweiterungen von Claude Code, global (scope user) oder für ein Projekt. kind mcp: MCP-Server auflisten, mit read Einstellungen ansagen (ohne geheime Werte), mit add (target ist Befehl oder URL, token für Bearer-Token) hinzufügen, mit remove entfernen, mit enable einen Server aus .mcp.json im Projekt freigeben. kind skill oder agent: Skills und Subagenten auflisten, mit read vorlesen, mit add und description anlegen, mit remove löschen. kind command: eigene Slash-Befehle auflisten. kind hook: Hooks vorlesen (ändern nur in FORGE). kind plugin: installierte Plugins auflisten oder mit query im Katalog suchen, mit add installieren, remove deinstallieren, enable und disable schalten. Bei kind mcp meldet login an einem Server an (öffnet den Browser am Computer), logout meldet ab. kind plugin: update aktualisiert, configure liest Einstellungen oder setzt sie mit values (key, value; geheime nur am Computer). kind marketplace: list, add (target ist GitHub-Repository, URL oder Pfad), remove.",
     params: {
+      values: "nur bei plugin configure: die neuen Werte",
+      "values.key": "Name der Einstellung",
+      "values.value": "neuer Wert",
       project: "Projektname, wenn es um ein Projekt geht",
       name: "Name des Servers, Skills, Subagenten oder Plugins",
       scope: "user: global; project: im Projekt, wird committet; local: nur für ihn im Projekt",

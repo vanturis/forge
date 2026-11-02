@@ -1,11 +1,13 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { ResultOf, ServerEvent, Session } from "@forge/protocol";
+import { useMcpLogin } from "@/stores/mcp-login";
 import { useSessionEvents } from "@/stores/session-events";
 import { useDevOutput } from "@/stores/dev-output";
 import { useTokenRate } from "@/stores/token-rate";
 import { useUi } from "@/stores/ui";
 import { toast } from "@/stores/toast";
 import { call, keys } from "./queries";
+import { openExternal } from "./native";
 import { rpc } from "./rpc";
 import { playSound } from "./sounds";
 import { notifyAutoContinue, notifyDone, notifyKind, notifySession, shouldNotify } from "./notifications";

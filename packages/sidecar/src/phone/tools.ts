@@ -228,9 +228,9 @@ export interface SessionsOptions {
 export const FILES_ACTIONS = ["list", "read", "find"] as const;
 export const CLAUDE_MD_ACTIONS = ["list", "read", "append"] as const;
 
-export const EXTENSION_KINDS = ["mcp", "skill", "agent", "command", "hook", "plugin"] as const;
+export const EXTENSION_KINDS = ["mcp", "skill", "agent", "command", "hook", "plugin", "marketplace"] as const;
 export type ExtensionKind = (typeof EXTENSION_KINDS)[number];
-export const EXTENSION_ACTIONS = ["list", "read", "add", "remove", "enable", "disable"] as const;
+export const EXTENSION_ACTIONS = ["list", "read", "add", "remove", "enable", "disable", "login", "logout", "configure", "update"] as const;
 export type ExtensionAction = (typeof EXTENSION_ACTIONS)[number];
 
 export interface ExtensionOptions extends TargetOptions {
@@ -249,6 +249,8 @@ export interface ExtensionOptions extends TargetOptions {
   token?: string;
   /** plugin list: search the catalog */
   query?: string;
+  /** plugin configure: new values per setting; without it the settings are read out */
+  values?: Record<string, string>;
 }
 
 /** Global settings that can be changed on the phone; an empty patch tells the current ones. */
@@ -943,9 +945,11 @@ const TOOL_DEFS: readonly ToolDef[] = [
       args: { type: "string", optional: true },
       token: { type: "string", optional: true },
       query: { type: "string", optional: true },
+      values: { type: "array", optional: true, items: { key: { type: "string" }, value: { type: "string" } } },
     },
     run: (t, a) =>
       t.extensions(pick(a.kind, EXTENSION_KINDS, "mcp"), pick(a.action, EXTENSION_ACTIONS, "list"), {
+        ...(Array.isArray(a.values) ? { values: Object.fromEntries((a.values as Array<{ key?: unknown; value?: unknown }>).flatMap((v) => (typeof v?.key === "string" ? [[v.key, String(v.value ?? "")]] : []))) } : {}),
         project: opt(a.project),
         session: opt(a.session),
         name: opt(a.name),

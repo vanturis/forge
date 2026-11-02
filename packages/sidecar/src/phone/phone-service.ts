@@ -3031,6 +3031,15 @@ export class PhoneService {
                 ? xm.mcpList(asData(list.map((m) => `${m.name} ${state[m.status]}${m.scope ? ` (${xm.mcpScope[m.scope]})` : ""}`).join(", ")))
                 : xm.mcpNone;
             }
+            if (action === "login") {
+              const server = name();
+              const r = await call("mcp.login", { projectId, name: server });
+              return r.url ? xm.mcpLoginStarted(server) : xm.mcpLoginNotNeeded(server);
+            }
+            if (action === "logout") {
+              await call("mcp.logout", { projectId, name: name() });
+              return xm.mcpLoggedOut(name());
+            }
             if (action !== "add" && action !== "remove" && action !== "read" && action !== "enable") return only(xm.mcpOnly);
             const whereOf = (scope: "user" | "project" | "local") =>
               !p || scope === "user" ? xm.mcpScope[scope] : scope === "project" ? xm.inProject(p.name) : xm.localIn(p.name);
@@ -3115,6 +3124,22 @@ export class PhoneService {
             if (!names.length && !r.hooks.trim().replace(/^\{\s*\}$/, "")) return xm.noHooks(hookWhere);
             return xm.hooks(hookWhere, asData(names.join(", ")), action === "read" ? excerptData(r.hooks, 2000) : "");
           }
+          if (kind === "marketplace") {
+            if (action === "list" || action === "read") {
+              const list = await call("plugins.marketplaces", {});
+              return list.length ? xm.marketplaces(asData(list.map((x) => `${x.name} (${x.location})`).join(", "))) : xm.noMarketplaces;
+            }
+            if (action === "add") {
+              const source = o?.target?.trim() || name();
+              await call("plugins.addMarketplace", { source });
+              return xm.marketplaceAdded(asData(source));
+            }
+            if (action === "remove") {
+              await call("plugins.removeMarketplace", { name: name() });
+              return xm.marketplaceRemoved(name());
+            }
+            return only(xm.marketplaceOnly);
+          }
           const catalog = await call("plugins.catalog", {});
           const pluginState = (x: (typeof catalog)[number]) => (!x.installed ? xm.notInstalled : x.enabled === false ? xm.installedOff : xm.installed);
           if (action === "list" || action === "read") {
@@ -3133,6 +3158,25 @@ export class PhoneService {
             return xm.pluginInstalled(plugin.name);
           }
           if (!plugin.installed) return xm.pluginNotInstalled(plugin.name);
+          if (action === "update") {
+            await call("plugins.update", { id: plugin.id });
+            return xm.pluginUpdated(plugin.name);
+          }
+          if (action === "configure") {
+            const options = await call("plugins.options", { id: plugin.id });
+            const given = Object.entries(o?.values ?? {});
+            if (!given.length) {
+              if (!options.length) return xm.pluginNoSettings(plugin.name);
+              return xm.pluginSettings(plugin.name, asData(options.map((x) => `${x.key}: ${x.title}, ${x.sensitive ? (x.isSet ? xm.pluginSecretSet : xm.pluginSecretUnset) : x.value || xm.pluginValueEmpty}`).join("; ")));
+            }
+            // A key spoken on the phone would end up in the call's transcript.
+            const secret = given.find(([k]) => options.find((x) => x.key === k)?.sensitive);
+            if (secret) return xm.pluginSecretOnComputer(secret[0]);
+            const unknown = given.find(([k]) => !options.some((x) => x.key === k));
+            if (unknown) return xm.pluginUnknownSetting(unknown[0]);
+            await call("plugins.configure", { id: plugin.id, values: Object.fromEntries(given) });
+            return xm.pluginConfigured(plugin.name);
+          }
           if (action === "remove") {
             await call("plugins.uninstall", { id: plugin.id });
             return xm.pluginRemoved(plugin.name);

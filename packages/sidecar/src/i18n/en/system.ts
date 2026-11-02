@@ -400,6 +400,7 @@ export const system: typeof De = {
     mcpListFailed: "claude mcp list failed",
     addFailed: "Adding failed",
     removeFailed: "Removing failed",
+    logoutFailed: "Signing out did not work.",
     mcpNotConfigured: (name) => `MCP server ${name} is not in any config file. Servers from plugins or claude.ai cannot be changed here.`,
     mcpEditRestored: (why) => `Change not applied, the previous entry stays in place. ${why}`,
     mcpEditLost: (why) => `Change not applied and the previous entry could not be restored. ${why}`,

@@ -402,6 +402,7 @@ export const system = {
     mcpListFailed: "claude mcp list fehlgeschlagen",
     addFailed: "Hinzufügen fehlgeschlagen",
     removeFailed: "Entfernen fehlgeschlagen",
+    logoutFailed: "Abmelden hat nicht geklappt.",
     mcpNotConfigured: (name: string) => `MCP-Server ${name} steht in keiner Konfigurationsdatei. Server aus Plugins oder von claude.ai lassen sich hier nicht ändern.`,
     mcpEditRestored: (why: string) => `Änderung nicht übernommen, der bisherige Eintrag gilt weiter. ${why}`,
     mcpEditLost: (why: string) => `Änderung nicht übernommen und der bisherige Eintrag ließ sich nicht wiederherstellen. ${why}`,

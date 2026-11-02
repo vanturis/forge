@@ -38,6 +38,11 @@ const fixture = readFileSync(path.join(import.meta.dirname, "fixtures", "stream-
 
 /** Replays recorded CLI output and lets tests drive approvals/hooks like the real CLI would. */
 class FakeRuntime implements ClaudeRuntime {
+  reloads: boolean[] = [];
+  reconnects: string[] = [];
+  async mcpLogin() {
+    return { url: "https://login.example.com", finished: new Promise<boolean>(() => {}), cancel() {} };
+  }
   readonly id = "fake";
   started: StartOptions[] = [];
   sinks: SessionSink[] = [];
@@ -121,7 +126,13 @@ class FakeRuntime implements ClaudeRuntime {
       },
       rewindFiles: async () => ({ canRewind: true, error: null, filesChanged: ["a.txt"], insertions: 1, deletions: 0 }),
       supportedCommands: async () => [],
-      reloadPlugins: async () => {},
+      reloadPlugins: async (apply) => {
+        this.reloads.push(apply);
+        return [{ name: "probe", status: "connected" }];
+      },
+      reconnectMcp: async (name) => {
+        this.reconnects.push(name);
+      },
       stopTask: async (taskId) => {
         this.stoppedTasks.push(taskId);
       },

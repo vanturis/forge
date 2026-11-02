@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { USAGE_STATS_URL } from "@forge/protocol";
-import { readPlan } from "../src/claude/diagnostics.js";
+import { readPlan, readPlanOrAuth } from "../src/claude/diagnostics.js";
 import { Db, type UsageTotals } from "../src/persistence/db.js";
 import { UsageStatsService } from "../src/stats/usage-stats.js";
 
@@ -216,6 +216,16 @@ describe("readPlan", () => {
     writeFileSync(file, JSON.stringify(account ? { oauthAccount: { emailAddress: "a@b.c", ...account } } : {}));
     return readPlan(file);
   }
+
+  it("asks Claude Code when .claude.json has no plan, as with many Pro accounts", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "forge-plan-"));
+    const file = path.join(dir, ".claude.json");
+    writeFileSync(file, JSON.stringify({ oauthAccount: { organizationType: null } }));
+    const bin = path.join(dir, "claude");
+    writeFileSync(bin, "#!/bin/sh\necho '{\"loggedIn\":true,\"subscriptionType\":\"pro\"}'\n", { mode: 0o755 });
+    if (process.platform !== "win32") expect(await readPlanOrAuth(bin, { ...process.env } as Record<string, string>, file)).toBe("pro");
+    expect(await readPlanOrAuth(null, {}, file)).toBeNull();
+  });
 
   it("reads the plan under its current name, nothing identifying", async () => {
     expect(await plan({ organizationType: "claude_max", organizationRateLimitTier: "default_claude_max_5x", userRateLimitTier: null })).toBe("max");

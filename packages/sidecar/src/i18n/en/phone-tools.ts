@@ -269,8 +269,11 @@ export const phoneTools: typeof De = {
   },
   extensions: {
     description:
-      "Extensions of Claude Code, global (scope user) or for a project. kind mcp: list MCP servers, tell the settings of one with read (without secret values), add one with add (target is a command or URL, token for a bearer token), remove one with remove, approve a server from the project's .mcp.json with enable. kind skill or agent: list skills and subagents, read one out with read, create one with add and description, delete one with remove. kind command: list own slash commands. kind hook: read hooks out (change them only in FORGE). kind plugin: list installed plugins or search the catalog with query, install with add, uninstall with remove, switch with enable and disable.",
+      "Extensions of Claude Code, global (scope user) or for a project. kind mcp: list MCP servers, tell the settings of one with read (without secret values), add one with add (target is a command or URL, token for a bearer token), remove one with remove, approve a server from the project's .mcp.json with enable. kind skill or agent: list skills and subagents, read one out with read, create one with add and description, delete one with remove. kind command: list own slash commands. kind hook: read hooks out (change them only in FORGE). kind plugin: list installed plugins or search the catalog with query, install with add, uninstall with remove, switch with enable and disable. With kind mcp, login signs in to a server (opens the browser on the computer), logout signs out. kind plugin: update updates, configure reads settings or sets them with values (key, value; secret ones only at the computer). kind marketplace: list, add (target is a GitHub repository, URL or path), remove.",
     params: {
+      values: "only for plugin configure: the new values",
+      "values.key": "Name of the setting",
+      "values.value": "New value",
       project: "Project name, if it is about a project",
       name: "Name of the server, skill, subagent or plugin",
       scope: "user: global; project: in the project, gets committed; local: only for the owner in the project",

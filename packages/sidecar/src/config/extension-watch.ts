@@ -64,8 +64,19 @@ export class ExtensionWatch {
     this.timer = null;
   }
 
-  /** Takes the current state as known; true when something changed since the last look. */
+  /** Tells about changes since the last look. */
   async check(): Promise<boolean> {
+    const changed = await this.scan();
+    if (changed) this.deps.onChange();
+    return changed;
+  }
+
+  /** Takes the current state as known, for a change the caller reports itself. */
+  async sync(): Promise<void> {
+    await this.scan();
+  }
+
+  private async scan(): Promise<boolean> {
     const paths = watchedPaths([...this.dirs, ...this.deps.liveDirs()], this.deps.configDir);
     const seen = await Promise.all(paths.map(async (p) => [p, await stat(p).then((s) => s.mtimeMs, () => 0)] as const));
     let changed = false;
@@ -75,7 +86,6 @@ export class ExtensionWatch {
       this.stamps.set(p, stamp);
     }
     if (await this.serversChanged()) changed = true;
-    if (changed) this.deps.onChange();
     return changed;
   }
 

@@ -11,6 +11,7 @@ import type { UiCompareService } from "../preview/ui-compare.js";
 import type { GitHubService } from "../github/github.js";
 import type { ClaudeSetupService } from "../claude/setup.js";
 import type { McpService } from "../config/mcp.js";
+import type { McpLoginService } from "../config/mcp-login.js";
 import type { PluginService } from "../config/plugins.js";
 import type { WorktreeService } from "../automation/worktrees.js";
 import type { WorktreeSetup } from "../automation/worktree-setup.js";

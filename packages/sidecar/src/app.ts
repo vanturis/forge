@@ -6,6 +6,7 @@ import { GitEngine } from "./git/git.js";
 import { GitHubService } from "./github/github.js";
 import { ClaudeSetupService } from "./claude/setup.js";
 import { McpService } from "./config/mcp.js";
+import { claudeJsonPath } from "./util/paths.js";
 import { ExtensionWatch } from "./config/extension-watch.js";
 import { McpLoginService } from "./config/mcp-login.js";
 import { PluginService } from "./config/plugins.js";
@@ -449,8 +450,8 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     mcpLogins,
     extensions: {
       changed: () => {
-        // Its own check would report the same change once more.
-        void extensionWatch.check().catch(() => {});
+        // Otherwise its next look reports the same change once more.
+        void extensionWatch.sync().catch(() => {});
         extensionsChanged(true);
       },
       watch: (dir) => extensionWatch.watch(dir),
