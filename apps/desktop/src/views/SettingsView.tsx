@@ -276,6 +276,21 @@ function ClaudeSection({ s, save }: { s: Settings; save: Save }) {
           checked={s.uiCompare}
           onChange={(v) => void save({ uiCompare: v })}
         />
+        <Row label={sv.subagentEffortLabel} description={sv.subagentEffortDescription}>
+          <Select
+            value={toChoice(s.subagentEffort)}
+            onChange={(v) => void save({ subagentEffort: fromChoice<EffortLevel>(v) })}
+            className="w-64"
+            options={effortOptions(sv.claudeCodeDefault)}
+            aria-label={sv.subagentEffortLabel}
+          />
+        </Row>
+        <SwitchRow
+          label={sv.idleCompactionLabel}
+          description={sv.idleCompactionDescription}
+          checked={s.idleCompaction}
+          onChange={(v) => void save({ idleCompaction: v })}
+        />
         <Row label={sv.idleCloseLabel} description={sv.idleCloseDescription}>
           <Select
             value={String(s.idleCloseMinutes)}

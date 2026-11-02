@@ -37,7 +37,7 @@ vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
   getSessionMessages: vi.fn(),
 }));
 
-const { AgentSdkRuntime, REMOTE_UNAVAILABLE, USAGE_UNAVAILABLE, REPLAY_FLAG, withStderr } = await import("../src/claude/runtime.js");
+const { AgentSdkRuntime, REMOTE_UNAVAILABLE, USAGE_UNAVAILABLE, REPLAY_FLAG, mcpShares, withStderr } = await import("../src/claude/runtime.js");
 
 const opts = { cwd: process.cwd(), env: {}, claudePath: "claude" };
 const last = () => sdk.calls.at(-1)!;
@@ -165,5 +165,49 @@ describe("session hooks", () => {
   it("asks the CLI to echo user messages for Remote Control", () => {
     start(sink({}));
     expect(last().options.extraArgs).toEqual({ [REPLAY_FLAG]: null });
+  });
+});
+
+describe("mcpShares", () => {
+  it("adds tools and instructions per server, leaves out unloaded tools, largest first", () => {
+    expect(
+      mcpShares(
+        [
+          { serverName: "a", tokens: 10 },
+          { serverName: "b", tokens: 500 },
+          { serverName: "a", tokens: 20, isLoaded: true },
+          { serverName: "c", tokens: 900, isLoaded: false },
+        ],
+        [{ serverName: "a", tokens: 5 }],
+      ),
+    ).toEqual([
+      { name: "b", tokens: 500 },
+      { name: "a", tokens: 35 },
+    ]);
+  });
+
+  it("joins a server's tools and instructions under the name the user knows", () => {
+    expect(mcpShares([{ serverName: "claude_ai_Docs", tokens: 10 }], [{ serverName: "claude.ai Docs", tokens: 5 }])).toEqual([{ name: "claude.ai Docs", tokens: 15 }]);
+  });
+});
+
+describe("settings given to a session", () => {
+  const start = (extra: Record<string, unknown>) => {
+    const sink = { onMessage() {}, onApproval: async () => ({ behavior: "deny", message: "" }), preToolUse: async () => null, onEnd() {} } as unknown as SessionSink;
+    new AgentSdkRuntime({ readDirs: ["/uploads"] }).startSession({ cwd: process.cwd(), model: null, effort: null, permissionMode: "default", resume: null, disallowedTools: [], env: {}, claudePath: "claude", ...extra } as never, sink);
+    return last().options as { settings?: unknown; additionalDirectories?: string[]; onElicitation?: unknown };
+  };
+
+  it("adds nothing by default", () => {
+    const o = start({ idleCompaction: true });
+    expect(o.settings).toBeUndefined();
+    expect(o.additionalDirectories).toEqual(["/uploads"]);
+    expect(o.onElicitation).toBeUndefined();
+  });
+
+  it("turns off idle compaction and confines the file tools on request", () => {
+    const o = start({ idleCompaction: false, confineFiles: { allow: ["/plans"] } });
+    expect(o.settings).toEqual({ idleCompaction: false, permissions: { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true } });
+    expect(o.additionalDirectories).toEqual(["/uploads", "/plans"]);
   });
 });

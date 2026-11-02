@@ -296,6 +296,7 @@ export const layout = {
       autoContinueAfterLimit: "Nach Nutzungslimit weitermachen",
       learnTemplates: "Vorlagen automatisch lernen",
       limitWarnings: "Vor dem Nutzungslimit warnen",
+      idleCompaction: "Lange Sessions im Leerlauf komprimieren",
       askPushOnClose: "Beim Schließen nach Ungepushtem fragen",
       uiCompare: "Vorher-Nachher-Bilder bei UI-Änderungen",
       stripApiKey: "ANTHROPIC_API_KEY ausblenden",
@@ -305,6 +306,7 @@ export const layout = {
     },
     options: {
       defaultModel: "Standardmodell für neue Sessions",
+      subagentEffort: "Denkaufwand der Subagenten",
       defaultEffort: "Standard-Denkaufwand",
       defaultProfile: "Profil für neue Projekte",
       projectDir: "Ordner für neue Projekte",

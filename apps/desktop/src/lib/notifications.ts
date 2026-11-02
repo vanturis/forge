@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { ResultOf, SessionEvent } from "@forge/protocol";
+import { ELICITATION_TOOL, type ResultOf, type SessionEvent } from "@forge/protocol";
 import { rpc } from "./rpc";
 import { desktopNotify, type NotifyTarget } from "./native";
 import { isInterrupted } from "./working";
@@ -82,7 +82,7 @@ export async function notifySession(qc: QueryClient, ev: SessionEvent, kind: Exc
   }
   if (kind === "approval") {
     const tool = b.type === "approval.request" ? b.toolName : "";
-    const title = tool === "AskUserQuestion" ? t.lib.notifications.question : tool === "ExitPlanMode" ? t.lib.notifications.planApproval : t.lib.notifications.approval;
+    const title = tool === "AskUserQuestion" || tool === ELICITATION_TOOL ? t.lib.notifications.question : tool === "ExitPlanMode" ? t.lib.notifications.planApproval : t.lib.notifications.approval;
     const text = tool === "AskUserQuestion" || tool === "ExitPlanMode" ? null : detail;
     notify(qc, title, [where, text], open);
   } else notify(qc, t.lib.notifications.error, [where, detail?.slice(0, 300)], open);

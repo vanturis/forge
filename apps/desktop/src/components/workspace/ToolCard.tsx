@@ -1,9 +1,13 @@
 import type { ReactNode } from "react";
 import { Collapse } from "@/components/ui/collapse";
 import {
+  Activity,
+  AlarmClock,
   Bot,
+  CalendarClock,
   Check,
   ChevronRight,
+  ClipboardCheck,
   ClipboardList,
   FileText,
   FilePen,
@@ -31,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TOOL_LABELS, toolDisplayName, toolSummary, type ChatItem, type TodoEntry } from "./chat-items";
 import { PlanCard, QuestionCard } from "./InteractiveCards";
+import { FindingsCard } from "./FindingsCard";
 import { ForgeToolCard } from "./ForgeToolCard";
 import { forgeToolName, forgeToolView, previewShot } from "./forge-tool";
 import { PreviewShot } from "./PreviewShot";
@@ -62,6 +67,12 @@ const ICONS: Record<string, ReactNode> = {
   Task: <Bot className="h-3.5 w-3.5" />,
   Agent: <Bot className="h-3.5 w-3.5" />,
   TodoWrite: <ListChecks className="h-3.5 w-3.5" />,
+  ScheduleWakeup: <AlarmClock className="h-3.5 w-3.5" />,
+  CronCreate: <CalendarClock className="h-3.5 w-3.5" />,
+  CronDelete: <CalendarClock className="h-3.5 w-3.5" />,
+  CronList: <CalendarClock className="h-3.5 w-3.5" />,
+  Monitor: <Activity className="h-3.5 w-3.5" />,
+  ReportFindings: <ClipboardCheck className="h-3.5 w-3.5" />,
   AskUserQuestion: <MessageCircleQuestion className="h-3.5 w-3.5" />,
   ExitPlanMode: <ClipboardList className="h-3.5 w-3.5" />,
 };
@@ -107,6 +118,13 @@ export function ToolCard({ item, sessionId, sessionLive, projectDir }: { item: T
       // The card header has 8px padding and a border above its first line.
       <ChatRow className="text-body" markerClassName="mt-2.25" marker={<StateDot state={state} />}>
         {use.name === "AskUserQuestion" ? <QuestionCard item={item} sessionId={sessionId} /> : <PlanCard item={item} sessionId={sessionId} />}
+      </ChatRow>
+    );
+
+  if (use.name === "ReportFindings" && !blocked && !approval)
+    return (
+      <ChatRow className="text-body" markerClassName="mt-2.25" marker={<StateDot state={state} />}>
+        <FindingsCard input={use.input} />
       </ChatRow>
     );
 

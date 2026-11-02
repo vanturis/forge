@@ -7,7 +7,7 @@ FORGE contains the following npm packages: in the sidecar (`sidecar.mjs`) and in
 
 | Package | Version | License | Part | Copyright |
 |---|---|---|---|---|
-| @anthropic-ai/claude-agent-sdk | 0.3.296 | SEE LICENSE IN README.md | Sidecar | © Anthropic PBC. All rights reserved. Use is subject to the Legal Agreements outlined here: https://code.claude.com/docs/en/legal-and-compliance. |
+| @anthropic-ai/claude-agent-sdk | 0.3.316 | SEE LICENSE IN README.md | Sidecar | © Anthropic PBC. All rights reserved. Use is subject to the Legal Agreements outlined here: https://code.claude.com/docs/en/legal-and-compliance. |
 | @babel/runtime | 7.29.10 | MIT | Interface | Copyright (c) 2014-present Sebastian McKenzie and other contributors |
 | @codemirror/autocomplete | 6.20.3 | MIT | Interface | Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others |
 | @codemirror/commands | 6.11.1 | MIT | Interface | Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others |
@@ -270,7 +270,7 @@ FORGE contains the following npm packages: in the sidecar (`sidecar.mjs`) and in
 
 ## License texts
 
-### @anthropic-ai/claude-agent-sdk 0.3.296
+### @anthropic-ai/claude-agent-sdk 0.3.316
 
 License: SEE LICENSE IN README.md
 Source: https://github.com/anthropics/claude-agent-sdk-typescript

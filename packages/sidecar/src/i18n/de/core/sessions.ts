@@ -18,6 +18,7 @@ export const sessions = {
 
   // approvals.ts
   guardError: "Die Policy-Prüfung ist fehlgeschlagen, der Aufruf wurde vorsichtshalber abgelehnt.",
+  elicitationInvalid: (names: string) => `Bitte prüfen: ${names}.`,
   approvalGone: "Diese Freigabeanfrage ist nicht mehr offen.",
   questionDeclined: "Der Nutzer möchte die Rückfrage nicht beantworten.",
   planDeclined: "Der Nutzer möchte den Plan überarbeiten.",

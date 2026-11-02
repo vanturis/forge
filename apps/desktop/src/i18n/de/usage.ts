@@ -2,6 +2,21 @@
 export const usage = {
   resetPast: (relative: string, date: string) => `Wurde ${relative} zurückgesetzt (${date})`,
   resetFuture: (relative: string, date: string) => `Wird ${relative} zurückgesetzt (${date})`,
+  advice: {
+    title: "Was den Verbrauch treibt",
+    known: {
+      cache_miss: "Pausen über eine Stunde: Der Cache läuft ab und das Gespräch wird neu berechnet. Nach langen Pausen besser in einer neuen Session weitermachen.",
+      long_context: "Lange Gespräche: Jede Nachricht schickt den ganzen Verlauf mit. Früher komprimieren oder eine neue Session starten.",
+      subagent_heavy: "Viele Subagenten: Den Denkaufwand der Subagenten in den Einstellungen senken.",
+      high_parallel: "Viele gleichzeitige Sessions oder Agenten: Weniger parallel laufen lassen.",
+      cron: "Geplante Aufgaben laufen oft: Abstände vergrößern oder alte Aufgaben löschen.",
+      max_effort: "Höchster Denkaufwand: Auf high oder niedriger stellen, wo es reicht.",
+      workflow: "Workflows starten viele Agenten: Nur für große Aufgaben nutzen.",
+      always_on_context: "Dauerhafter Kontext ist groß: CLAUDE.md, Skills und MCP-Server prüfen.",
+      large_tool_results: "Große Werkzeug-Ergebnisse: Ausgaben begrenzen, zum Beispiel lange Logs.",
+    },
+  },
+  used: (pct: number) => `${pct} % genutzt`,
   fetched: (relative: string) => `Stand ${relative}`,
   skeletonLabel: "Lädt Nutzung",
   forecastWarning: {

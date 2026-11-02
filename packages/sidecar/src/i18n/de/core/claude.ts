@@ -99,6 +99,7 @@ export const claude = {
   usageUnavailableLine: (error: string | null) => `Nutzung nicht verfügbar${error ? `: ${error}` : ""}.`,
   windowLine: (label: string, percent: number, reset: string | null, outlook: string | null) =>
     `${label}: ${percent} % genutzt${reset ? `, Reset ${reset}` : ""}${outlook ? `. Prognose: ${outlook}` : ""}`,
+  adviceLine: (pct: number, title: string, detail: string | null) => `Tipp (${pct} % des Verbrauchs): ${title}${detail ? `, ${detail}` : ""}`,
   noForecast: "Prognose: noch zu wenig Messwerte oder kein Anstieg.",
   subscription: (type: string) => `Abo: ${type}`,
   today: (time: string) => `heute ${time}`,

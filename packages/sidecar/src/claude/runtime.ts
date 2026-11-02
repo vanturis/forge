@@ -11,6 +11,8 @@ import {
   query,
   type AgentDefinition,
   type CanUseTool,
+  type ElicitationRequest,
+  type ElicitationResult,
   type HookCallback,
   type PermissionResult,
   type PermissionUpdate,
@@ -59,6 +61,10 @@ export interface StartOptions {
   context?: string | null;
   /** model the CLI switches to when the main one is overloaded (must differ from it) */
   fallbackModel?: string | null;
+  /** file tools refuse paths outside the working directories; `allow` are further working directories */
+  confineFiles?: { allow: string[] };
+  /** false turns off Claude Code's compaction of long idle conversations */
+  idleCompaction?: boolean;
   /** subagents the session can start besides Claude Code's own */
   agents?: Record<string, AgentDefinition>;
 }
@@ -116,6 +122,8 @@ export type ApprovalDecision =
 export interface SessionSink {
   onMessage(msg: unknown): void;
   onApproval(req: ApprovalRequest, signal: AbortSignal): Promise<ApprovalDecision>;
+  /** an MCP server asks the user for input; without this the CLI declines such requests by itself */
+  onElicitation?(req: ElicitationRequest, signal: AbortSignal): Promise<ElicitationResult>;
   /** hard policy check; runs as PreToolUse hook, so it applies in every permission mode */
   preToolUse(toolName: string, input: Record<string, unknown>, toolUseId: string | null): Promise<{ rule: string; message: string } | null>;
   /**
@@ -154,6 +162,8 @@ export interface RuntimeSession {
   setPermissionMode(mode: PermissionMode): Promise<void>;
   /** null returns to the model's default effort */
   setEffort(effort: EffortLevel | null): Promise<void>;
+  /** loads installed or changed plugins into the running session */
+  reloadPlugins(): Promise<void>;
   /** context window usage estimated from the last response (cheap, no token-count calls) */
   contextUsage(): Promise<ContextUsage>;
   /** connects this session to claude.ai / the Claude app (Remote Control); returns the session link */
@@ -228,6 +238,22 @@ const ONE_SHOT_TIMEOUT_MS = 45_000;
 function userMessage(m: OutgoingMessage): SDKUserMessage {
   const content = m.blocks.length ? [...m.blocks, { type: "text", text: m.text }] : m.text;
   return { type: "user", message: { role: "user", content }, parent_tool_use_id: null, session_id: "", uuid: m.uuid } as SDKUserMessage;
+}
+
+/**
+ * Context tokens per MCP server, tools and instructions together. Deferred tools take none until they
+ * are loaded. Tools carry the normalized server name, instructions the one the user knows.
+ */
+export function mcpShares(tools: Array<{ serverName: string; tokens: number; isLoaded?: boolean }>, instructions: Array<{ serverName: string; tokens: number }>): Array<{ name: string; tokens: number }> {
+  const key = (name: string) => name.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const by = new Map<string, { name: string; tokens: number }>();
+  const add = (name: string, tokens: number, shown: boolean) => {
+    const cur = by.get(key(name)) ?? { name, tokens: 0 };
+    by.set(key(name), { name: shown ? name : cur.name, tokens: cur.tokens + tokens });
+  };
+  for (const t of tools) if (t.isLoaded !== false) add(t.serverName, t.tokens, false);
+  for (const i of instructions) add(i.serverName, i.tokens, true);
+  return [...by.values()].filter((m) => m.tokens > 0).sort((a, b) => b.tokens - a.tokens);
 }
 
 /** What a session keeps of the CLI's stderr for the error message when the process fails. */
@@ -419,7 +445,7 @@ export class AgentSdkRuntime implements ClaudeRuntime {
         ...(opts.resume && opts.resumeAt ? { resumeSessionAt: opts.resumeAt } : {}),
         disallowedTools: opts.disallowedTools,
         // Writes there still go through FORGE's guard for paths outside the project.
-        ...(this.readDirs.length ? { additionalDirectories: this.readDirs } : {}),
+        ...(this.readDirs.length || opts.confineFiles?.allow.length ? { additionalDirectories: [...this.readDirs, ...(opts.confineFiles?.allow ?? [])] } : {}),
         includePartialMessages: true,
         enableFileCheckpointing: true,
         // No agentProgressSummaries: in an SDK session they fork the whole subagent conversation every
@@ -430,6 +456,25 @@ export class AgentSdkRuntime implements ClaudeRuntime {
         settingSources: ["user", "project", "local"],
         pathToClaudeCodeExecutable: opts.claudePath,
         canUseTool,
+        ...(opts.idleCompaction === false || opts.confineFiles
+          ? {
+              settings: {
+                ...(opts.idleCompaction === false ? { idleCompaction: false } : {}),
+                ...(opts.confineFiles ? { permissions: { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true } } : {}),
+              },
+            }
+          : {}),
+        ...(sink.onElicitation
+          ? {
+              onElicitation: async (req: ElicitationRequest, o: { signal: AbortSignal }): Promise<ElicitationResult> => {
+                try {
+                  return await sink.onElicitation!(req, o.signal);
+                } catch {
+                  return { action: "cancel" };
+                }
+              },
+            }
+          : {}),
         ...(opts.agents ? { agents: opts.agents } : {}),
         ...(opts.context ? { systemPrompt: { type: "preset", preset: "claude_code", append: opts.context } } : {}),
         hooks: { PreToolUse: [{ hooks: [guard] }], ...(sink.toolContext ? { PostToolUse: [{ hooks: [after] }] } : {}) },
@@ -507,6 +552,11 @@ export class AgentSdkRuntime implements ClaudeRuntime {
       setModel: (model) => q.setModel(model),
       setPermissionMode: (mode) => q.setPermissionMode(mode),
       setEffort: (effort) => q.applyFlagSettings({ effortLevel: effort }),
+      reloadPlugins: async () => {
+        // Held when applying would invalidate the prompt cache: then it takes effect at the next start
+        // and a plugin change does not make every running conversation expensive.
+        await q.reloadPlugins({ holdOnCacheImpact: true });
+      },
       contextUsage: async () => {
         const u = await q.getContextUsage({ detail: "summary" });
         return {
@@ -514,6 +564,7 @@ export class AgentSdkRuntime implements ClaudeRuntime {
           maxTokens: u.rawMaxTokens || u.maxTokens,
           percentage: u.percentage,
           categories: u.categories.filter((c) => c.tokens > 0).map((c) => ({ name: c.name, tokens: c.tokens, kind: c.kind })),
+          mcpServers: mcpShares(u.mcpTools ?? [], u.mcpInstructions ?? []),
           updatedAt: new Date().toISOString(),
         };
       },

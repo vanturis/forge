@@ -162,6 +162,21 @@ function ContextBody({ session, onClose }: InfoProps) {
           ))}
         </tbody>
       </table>
+      {!!usage.mcpServers?.length && (
+        <div className="space-y-1.5">
+          <div className="text-small font-medium">{t.chat.info.context.mcpTitle}</div>
+          <table className="w-full text-body">
+            <tbody className="divide-y divide-border">
+              {usage.mcpServers.map((m) => (
+                <tr key={m.name}>
+                  <td className="py-1.5">{m.name}</td>
+                  <td className="py-1.5 text-right tabular-nums text-muted">{formatTokens(m.tokens)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       {session.live && (
         <div className="flex justify-end">
           <Button

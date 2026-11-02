@@ -115,7 +115,7 @@ export function mcpAddArgs(i: McpAddInput): string[] {
 
 async function readJson(p: string): Promise<Record<string, unknown>> {
   try {
-    const j = JSON.parse((await readFile(p, "utf8")).replace(/^﻿/, "")) as unknown;
+    const j = JSON.parse((await readFile(p, "utf8")).replace(/^\uFEFF/, "")) as unknown;
     return j && typeof j === "object" && !Array.isArray(j) ? (j as Record<string, unknown>) : {};
   } catch {
     return {};

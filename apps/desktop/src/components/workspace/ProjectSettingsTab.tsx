@@ -39,6 +39,7 @@ export const TAG_INFO: ReadonlyArray<{ tag: string; label: string; info: string;
   { tag: "auto-merge", ...m.tags["auto-merge"], rootOnly: true, git: true },
   { tag: "review-required", ...m.tags["review-required"], git: true },
   { tag: "no-network", ...m.tags["no-network"] },
+  { tag: "project-files-only", ...m.tags["project-files-only"] },
   { tag: "sandbox-only", ...m.tags["sandbox-only"] },
 ];
 const KNOWN_TAGS = new Set(TAG_INFO.map((t) => t.tag));

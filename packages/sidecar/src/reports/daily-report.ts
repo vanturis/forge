@@ -12,6 +12,7 @@ import {
   type DailyReportOpen,
   type DailyReportSession,
   type Project,
+  ELICITATION_TOOL,
 } from "@forge/protocol";
 import type { GitEngine } from "../git/git.js";
 import type { AgentLogEntry, Db, SessionActivity } from "../persistence/db.js";
@@ -350,10 +351,10 @@ export class DailyReportService {
     for (const s of db.listAllSessions(undefined, "waiting_approval")) {
       if (!inScope(s.projectId)) continue;
       for (const { ts, body } of db.openApprovalRequests(s.id)) {
-        const kind = body.toolName === "AskUserQuestion" ? "question" : body.toolName === "ExitPlanMode" ? "plan" : "approval";
+        const kind = body.toolName === "AskUserQuestion" || body.toolName === ELICITATION_TOOL ? "question" : body.toolName === "ExitPlanMode" ? "plan" : "approval";
         const text =
           kind === "question"
-            ? questionTexts(body.input).join(" ") || t.open.question
+            ? questionTexts(body.input).join(" ") || (typeof body.input.message === "string" && firstLine(body.input.message)) || t.open.question
             : kind === "plan"
               ? firstLine(typeof body.input.plan === "string" ? body.input.plan : "") || t.open.plan
               : `${body.toolName}${requestSubject(body) ? `: ${firstLine(requestSubject(body))}` : ""}`;

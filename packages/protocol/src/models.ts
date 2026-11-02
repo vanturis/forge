@@ -172,6 +172,8 @@ export const ContextUsage = z.object({
   maxTokens: z.number(),
   /** 0-100, may exceed 100 when over the limit */
   percentage: z.number(),
+  /** tokens each MCP server takes in the context: its tools and its instructions; largest first */
+  mcpServers: z.array(z.object({ name: z.string(), tokens: z.number() })).optional(),
   categories: z.array(z.object({ name: z.string(), tokens: z.number(), kind: z.enum(["used", "free", "buffer", "deferred"]) })),
   updatedAt: z.string(),
 });
@@ -571,6 +573,10 @@ export const Settings = z.object({
   limitWarnings: z.boolean(),
   /** minutes without activity after which FORGE ends the idle CLI process of a session; 0 never */
   idleCloseMinutes: z.number().int().min(0).max(1440),
+  /** effort subagents run at when nothing else names one; null leaves it to Claude Code */
+  subagentEffort: EffortLevel.nullable(),
+  /** Claude Code compacts a long conversation left idle, before its prompt cache expires (next process start) */
+  idleCompaction: z.boolean(),
   /** context size (tokens) from which the composer suggests going on in a new session; 0 never */
   longSessionTokens: z.number().int().min(0).max(2_000_000),
   /** look for new FORGE releases on GitHub (start and every 30 minutes) */
@@ -775,6 +781,8 @@ export const PlanUsage = z.object({
   windows: z.array(UsageWindow),
   fetchedAt: z.string(),
   error: z.string().nullable(),
+  /** what drives the usage, from Claude Code's scan of local transcripts; largest share first, the CLI's wording */
+  advice: z.array(z.object({ key: z.string(), pct: z.number(), title: z.string(), detail: z.string().nullable() })).optional(),
 });
 export type PlanUsage = z.infer<typeof PlanUsage>;
 

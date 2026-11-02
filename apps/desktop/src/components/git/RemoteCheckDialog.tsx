@@ -141,8 +141,9 @@ function Ask({ projectId, incoming }: { projectId: string; incoming: GitIncoming
                 aria-checked={active}
                 disabled={busy}
                 onClick={() => setChoice(o.value)}
+                // No color transition: the old choice fading out next to the new one reads as two marked options.
                 className={cn(
-                  "flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors duration-120 disabled:opacity-50",
+                  "flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left disabled:opacity-50",
                   active ? "border-accent bg-accent-soft" : "border-border enabled:hover:border-border-strong enabled:hover:bg-surface-2",
                 )}
               >
@@ -156,7 +157,8 @@ function Ask({ projectId, incoming }: { projectId: string; incoming: GitIncoming
           })}
         </div>
       )}
-      {hasLocal && choice !== "reset" && <p className="text-xs text-subtle">{m.conflictNote}</p>}
+      {/* Keeps its space when hidden: otherwise the centered dialog moves under the pointer on every choice. */}
+      {hasLocal && <p className={cn("text-xs text-subtle", choice === "reset" && "invisible")}>{m.conflictNote}</p>}
     </Dialog>
   );
 }

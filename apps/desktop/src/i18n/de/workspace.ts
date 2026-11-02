@@ -238,6 +238,7 @@ export const workspace = {
       },
       "review-required": { label: "Commits nur nach Prüfung", info: "Kein Auto-Commit: Commits nur nach Prüfung im Git-Bereich." },
       "no-network": { label: "Ohne Internet", info: "Claude bekommt keine Web-Tools (WebFetch, WebSearch)." },
+      "project-files-only": { label: "Dateien nur im Projekt", info: "Claudes Datei-Werkzeuge lesen und schreiben nur im Projektordner. Terminal-Befehle sind davon nicht erfasst. Gilt ab dem nächsten Start einer Session." },
       "sandbox-only": { label: "Autonomous sperren", info: "Autonomous ist in diesem Projekt gesperrt." },
     },
     sections: {

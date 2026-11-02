@@ -1,4 +1,4 @@
-import type { SessionEventBody } from "@forge/protocol";
+import { ELICITATION_TOOL, elicitationFields, type SessionEventBody } from "@forge/protocol";
 import type { Db } from "../persistence/db.js";
 import { tr } from "../i18n/index.js";
 import { asData } from "./tools.js";
@@ -95,6 +95,13 @@ export function pendingText(db: Db, sessionId: string, short = false): string {
   const p = tr().phone.pending;
   const req = openRequest(db, sessionId);
   if (!req) return p.nothing;
+  if (req.toolName === ELICITATION_TOOL) {
+    const server = typeof req.input.serverName === "string" ? req.input.serverName : "MCP";
+    if (short) return p.elicitationShort(asData(server));
+    if (req.input.mode === "url") return p.elicitationUrl(asData(server), excerptData(typeof req.input.message === "string" ? req.input.message : "", DETAILS_MAX));
+    const fields = elicitationFields(req.input).map((f) => (f.options.length ? `${f.label} (${f.options.map((o) => o.label).join(", ")})` : f.label));
+    return p.elicitation(asData(server), excerptData(typeof req.input.message === "string" ? req.input.message : "", DETAILS_MAX), asData(fields.join("; ")));
+  }
   if (req.toolName === "AskUserQuestion") {
     if (short) return p.questionShort;
     const qs = Array.isArray(req.input.questions) ? (req.input.questions as Array<{ question?: string; options?: Array<{ label?: string }> }>) : [];

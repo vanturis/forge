@@ -27,6 +27,29 @@ function WindowDetail({ w }: { w: UsageWindow }) {
   );
 }
 
+/** What drives the usage, from Claude Code's scan of local sessions. Known causes in FORGE's words, named sources (an agent, a plugin) in the CLI's. */
+function UsageAdvice({ usage }: { usage: PlanUsage }) {
+  const advice = usage.advice?.slice(0, 4) ?? [];
+  if (!advice.length) return null;
+  const known = t.usage.advice.known as Record<string, string | undefined>;
+  return (
+    <div className="space-y-1.5">
+      <div className="text-small font-medium">{t.usage.advice.title}</div>
+      <ul className="space-y-1">
+        {advice.map((a) => (
+          <li key={`${a.key}:${a.title}`} className="flex items-baseline gap-2 text-small text-muted">
+            <span className="w-9 shrink-0 text-right font-mono text-caption-lg text-subtle">{Math.round(a.pct)} %</span>
+            <span className="min-w-0">
+              {known[a.key] ?? a.title}
+              {!known[a.key] && a.detail ? <span className="text-subtle"> ({a.detail})</span> : null}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /**
  * Every window of the plan usage with its reset and the limit forecast, followed by when it was read.
  * Shared by Settings → Claude Code and /usage.
@@ -37,6 +60,7 @@ export function UsageWindows({ usage }: { usage: PlanUsage }) {
       {usage.windows.map((w) => (
         <Meter key={w.key} label={w.label} value={w.utilization} detail={<WindowDetail w={w} />} toneOf={usageTone} />
       ))}
+      <UsageAdvice usage={usage} />
       <div className="text-caption text-subtle">{t.usage.fetched(relativeTime(usage.fetchedAt))}</div>
     </div>
   );

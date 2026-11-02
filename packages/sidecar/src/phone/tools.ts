@@ -264,6 +264,10 @@ export interface ForgeSettingsPatch {
   autoContinueAfterLimit?: boolean;
   /** warnings before the usage limit is reached */
   limitWarnings?: boolean;
+  /** effort of subagents without their own; "default" leaves it to Claude Code */
+  subagentEffort?: EffortLevel | "default";
+  /** Claude Code compacts long idle conversations */
+  idleCompaction?: boolean;
   /** minutes until an idle session's process ends; 0 never */
   idleCloseMinutes?: number;
   /** context tokens from which FORGE suggests a new session; 0 never */
@@ -324,7 +328,7 @@ export const SYSTEM_ACTIONS = [
 export type SystemAction = (typeof SYSTEM_ACTIONS)[number];
 
 /** Project tags with behaviour, as in Projekt-Einstellungen > Automatik. */
-export const AUTOMATION_TAG_IDS = ["plan-first", "auto-test", "auto-commit", "auto-push", "auto-merge", "review-required", "no-network", "sandbox-only"] as const;
+export const AUTOMATION_TAG_IDS = ["plan-first", "auto-test", "auto-commit", "auto-push", "auto-merge", "review-required", "no-network", "project-files-only", "sandbox-only"] as const;
 export type AutomationTag = (typeof AUTOMATION_TAG_IDS)[number];
 
 /** An automation tag named as in the project settings. */
@@ -966,6 +970,8 @@ const TOOL_DEFS: readonly ToolDef[] = [
       enter_to_send: { type: "boolean", optional: true },
       auto_continue: { type: "boolean", optional: true },
       limit_warnings: { type: "boolean", optional: true },
+      subagent_effort: { type: "string", optional: true, enum: [...EffortLevel.options, "default"] },
+      idle_compaction: { type: "boolean", optional: true },
       idle_close_minutes: { type: "number", optional: true, min: 0, max: 1440 },
       long_session_tokens: { type: "number", optional: true, min: 0, max: 2000000 },
       update_checks: { type: "boolean", optional: true },
@@ -992,6 +998,8 @@ const TOOL_DEFS: readonly ToolDef[] = [
         enterToSend: optBool(a.enter_to_send),
         autoContinueAfterLimit: optBool(a.auto_continue),
         limitWarnings: optBool(a.limit_warnings),
+        subagentEffort: [...EffortLevel.options, "default" as const].find((x) => x === a.subagent_effort),
+        idleCompaction: optBool(a.idle_compaction),
         idleCloseMinutes: optNum(a.idle_close_minutes),
         longSessionTokens: optNum(a.long_session_tokens),
         updateChecks: optBool(a.update_checks),

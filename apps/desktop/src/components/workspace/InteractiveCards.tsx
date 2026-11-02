@@ -1,7 +1,9 @@
 import { useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { Check, ChevronRight, ClipboardList, MessageCircleQuestion, X } from "lucide-react";
+import { Check, ChevronRight, ClipboardList, ExternalLink, MessageCircleQuestion, PlugZap, X } from "lucide-react";
+import { elicitationFields, elicitationUrl, type ElicitationField } from "@forge/protocol";
 import { call } from "@/lib/queries";
+import { openExternal } from "@/lib/native";
 import { errorMessage } from "@/lib/rpc";
 import { cn } from "@/lib/utils";
 import { toast } from "@/stores/toast";
@@ -9,6 +11,8 @@ import { cardKey, useCardState } from "@/stores/card-state";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Badge } from "@/components/ui/misc";
+import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import type { ChatItem } from "./chat-items";
 import { Markdown } from "./Markdown";
 import { t } from "@/i18n";
@@ -66,9 +70,9 @@ function useRespond(sessionId: string, requestId: string | undefined, cardId: st
   return { mutate: mutation.mutate, isPending: mutation.isPending, sent, locked: mutation.isPending || sent };
 }
 
-/** A card that waits for the user stands out with an accent edge; answered ones step back. */
+/** A card that waits for the user stands out with an accent border; answered ones step back. */
 function cardClass(pending: boolean) {
-  return cn("rounded-md border border-l-2 bg-surface", pending ? "border-accent/40 border-l-accent" : "border-border border-l-border-strong");
+  return cn("rounded-md border bg-surface", pending ? "border-accent/50" : "border-border");
 }
 
 function CardHeader({ icon, title, children }: { icon: React.ReactNode; title: string; children?: React.ReactNode }) {
@@ -93,7 +97,8 @@ export function QuestionCard({ item, sessionId }: { item: ToolItem; sessionId: s
   const respond = useRespond(sessionId, req?.requestId, cardId);
   const pending = !!req && !resolved;
   const answers = buildAnswers(questions, picked, other);
-  const complete = questions.length > 0 && questions.every((q) => answers[q.question]);
+  // One answer is enough: the others go back to Claude as skipped.
+  const complete = questions.some((q) => answers[q.question]);
 
   const toggle = (qi: number, label: string, multi: boolean) => {
     setPicked((cur) => cur.map((p, i) => (i !== qi ? p : multi ? (p.includes(label) ? p.filter((x) => x !== label) : [...p, label]) : [label])));
@@ -187,6 +192,101 @@ export function QuestionCard({ item, sessionId }: { item: ToolItem; sessionId: s
           <Button size="sm" variant="primary" onClick={() => respond.mutate({ decision: "allow", answers })} disabled={!complete || respond.sent} loading={respond.isPending}>
             {t.chat.cards.answer}
           </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ElicitationInput({ field, value, onChange, disabled }: { field: ElicitationField; value: string; onChange: (v: string) => void; disabled: boolean }) {
+  const m = t.chat.cards.elicitation;
+  switch (field.kind) {
+    case "boolean":
+      return <Switch checked={value === "true"} onChange={(v) => onChange(String(v))} label={field.label} disabled={disabled} />;
+    case "select":
+      return <Select value={value || undefined} onChange={onChange} options={field.options} placeholder={m.choose} disabled={disabled} aria-label={field.label} className="w-full" />;
+    case "multiselect": {
+      const chosen = value ? value.split("\n") : [];
+      return (
+        <div className="flex flex-wrap gap-1.5" role="group" aria-label={field.label}>
+          {field.options.map((o) => {
+            const on = chosen.includes(o.value);
+            return (
+              <Button key={o.value} size="sm" variant={on ? "primary" : "outline"} aria-pressed={on} disabled={disabled} onClick={() => onChange((on ? chosen.filter((c) => c !== o.value) : [...chosen, o.value]).join("\n"))}>
+                {o.label}
+              </Button>
+            );
+          })}
+        </div>
+      );
+    }
+    default:
+      return <Input value={value} onChange={(e) => onChange(e.target.value)} type={field.kind === "text" ? "text" : "number"} step={field.kind === "integer" ? 1 : "any"} disabled={disabled} className="h-8" aria-label={field.label} />;
+  }
+}
+
+/** An MCP server asks for input: a form from its schema, or a page to open for a sign-in. */
+export function ElicitationCard({ req, resolved, sessionId }: { req: Extract<ChatItem, { kind: "approval" }>["req"]; resolved: Extract<ChatItem, { kind: "approval" }>["resolved"]; sessionId: string }) {
+  const m = t.chat.cards.elicitation;
+  const fields = elicitationFields(req.input);
+  const server = typeof req.input.serverName === "string" ? req.input.serverName : "MCP";
+  const message = typeof req.input.message === "string" ? req.input.message : "";
+  const url = req.input.mode === "url" ? elicitationUrl(req.input.url) : null;
+  const [values, setValues] = useCardState<Record<string, string>>(cardKey(sessionId, req.requestId, "fields"), () => Object.fromEntries(fields.map((f) => [f.name, f.initial])));
+  const respond = useRespond(sessionId, req.requestId, req.requestId);
+  const pending = !resolved;
+  const complete = fields.every((f) => !f.required || values[f.name]?.trim());
+
+  return (
+    <div className={cardClass(pending)} role="group" aria-label={m.label}>
+      <CardHeader icon={<PlugZap className="h-4 w-4" />} title={pending ? m.pending(server) : m.done(server)}>
+        {resolved && <ResolvedBadge decision={resolved.decision} source={resolved.source} allowText={m.sent} denyText={resolved.source === "abort" ? m.cancelled : m.declined} />}
+      </CardHeader>
+      {(message || pending) && (
+        <div className="space-y-3 border-t border-border px-3 py-2.5">
+          {message && <Markdown text={message} />}
+          {pending && url && <div className="break-all text-xs text-muted">{m.urlHint(new URL(url).host)}</div>}
+          {pending &&
+            !url &&
+            fields.map((f) => (
+              <div key={f.name} className="space-y-1">
+                <div className="flex items-baseline gap-2 text-body font-medium">
+                  {f.label}
+                  {f.required && <span className="text-xs font-normal text-subtle">{m.required}</span>}
+                </div>
+                {f.description && <div className="text-xs text-muted">{f.description}</div>}
+                <ElicitationInput field={f} value={values[f.name] ?? ""} onChange={(v) => setValues((cur) => ({ ...cur, [f.name]: v }))} disabled={respond.locked} />
+              </div>
+            ))}
+          {pending && !url && !fields.length && <div className="text-xs text-muted">{m.noFields}</div>}
+        </div>
+      )}
+      {pending && (
+        <div className="flex items-center gap-2 border-t border-border px-3 py-2">
+          <span className="text-xs text-subtle">{t.chat.cards.waitingForYou}</span>
+          <div className="flex-1" />
+          <Button size="sm" variant="ghost" onClick={() => respond.mutate({ decision: "deny" })} disabled={respond.locked}>
+            {m.decline}
+          </Button>
+          {url ? (
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={respond.sent}
+              loading={respond.isPending}
+              onClick={() => {
+                void openExternal(url);
+                respond.mutate({ decision: "allow" });
+              }}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {m.openUrl}
+            </Button>
+          ) : (
+            <Button size="sm" variant="primary" onClick={() => respond.mutate({ decision: "allow", answers: values })} disabled={!complete || respond.sent} loading={respond.isPending}>
+              {m.send}
+            </Button>
+          )}
         </div>
       )}
     </div>

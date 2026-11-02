@@ -5,6 +5,7 @@ import { useRuntimeInfo, useSettings, useTemplates } from "@/lib/queries";
 import { EFFORT_LEVELS, findModel, modelLabel } from "@/lib/models";
 import { isWorking } from "@/lib/working";
 import { cn } from "@/lib/utils";
+import { composerHistory, rememberSent } from "@/stores/composer-history";
 import { draftKey, useDrafts } from "@/stores/drafts";
 import { composerFocused, registerComposer } from "@/lib/screenshot";
 import { Button } from "@/components/ui/button";
@@ -356,11 +357,15 @@ export const Composer = memo(function Composer({
   const shownTemplates = dictating || filling ? NO_TEMPLATES : templateMatches;
   /** counts sends; the arrow animation restarts with each */
   const [sentTick, setSentTick] = useState(0);
+  /** position in the sent messages while stepping through them with the arrow keys; `typed` comes back at the end */
+  const recall = useRef<{ index: number; typed: string } | null>(null);
   const submit = () => {
     if (dictating) return;
     if (typedInfo) return openInfo(typedInfo);
     if (waiting && !clearTyped) return;
     setSentTick((n) => n + 1);
+    rememberSent(project.id, text);
+    recall.current = null;
     void attachments.settled().then((ready) => send(text, ready));
   };
   const stop = () => {
@@ -566,6 +571,27 @@ export const Composer = memo(function Composer({
               e.preventDefault();
               stop();
               return;
+            }
+            // Like the terminal: up brings back what was sent. Only from an empty field or while stepping,
+            // so moving the cursor in a text with several lines stays as it is.
+            if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey && !dictating) {
+              const stepping = recall.current;
+              if (stepping && stepping.index >= 0 && text !== composerHistory(project.id)[stepping.index]) recall.current = null;
+              else if (stepping || (e.key === "ArrowUp" && !text)) {
+                const list = composerHistory(project.id);
+                const index = (stepping?.index ?? -1) + (e.key === "ArrowUp" ? 1 : -1);
+                if (index < list.length) {
+                  e.preventDefault();
+                  if (index < 0) {
+                    setText(stepping?.typed ?? "");
+                    recall.current = null;
+                  } else {
+                    recall.current = { index, typed: stepping?.typed ?? text };
+                    setText(list[index]!);
+                  }
+                  return;
+                }
+              }
             }
             if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
             const isSubmit = enterToSend ? !e.shiftKey && !e.ctrlKey : e.ctrlKey || e.metaKey;

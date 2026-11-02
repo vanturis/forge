@@ -88,6 +88,10 @@ export async function invokeHandler<M extends MethodName>(handlers: Handlers, me
 }
 
 export function createHandlers(s: Services): Handlers {
+  const pluginChanged = <T,>(result: T): T => {
+    s.sessions.reloadPlugins();
+    return result;
+  };
   let diagCache: ResultOf<"system.diagnostics"> | null = null;
 
   const projectDir = (projectId: string) => s.projects.requireExisting(projectId).path;
@@ -191,9 +195,9 @@ export function createHandlers(s: Services): Handlers {
     "mcp.remove": ({ projectId, name, scope }) => s.mcp.remove(dirOf(projectId) ?? os.homedir(), name, scope),
     "mcp.approve": ({ projectId, name }) => s.mcp.approve(dirOf(projectId) ?? os.homedir(), name),
     "plugins.catalog": ({ refresh }) => s.plugins.catalog(refresh),
-    "plugins.install": ({ id }) => s.plugins.install(id),
-    "plugins.uninstall": ({ id }) => s.plugins.uninstall(id),
-    "plugins.setEnabled": ({ id, enabled }) => s.plugins.setEnabled(id, enabled),
+    "plugins.install": async ({ id }) => pluginChanged(await s.plugins.install(id)),
+    "plugins.uninstall": async ({ id }) => pluginChanged(await s.plugins.uninstall(id)),
+    "plugins.setEnabled": async ({ id, enabled }) => pluginChanged(await s.plugins.setEnabled(id, enabled)),
 
     "worktrees.create": ({ projectId, branch }) => s.worktrees.create(s.projects.requireAgents(projectId), branch),
     "worktrees.remove": async ({ projectId, force, deleteBranch }) => {

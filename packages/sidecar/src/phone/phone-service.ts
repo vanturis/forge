@@ -34,6 +34,8 @@ import {
   type Settings,
   type UsageWindow,
   SUPPORT_LINKS,
+  ELICITATION_TOOL,
+  elicitationFields,
 } from "@forge/protocol";
 import type { Db } from "../persistence/db.js";
 import { limitWarning } from "../claude/usage.js";
@@ -481,6 +483,10 @@ function settingText(s: Settings, key: keyof ForgeSettingsPatch | "alwaysOnTop")
       return m.settings.autoContinue(s.autoContinueAfterLimit);
     case "limitWarnings":
       return m.settings.limitWarnings(s.limitWarnings);
+    case "subagentEffort":
+      return m.settings.subagentEffort(s.subagentEffort);
+    case "idleCompaction":
+      return m.settings.idleCompaction(s.idleCompaction);
     case "idleCloseMinutes":
       return s.idleCloseMinutes > 0 ? m.settings.idleClose(s.idleCloseMinutes) : m.settings.idleOpen;
     case "longSessionTokens":
@@ -1846,6 +1852,17 @@ export class PhoneService {
           const req = openRequest(db, s.id);
           if (!req) return m.noRequest(r);
           let mapped: Record<string, string> | undefined;
+          if (req.toolName === ELICITATION_TOOL && decision === "allow") {
+            // The browser for a sign-in opens on the computer, nobody could finish it from the phone.
+            if (req.input.mode === "url") return m.elicitationUrlOnComputer;
+            const fields = elicitationFields(req.input);
+            mapped = {};
+            Object.entries(answers ?? {}).forEach(([q, v], i) => {
+              const key = q.toLowerCase();
+              const f = fields.find((x) => x.name === q) ?? fields.find((x) => x.label.toLowerCase() === key || x.label.toLowerCase().includes(key)) ?? fields[i];
+              if (f) mapped![f.name] = v;
+            });
+          }
           if (req.toolName === "AskUserQuestion" && decision === "allow") {
             const questions = questionTexts(req.input);
             const given = Object.entries(answers ?? {});
@@ -3128,7 +3145,7 @@ export class PhoneService {
           const cur = await call("settings.get", {});
           const update: Partial<Settings> = {};
           const changed: Array<keyof ForgeSettingsPatch> = [];
-          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
+          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "idleCompaction", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
           for (const k of flags) {
             const v = patch[k];
             if (v === undefined) continue;
@@ -3143,6 +3160,10 @@ export class PhoneService {
           if (patch.defaultEffort) {
             update.defaultEffort = patch.defaultEffort === "default" ? null : patch.defaultEffort;
             changed.push("defaultEffort");
+          }
+          if (patch.subagentEffort) {
+            update.subagentEffort = patch.subagentEffort === "default" ? null : patch.subagentEffort;
+            changed.push("subagentEffort");
           }
           if (patch.idleCloseMinutes !== undefined) {
             update.idleCloseMinutes = Math.min(1440, Math.max(0, Math.round(patch.idleCloseMinutes)));
@@ -3171,7 +3192,7 @@ export class PhoneService {
             update.disabledPolicyRules = patch.policyRuleOn ? off : [...off, rule];
             changed.push("policyRule");
           }
-          if (!changed.length) return `${(["defaultModel", "defaultEffort", "defaultProfile", "defaultProjectDir", ...flags, "updateChannel", "idleCloseMinutes", "longSessionTokens", "alwaysOnTop", "policyRule"] as const).map((k) => settingText(cur, k)).join(", ")}.`;
+          if (!changed.length) return `${(["defaultModel", "defaultEffort", "defaultProfile", "defaultProjectDir", ...flags, "updateChannel", "subagentEffort", "idleCloseMinutes", "longSessionTokens", "alwaysOnTop", "policyRule"] as const).map((k) => settingText(cur, k)).join(", ")}.`;
           const next = await call("settings.update", update);
           return tr().phone.settings.saved(changed.map((k) => settingText(next, k)).join(", "));
         }),

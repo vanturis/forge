@@ -19,7 +19,7 @@ function known(): Array<[key: string, label: string]> {
 
 /** Converts the SDK's /usage payload into FORGE's stable shape. Tolerates missing fields. */
 export function toPlanUsage(raw: unknown): PlanUsage {
-  const r = (raw ?? {}) as { subscription_type?: unknown; rate_limits_available?: unknown; rate_limits?: unknown };
+  const r = (raw ?? {}) as { subscription_type?: unknown; rate_limits_available?: unknown; rate_limits?: unknown; behaviors?: unknown };
   const limits = (r.rate_limits ?? null) as Record<string, unknown> | null;
   const windows: UsageWindow[] = [];
   if (limits) {
@@ -39,7 +39,17 @@ export function toPlanUsage(raw: unknown): PlanUsage {
     windows,
     fetchedAt: new Date().toISOString(),
     error: null,
+    advice: usageAdvice(r.behaviors),
   };
+}
+
+/** Recommendations of the week's scan, or of the day's when the week has none. Older CLIs send none. */
+function usageAdvice(behaviors: unknown): NonNullable<PlanUsage["advice"]> {
+  const b = (behaviors ?? {}) as { week?: { recommendations?: unknown }; day?: { recommendations?: unknown } };
+  const list = [b.week?.recommendations, b.day?.recommendations].find((l) => Array.isArray(l) && l.length) as Array<{ key?: unknown; pct?: unknown; title?: unknown; detail?: unknown }> | undefined;
+  return (list ?? []).flatMap((a) =>
+    typeof a.key === "string" && typeof a.title === "string" && typeof a.pct === "number" ? [{ key: a.key, pct: clamp(a.pct), title: a.title, detail: typeof a.detail === "string" ? a.detail : null }] : [],
+  );
 }
 
 /** Usage as plain lines for Claude (FORGE tool usage_status). */
@@ -53,6 +63,7 @@ export function describeUsage(usage: PlanUsage, limit: RateLimitState, now = Dat
   if (!u.available || !u.windows.length) lines.push(t.usageUnavailableLine(u.error));
   for (const w of u.windows) lines.push(t.windowLine(w.label, w.utilization, w.resetsAt ? at(w.resetsAt) : null, forecastText(w, at)));
   if (u.windows.length && !u.windows.some((w) => w.forecast)) lines.push(t.noForecast);
+  for (const a of u.advice?.slice(0, 3) ?? []) lines.push(t.adviceLine(a.pct, a.title, a.detail));
   if (u.subscriptionType) lines.push(t.subscription(planName(u.subscriptionType, u.rateLimitTier)));
   return lines.join("\n");
 }

@@ -466,6 +466,8 @@ export const DEFAULT_SETTINGS: Settings = {
   autoContinueAfterLimit: true,
   limitWarnings: true,
   idleCloseMinutes: 60,
+  subagentEffort: null,
+  idleCompaction: true,
   longSessionTokens: 600_000,
   updateChecks: true,
   updateChannel: "stable",

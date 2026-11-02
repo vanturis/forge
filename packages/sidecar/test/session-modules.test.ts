@@ -88,7 +88,7 @@ const request = (requestId: string): ApprovalRequest => ({
 
 describe("ApprovalGate", () => {
   let tags: string[] = [];
-  const host = { abortReason: () => "Abgebrochen", syncPermissionMode: () => {}, projectTags: () => tags };
+  const host = { abortReason: () => "Abgebrochen", syncPermissionMode: () => {}, projectTags: () => tags, cliSupports: () => true };
 
   it("looks up the branch only for a push", async () => {
     const exec = vi.fn(async () => ({ code: 0, stdout: "feature\n", stderr: "" }));
@@ -124,6 +124,66 @@ describe("ApprovalGate", () => {
       { behavior: "deny", message: "Gestoppt" },
     ]);
     expect(db.getSession(SID)?.status).toBe("running");
+  });
+
+  describe("elicitation by an MCP server", () => {
+    const form = { serverName: "crm", message: "Welcher Kunde?", mode: "form" as const, requestedSchema: { type: "object", required: ["name"], properties: { name: { type: "string" }, seats: { type: "integer" } } } };
+    const open = (live: ReturnType<typeof liveSession>) => [...live.pending.keys()][0]!;
+
+    it("waits for the answer, sends it typed and keeps the values out of the history", async () => {
+      const gate = new ApprovalGate(core, {} as GitEngine, host);
+      const live = liveSession();
+      const pending = gate.elicit(SID, live, form, new AbortController().signal);
+      await vi.waitFor(() => expect(live.pending.size).toBe(1));
+      expect(db.getSession(SID)?.status).toBe("waiting_approval");
+      expect(() => gate.respond(SID, open(live), "allow", "once", undefined, { seats: "2" })).toThrow(/name/);
+      gate.respond(SID, open(live), "allow", "once", undefined, { name: "Ada", seats: "2" });
+      await expect(pending).resolves.toEqual({ action: "accept", content: { name: "Ada", seats: 2 } });
+      expect(JSON.stringify(db.listEvents(SID))).not.toContain("Ada");
+    });
+
+    it("declines when the user declines and cancels when the prompt is aborted", async () => {
+      const gate = new ApprovalGate(core, {} as GitEngine, host);
+      const live = liveSession();
+      const declined = gate.elicit(SID, live, form, new AbortController().signal);
+      await vi.waitFor(() => expect(live.pending.size).toBe(1));
+      gate.respond(SID, open(live), "deny", "once");
+      await expect(declined).resolves.toEqual({ action: "decline" });
+      const ac = new AbortController();
+      const aborted = gate.elicit(SID, live, form, ac.signal);
+      await vi.waitFor(() => expect(live.pending.size).toBe(1));
+      ac.abort();
+      await expect(aborted).resolves.toEqual({ action: "cancel" });
+    });
+
+    it("never asks for an address that is no web page", async () => {
+      const gate = new ApprovalGate(core, {} as GitEngine, host);
+      const live = liveSession();
+      await expect(gate.elicit(SID, live, { serverName: "x", message: "m", mode: "url", url: "file:///etc/passwd" }, new AbortController().signal)).resolves.toEqual({ action: "decline" });
+      expect(live.pending.size).toBe(0);
+    });
+
+    it("accepts a sign-in page without content", async () => {
+      const gate = new ApprovalGate(core, {} as GitEngine, host);
+      const live = liveSession();
+      const pending = gate.elicit(SID, live, { serverName: "x", message: "m", mode: "url", url: "https://example.com/login" }, new AbortController().signal);
+      await vi.waitFor(() => expect(live.pending.size).toBe(1));
+      gate.respond(SID, open(live), "allow", "once");
+      await expect(pending).resolves.toEqual({ action: "accept" });
+    });
+  });
+
+  it("marks questions left open as skipped, when the CLI understands that", async () => {
+    for (const supported of [true, false]) {
+      const gate = new ApprovalGate(core, {} as GitEngine, { ...host, cliSupports: () => supported });
+      const live = liveSession();
+      const req = { ...request("q"), toolName: "AskUserQuestion", input: { questions: [{ question: "A?" }, { question: "B?" }] } };
+      const pending = gate.request(SID, live, req, new AbortController().signal);
+      gate.respond(SID, "q", "allow", "once", undefined, { "A?": "ja" });
+      const d = await pending;
+      expect(d.behavior === "allow" && d.updatedInput?.answers).toEqual({ "A?": "ja" });
+      expect(d.behavior === "allow" && d.updatedInput?.annotations).toEqual(supported ? { "B?": { unanswered: "skipped" } } : undefined);
+    }
   });
 
   it("checks the no-network tag on every call, not only at process start", async () => {

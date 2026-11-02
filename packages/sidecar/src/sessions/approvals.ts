@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import os from "node:os";
-import { ForgeError, type PermissionMode } from "@forge/protocol";
+import type { ElicitationRequest, ElicitationResult } from "@anthropic-ai/claude-agent-sdk";
+import { ELICITATION_TOOL, elicitationContent, elicitationFields, elicitationUrl, ForgeError, type PermissionMode } from "@forge/protocol";
 import type { ApprovalDecision, ApprovalRequest } from "../claude/runtime.js";
 import { truncateInput } from "../claude/normalize.js";
 import type { GitEngine } from "../git/git.js";
@@ -14,7 +15,14 @@ import { tr } from "../i18n/index.js";
 /** Tools that ask the user something instead of doing something; answered in their own cards. */
 const QUESTION_TOOL = "AskUserQuestion";
 const PLAN_TOOL = "ExitPlanMode";
-const INTERACTIVE_TOOLS = new Set([QUESTION_TOOL, PLAN_TOOL]);
+const INTERACTIVE_TOOLS = new Set([QUESTION_TOOL, PLAN_TOOL, ELICITATION_TOOL]);
+
+const UNANSWERED_CAPABILITY = "ask_user_question_unanswered_v1";
+
+function questionTexts(input: Record<string, unknown>): string[] {
+  const list = Array.isArray(input.questions) ? (input.questions as Array<{ question?: unknown }>) : [];
+  return list.flatMap((q) => (typeof q?.question === "string" ? [q.question] : []));
+}
 
 const guardError = (): GuardViolation => ({ rule: "guard-error", message: tr().core.sessions.guardError });
 
@@ -23,6 +31,8 @@ export interface ApprovalHost {
   abortReason(sessionId: string): string;
   /** an accepted plan moved the session out of plan mode */
   syncPermissionMode(sessionId: string, mode: PermissionMode): void;
+  /** whether the running CLI announced this capability in system/init */
+  cliSupports(capability: string): boolean;
   /** current tags of the session's project */
   projectTags(sessionId: string): readonly string[];
 }
@@ -137,6 +147,32 @@ export class ApprovalGate {
     });
   }
 
+  /** An MCP server asks the user for input. A declined or failed prompt never reaches the server as an answer. */
+  async elicit(id: string, live: LiveSession, req: ElicitationRequest, signal: AbortSignal): Promise<ElicitationResult> {
+    const mode = req.mode === "url" ? "url" : "form";
+    const url = mode === "url" ? elicitationUrl(req.url) : null;
+    if (mode === "url" && !url) return { action: "decline" };
+    const requestId = randomUUID();
+    const d = await this.request(
+      id,
+      live,
+      {
+        requestId,
+        toolUseId: `elicitation-${requestId}`,
+        toolName: ELICITATION_TOOL,
+        input: { serverName: req.serverName, message: req.message, mode, ...(url ? { url } : {}), ...(req.requestedSchema ? { schema: req.requestedSchema } : {}) },
+        title: req.title ?? req.displayName ?? req.serverName,
+        description: req.description ?? null,
+        reason: null,
+        suppressAlwaysAllow: true,
+      },
+      signal,
+    );
+    if (d.behavior === "deny") return { action: signal.aborted ? "cancel" : "decline" };
+    const content = d.updatedInput?.content as Extract<ElicitationResult, { action: "accept" }>["content"] | undefined;
+    return { action: "accept", ...(content ? { content } : {}) };
+  }
+
   respond(sessionId: string, requestId: string, decision: "allow" | "deny", scope: "once" | "session", message?: string, answers?: Record<string, string>) {
     const live = this.core.live.get(sessionId);
     const p = live?.pending.get(requestId);
@@ -148,10 +184,24 @@ export class ApprovalGate {
       p.resolve({ behavior: "deny", message: message?.trim() || fallback });
       return { ok: true };
     }
+    if (tool === ELICITATION_TOOL) {
+      if (p.req.input.mode === "url") {
+        p.resolve({ behavior: "allow", scope: "once" });
+        return { ok: true };
+      }
+      const { content, missing, invalid } = elicitationContent(elicitationFields(p.req.input), answers ?? {});
+      if (missing.length || invalid.length) throw new ForgeError("VALIDATION", tr().core.sessions.elicitationInvalid([...missing, ...invalid].join(", ")));
+      // Not stored as `answers`: what a server asks for stays out of the session history.
+      p.resolve({ behavior: "allow", scope: "once", updatedInput: { content } });
+      return { ok: true };
+    }
     if (tool === QUESTION_TOOL) {
       const given = Object.fromEntries(Object.entries(answers ?? {}).filter(([, v]) => v.trim()));
       if (!Object.keys(given).length) throw new ForgeError("VALIDATION", tr().core.sessions.answerOne);
-      p.resolve({ behavior: "allow", scope: "once", updatedInput: { ...p.req.input, answers: given } });
+      // Claude learns which questions stayed open instead of reading the gap as an answer.
+      const open = questionTexts(p.req.input).filter((q) => !given[q]);
+      const annotations = open.length && this.host.cliSupports(UNANSWERED_CAPABILITY) ? { annotations: Object.fromEntries(open.map((q) => [q, { unanswered: "skipped" }])) } : {};
+      p.resolve({ behavior: "allow", scope: "once", updatedInput: { ...p.req.input, answers: given, ...annotations } });
       return { ok: true };
     }
     if (tool === PLAN_TOOL) {

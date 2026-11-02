@@ -19,6 +19,7 @@ export const sessions: typeof De = {
 
   // approvals.ts
   guardError: "The policy check failed, so the call was denied as a precaution.",
+  elicitationInvalid: (names: string) => `Please check: ${names}.`,
   approvalGone: "This approval request is no longer open.",
   questionDeclined: "The user does not want to answer the question.",
   planDeclined: "The user wants to revise the plan.",

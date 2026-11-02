@@ -238,6 +238,7 @@ export const workspace: typeof De = {
       },
       "review-required": { label: "Commits only after review", info: "No auto-commit: commits only after review in the Git area." },
       "no-network": { label: "No internet", info: "Claude gets no web tools (WebFetch, WebSearch)." },
+      "project-files-only": { label: "Files only in the project", info: "Claude's file tools read and write only in the project folder. Terminal commands are not covered. Takes effect the next time a session starts." },
       "sandbox-only": { label: "Lock Autonomous", info: "Autonomous is locked in this project." },
     },
     sections: {

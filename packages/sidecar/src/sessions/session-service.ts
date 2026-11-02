@@ -160,6 +160,7 @@ export class SessionService {
     this.modes = new PermissionModes(core, projects, { reopen: (id) => this.lifecycle.resume(id, null) });
     this.approvals = new ApprovalGate(core, git, {
       abortReason: (id) => this.remote.abortReason(id),
+      cliSupports: (capability) => this.catalog.cliSupports(capability),
       syncPermissionMode: (id, mode) => this.modes.sync(id, mode),
       projectTags: (id) => {
         const rec = db.getSession(id);
@@ -878,6 +879,11 @@ ${crew.context}` } : own;
     for (const id of this.core.live.keys()) {
       if (this.db.getSession(id)?.projectId === projectId) this.automation.hint(id, text);
     }
+  }
+
+  /** After a plugin change: running sessions pick it up where that costs nothing, the rest at their next start. */
+  reloadPlugins() {
+    for (const live of this.core.live.values()) void live.rt.reloadPlugins().catch(() => {});
   }
 
   // ---------- approvals

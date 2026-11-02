@@ -4,6 +4,14 @@ import { describeUsage, toPlanUsage } from "../src/claude/usage.js";
 import { buildCommitPrompt, cleanCommitMessage } from "../src/git/commit-message.js";
 
 describe("toPlanUsage", () => {
+  it("takes the week's recommendations, falls back to the day's and tolerates a CLI without them", () => {
+    const rec = (key: string) => ({ key, pct: 40, title: `Tu ${key}`, detail: "kurz" });
+    expect(toPlanUsage({ behaviors: { week: { recommendations: [rec("cron")] }, day: { recommendations: [rec("workflow")] } } }).advice).toEqual([{ key: "cron", pct: 40, title: "Tu cron", detail: "kurz" }]);
+    expect(toPlanUsage({ behaviors: { week: { recommendations: [] }, day: { recommendations: [rec("workflow")] } } }).advice?.[0]?.key).toBe("workflow");
+    expect(toPlanUsage({}).advice).toEqual([]);
+    expect(toPlanUsage({ behaviors: { week: { recommendations: [{ key: 3 }] } } }).advice).toEqual([]);
+  });
+
   it("keeps documented windows and model-scoped rows, ignores unknown keys", () => {
     const u = toPlanUsage({
       subscription_type: "max",

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import type { Project, PromptTemplate, ServerEvent, Session } from "@forge/protocol";
 import type * as RpcModuleNs from "@/lib/rpc";
+import { rememberSent } from "@/stores/composer-history";
 import { draftKey, useDrafts } from "@/stores/drafts";
 import { useUi } from "@/stores/ui";
 
@@ -101,6 +102,32 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Composer", () => {
+  it("brings back what was sent with the arrow keys, and what was typed at the end", async () => {
+    localStorage.clear();
+    rememberSent("p1", "erste");
+    rememberSent("p1", "zweite");
+    setup(<Composer project={project("p1")} session={session} />);
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.keyDown(box, { key: "ArrowUp" });
+    expect(useDrafts.getState().drafts.s1?.text).toBe("zweite");
+    await waitFor(() => expect(box.value).toBe("zweite"));
+    fireEvent.keyDown(box, { key: "ArrowUp" });
+    expect(useDrafts.getState().drafts.s1?.text).toBe("erste");
+    await waitFor(() => expect(box.value).toBe("erste"));
+    fireEvent.keyDown(box, { key: "ArrowDown" });
+    fireEvent.keyDown(box, { key: "ArrowDown" });
+    await waitFor(() => expect(box.value).toBe(""));
+  });
+
+  it("leaves the arrow keys alone in a text the user typed", () => {
+    localStorage.clear();
+    rememberSent("p1", "alt");
+    useDrafts.getState().setText("s1", "eigener Text");
+    setup(<Composer project={project("p1")} session={session} />);
+    fireEvent.keyDown(screen.getByRole("textbox"), { key: "ArrowUp" });
+    expect(useDrafts.getState().drafts.s1?.text).toBe("eigener Text");
+  });
+
   it("sends the draft and clears it", async () => {
     useDrafts.getState().setText("s1", "Bitte testen");
     setup(<Composer project={project("p1")} session={session} />);

@@ -121,6 +121,7 @@ class FakeRuntime implements ClaudeRuntime {
       },
       rewindFiles: async () => ({ canRewind: true, error: null, filesChanged: ["a.txt"], insertions: 1, deletions: 0 }),
       supportedCommands: async () => [],
+      reloadPlugins: async () => {},
       stopTask: async (taskId) => {
         this.stoppedTasks.push(taskId);
       },

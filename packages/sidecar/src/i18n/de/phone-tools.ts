@@ -27,7 +27,7 @@ export const phoneTools = {
     },
   },
   respond: {
-    description: "Beantwortet die offene Freigabe, Rückfrage oder den Plan einer Session. allow = erlauben, Plan annehmen oder Rückfrage beantworten (answers). deny = ablehnen oder Plan mit feedback zurückgeben.",
+    description: "Beantwortet die offene Freigabe, Rückfrage, MCP-Rückfrage oder den Plan einer Session. allow = erlauben, Plan annehmen oder Rückfrage beantworten (answers, bei MCP-Rückfragen je Feld). deny = ablehnen oder Plan mit feedback zurückgeben.",
     params: {
       answers: "nur für Rückfragen: je Frage die gewählte Antwort",
       "answers.question": "Fragetext",
@@ -92,7 +92,7 @@ export const phoneTools = {
     },
   },
   project_automation: {
-    description: "Automatik eines Projekts, wie in den Projekt-Einstellungen: plan-first (neue Sessions planen erst), auto-test (Testbefehl nach einem Durchlauf, der Code geändert hat), auto-commit, auto-push, auto-merge (fertige Agenten automatisch in den Branch zurückführen, von dem sie gestartet sind), review-required (kein Auto-Commit), no-network (keine Web-Werkzeuge), sandbox-only (Autonomous gesperrt). Mit tag und on schalten; ohne tag sagt es, was an ist. auto-merge gilt immer für das Hauptprojekt samt seinen Agenten.",
+    description: "Automatik eines Projekts, wie in den Projekt-Einstellungen: plan-first (neue Sessions planen erst), auto-test (Testbefehl nach einem Durchlauf, der Code geändert hat), auto-commit, auto-push, auto-merge (fertige Agenten automatisch in den Branch zurückführen, von dem sie gestartet sind), review-required (kein Auto-Commit), no-network (keine Web-Werkzeuge), project-files-only (Datei-Werkzeuge nur im Projektordner), sandbox-only (Autonomous gesperrt). Mit tag und on schalten; ohne tag sagt es, was an ist. auto-merge gilt immer für das Hauptprojekt samt seinen Agenten.",
     params: {
       tag: "Welche Automatik; weglassen für den Stand",
       on: "true einschalten, false ausschalten",

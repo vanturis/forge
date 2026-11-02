@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import type { SessionStatus } from "@forge/protocol";
+import { ELICITATION_TOOL, type SessionStatus } from "@forge/protocol";
 import { tr } from "../i18n/index.js";
 import { digestAuthorization, parseChallenge } from "./digest.js";
 import type { ApprovalRequest } from "./session-info.js";
@@ -367,7 +367,7 @@ export class DeskPhone {
     for (const s of sessions) {
       if (s.status !== "waiting_approval") continue;
       const req = this.d.pending(s.id);
-      if (!req || req.toolName === "AskUserQuestion" || req.toolName === "ExitPlanMode" || this.menus.has(req.requestId)) continue;
+      if (!req || req.toolName === "AskUserQuestion" || req.toolName === "ExitPlanMode" || req.toolName === ELICITATION_TOOL || this.menus.has(req.requestId)) continue;
       this.menus.add(req.requestId);
       const url = (d: string) => escapeXml(`http://${cfg.localIp}:${cfg.httpPort}/desk/${cfg.token}/answer?s=${encodeURIComponent(s.id)}&r=${encodeURIComponent(req.requestId)}&d=${d}`);
       this.push(
@@ -513,7 +513,7 @@ export class DeskPhone {
 }
 
 function requestShort(req: ApprovalRequest): string {
-  if (req.toolName === "AskUserQuestion") return tr().phone.line.deskQuestion;
+  if (req.toolName === "AskUserQuestion" || req.toolName === ELICITATION_TOOL) return tr().phone.line.deskQuestion;
   if (req.toolName === "ExitPlanMode") return tr().phone.line.deskPlan;
   const subject = typeof req.input.command === "string" ? req.input.command : typeof req.input.file_path === "string" ? req.input.file_path : "";
   return `${req.toolName}${subject ? `: ${subject}` : ""}`;

@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Copy, Info, RotateCcw, ShieldAlert, XCircle } from "lucide-react";
+import { ELICITATION_TOOL } from "@forge/protocol";
 import { contextItems, copyText } from "@/lib/context-menu";
 import { clockTime, cn, formatDuration, formatTokens } from "@/lib/utils";
 import { useThrottledValue } from "@/lib/timing-hooks";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import type { ChatItem, NoticeIcon } from "./chat-items";
 import { Markdown, StreamingMarkdown } from "./Markdown";
 import { ApprovalBlock, ToolCard } from "./ToolCard";
+import { ElicitationCard } from "./InteractiveCards";
 import { EVENT_ICON, EventCard, noticeIcon } from "./EventCard";
 import { ChatRow, Dot, HoverTime } from "./ChatRow";
 import { UserMessage } from "./UserMessage";
@@ -45,6 +47,13 @@ export const ItemView = memo(function ItemView({ item, sessionId, live, projectD
     case "tool":
       return <ToolCard item={item} sessionId={sessionId} sessionLive={live} projectDir={projectDir} />;
     case "approval":
+      if (item.req.toolName === ELICITATION_TOOL) {
+        return (
+          <ChatRow className="text-body" markerClassName="mt-2.25" marker={<Dot className={item.resolved ? (item.resolved.decision === "allow" ? "bg-success" : "border-[1.5px] border-danger") : "animate-soft-pulse bg-warning"} label={item.resolved ? undefined : t.chat.item.waitingForApproval} />}>
+            <ElicitationCard req={item.req} resolved={item.resolved} sessionId={sessionId} />
+          </ChatRow>
+        );
+      }
       if (item.req.toolName === "AskUserQuestion" || item.req.toolName === "ExitPlanMode") {
         // The approval came without a preceding tool event; show the same card as usual.
         const tool: Extract<ChatItem, { kind: "tool" }> = {

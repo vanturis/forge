@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { t } from "@/i18n";
 import { Skeleton } from "./skeleton";
 
 export type MeterTone = "ok" | "warn" | "danger";
@@ -15,7 +16,7 @@ export function Meter({ label, value, detail, toneOf }: { label: string; value: 
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-3 text-body">
         <span>{label}</span>
-        <span className={cn("tabular-nums", tone === "danger" ? "text-danger" : tone === "warn" ? "text-warning" : "text-muted")}>{pct} % genutzt</span>
+        <span className={cn("tabular-nums", tone === "danger" ? "text-danger" : tone === "warn" ? "text-warning" : "text-muted")}>{t.usage.used(pct)}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-surface-3" role="progressbar" aria-valuenow={Math.min(100, pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
         <div className={cn("h-full rounded-full", tone === "danger" ? "bg-danger" : tone === "warn" ? "bg-warning" : "bg-accent")} style={{ width: `${Math.min(100, pct)}%` }} />

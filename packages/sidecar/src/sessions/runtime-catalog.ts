@@ -81,6 +81,10 @@ export class RuntimeCatalog {
     if (!first || added.length) this.core.emit({ event: "runtime.models", payload: { added: added.map((m) => ({ value: m.value, displayName: m.displayName || m.value })) } });
   }
 
+  cliSupports(capability: string): boolean {
+    return this.cliCapabilities.includes(capability);
+  }
+
   /** Capabilities and MCP servers from a session's system/init message. */
   noteSystemInit(m: Record<string, unknown>) {
     if (Array.isArray(m.capabilities)) this.cliCapabilities = m.capabilities.filter((c): c is string => typeof c === "string");

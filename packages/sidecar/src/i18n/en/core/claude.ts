@@ -96,6 +96,7 @@ export const claude: typeof De = {
   limitWarning: (percent, reset) => `Limit almost reached${percent !== null ? ` (${percent}%)` : ""}${reset ? `, resets ${reset}` : ""}.`,
   usageUnavailableLine: (error) => `Usage not available${error ? `: ${error}` : ""}.`,
   windowLine: (label, percent, reset, outlook) => `${label}: ${percent}% used${reset ? `, resets ${reset}` : ""}${outlook ? `. Forecast: ${outlook}` : ""}`,
+  adviceLine: (pct: number, title: string, detail: string | null) => `Tip (${pct}% of usage): ${title}${detail ? `, ${detail}` : ""}`,
   noForecast: "Forecast: not enough readings yet, or no increase.",
   subscription: (type) => `Subscription: ${type}`,
   today: (time) => `today ${time}`,

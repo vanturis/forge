@@ -68,6 +68,8 @@ beforeEach(() => {
     learnTemplates: true,
     askPushOnClose: true,
     limitWarnings: true,
+    subagentEffort: null,
+    idleCompaction: true,
     disabledPolicyRules: [],
     setupDone: false,
     syncEnabled: false,

@@ -41,6 +41,8 @@ export const PROFILES: Record<ProfileId, ProfileConfig> = {
 
 export const SANDBOX_ONLY_TAG = "sandbox-only";
 export const NO_NETWORK_TAG = "no-network";
+/** Claude Code's file tools refuse paths outside the working directories, reading too. Shell commands are not covered. */
+export const PROJECT_FILES_ONLY_TAG = "project-files-only";
 const NETWORK_TOOLS = ["WebFetch", "WebSearch"];
 
 /** Tools the profile and the project's tags forbid; the no-network tag turns web tools off regardless of profile. */

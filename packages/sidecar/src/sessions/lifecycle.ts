@@ -5,7 +5,8 @@ import { fallbackFor, type ClaudeRuntime, type OutgoingMessage, type RuntimeSess
 import { Normalizer } from "../claude/normalize.js";
 import { locateClaude, sessionEnv } from "../claude/environment.js";
 import type { SessionRecord } from "../persistence/db.js";
-import { blockedTools, effectivePermissionMode, resolveProfile, type ProfileConfig } from "../policy/profiles.js";
+import { blockedTools, effectivePermissionMode, resolveProfile, type ProfileConfig, PROJECT_FILES_ONLY_TAG } from "../policy/profiles.js";
+import { claudePlansDir } from "../policy/guard.js";
 import type { ProjectManager } from "../projects/project-manager.js";
 import { denyPending, type ApprovalGate } from "./approvals.js";
 import { BUSY, closeLive, describeRuntimeError, endLive, isAuthFailure, remotePlaceholderTitle, titleFrom, type LiveSession } from "./live-session.js";
@@ -242,7 +243,10 @@ export class SessionLifecycle {
           resume,
           resumeAt,
           disallowedTools: blockedTools(profile, this.projects.get(rec.projectId).tags),
-          env: sessionEnv(stripApiKey),
+          env: { ...sessionEnv(stripApiKey), ...(this.core.db.getSettings().subagentEffort ? { CLAUDE_CODE_SUBAGENT_EFFORT: this.core.db.getSettings().subagentEffort! } : {}) },
+          idleCompaction: this.core.db.getSettings().idleCompaction,
+          // The plan file of plan mode lies outside the project; without it a session could not finish a plan.
+          ...(this.projects.get(rec.projectId).tags.includes(PROJECT_FILES_ONLY_TAG) ? { confineFiles: { allow: [claudePlansDir()] } } : {}),
           claudePath,
           firstMessage: first,
           fallbackModel: fallbackFor(rec.model),
@@ -272,6 +276,7 @@ export class SessionLifecycle {
     return {
       onMessage: (msg) => this.stream.handle(id, live, msg),
       onApproval: (req, signal) => this.approvals.request(id, live, req, signal),
+      onElicitation: (req, signal) => this.approvals.elicit(id, live, req, signal),
       preToolUse: (toolName, input, toolUseId) => this.approvals.guard(id, live, toolName, input, toolUseId),
       ...(this.toolContext ? { toolContext: (phase: "pre" | "post", toolName: string, input: Record<string, unknown>) => this.toolContext!(id, phase, toolName, input) } : {}),
       onEnd: (error) => this.onEnd(id, live, error),

@@ -223,6 +223,10 @@ export const views = {
     uiCompareLabel: "Vorher-Nachher-Bilder bei UI-Änderungen",
     uiCompareDescription:
       "Ändert Claude Dateien wie .tsx oder .css, während der Dev-Server läuft, zeigt der Chat Screenshots der Web-App von vor und nach dem Durchlauf. Die Bilder gehen nicht an Claude und werden nach 14 Tagen gelöscht.",
+    subagentEffortLabel: "Denkaufwand der Subagenten",
+    subagentEffortDescription: "Gilt für Subagenten ohne eigene Angabe. Niedriger verbraucht weniger vom Abo-Limit. Wirkt ab dem nächsten Start einer Session.",
+    idleCompactionLabel: "Lange Sessions im Leerlauf komprimieren",
+    idleCompactionDescription: "Claude Code fasst ein Gespräch ab 200.000 Tokens nach etwa 54 Minuten Leerlauf zusammen, bevor der Prompt-Cache abläuft. Die nächste Nachricht wird dadurch günstiger, die Zusammenfassung verbraucht aber selbst Tokens. Wirkt ab dem nächsten Start einer Session.",
     idleCloseLabel: "Untätige Sessions schließen nach",
     idleCloseDescription: "Beendet nur den Claude-Prozess. Die Session bleibt mit Verlauf erhalten und läuft mit der nächsten Nachricht weiter.",
     longSessionLabel: "Lange Sessions melden",

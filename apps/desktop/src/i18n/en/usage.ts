@@ -3,6 +3,21 @@ import type { usage as De } from "../de/usage";
 export const usage: typeof De = {
   resetPast: (relative, date) => `Was reset ${relative} (${date})`,
   resetFuture: (relative, date) => `Resets ${relative} (${date})`,
+  advice: {
+    title: "What drives your usage",
+    known: {
+      cache_miss: "Breaks of over an hour: the cache expires and the conversation is processed again. After long breaks, better continue in a new session.",
+      long_context: "Long conversations: every message sends the whole history. Compact earlier or start a new session.",
+      subagent_heavy: "Many subagents: lower the subagent thinking effort in the settings.",
+      high_parallel: "Many sessions or agents at once: run fewer in parallel.",
+      cron: "Scheduled tasks run often: space them out or delete old ones.",
+      max_effort: "Maximum thinking effort: use high or lower where that is enough.",
+      workflow: "Workflows start many agents: use them for big tasks only.",
+      always_on_context: "Large always-on context: check CLAUDE.md, skills and MCP servers.",
+      large_tool_results: "Large tool results: limit output, such as long logs.",
+    },
+  },
+  used: (pct: number) => `${pct}% used`,
   fetched: (relative) => `Updated ${relative}`,
   skeletonLabel: "Loading usage",
   forecastWarning: {

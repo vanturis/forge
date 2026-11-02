@@ -567,6 +567,19 @@ export function toolSummary(name: string, input: Record<string, unknown>, projec
     }
     case "ExitPlanMode":
       return t.chat.cards.planForApproval;
+    case "ScheduleWakeup":
+      if (input.stop === true) return t.chat.tool.wakeupStop;
+      return `${typeof input.delaySeconds === "number" ? t.chat.tool.wakeupIn(Math.round(input.delaySeconds / 60)) : ""}${s("reason") ? ` ${s("reason")}` : ""}`.trim();
+    case "CronCreate":
+      return `${s("cron")} ${s("prompt")}`.trim().slice(0, 120);
+    case "CronDelete":
+      return s("id");
+    case "CronList":
+      return t.chat.tool.cronList;
+    case "Monitor":
+      return s("description");
+    case "ReportFindings":
+      return "";
     default:
       return Object.values(input).find((v): v is string => typeof v === "string")?.slice(0, 120) ?? "";
   }

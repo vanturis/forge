@@ -223,6 +223,10 @@ export const views: typeof De = {
     uiCompareLabel: "Before and after images for UI changes",
     uiCompareDescription:
       "If Claude changes files like .tsx or .css while the dev server is running, the chat shows screenshots of the web app from before and after the run. The images are not sent to Claude and are deleted after 14 days.",
+    subagentEffortLabel: "Subagent thinking effort",
+    subagentEffortDescription: "Applies to subagents that name no effort of their own. Lower uses less of the plan limit. Takes effect the next time a session starts.",
+    idleCompactionLabel: "Compact long idle sessions",
+    idleCompactionDescription: "Claude Code summarizes a conversation of 200,000 tokens or more after about 54 idle minutes, before the prompt cache expires. That makes the next message cheaper, but the summary uses tokens itself. Takes effect the next time a session starts.",
     idleCloseLabel: "Close idle sessions after",
     idleCloseDescription: "Only ends the Claude process. The session keeps its history and continues with the next message.",
     longSessionLabel: "Report long sessions",
