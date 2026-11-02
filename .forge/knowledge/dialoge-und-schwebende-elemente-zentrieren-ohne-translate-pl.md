@@ -1,9 +1,11 @@
 ---
-title: "Dialoge auf macOS: zentrieren ohne translate, kein flex-1 im Inhalt (WebKit, zusammengezogene Dialoge)"
-summary: "Zwei WebKit-Fallen in Dialogen: translate plus Einblend-Animation verschiebt sie, flex-1 im h-fit-Dialog lässt den Inhalt auf das Padding zusammenfallen. Dazu, wie man das unter Windows mit altem WebKit nachstellt."
-tags: ["ui","stolperfalle","tauri","konvention"]
-updated: "2026-10-31T11:48:20.160Z"
+title: "Dialoge auf macOS: zentrieren ohne translate, kein flex-1 im Inhalt, Test im echten WKWebView (WebKit)"
+summary: "WebKit-Fallen in Dialogen (translate plus Einblend-Animation, flex-1 im h-fit-Dialog), wie man das unter Windows mit altem WebKit nachstellt und wie man auf dem Mac im echten WKWebView klickt und Fensterbilder misst."
+tags: ["ui","stolperfalle","tauri","konvention","tests"]
+updated: "2026-11-02T13:40:14.184Z"
 ---
+
+# Dialoge auf macOS: zentrieren ohne translate, kein flex-1 im Inhalt (WebKit, zusammengezogene Dialoge)
 
 ## Zentrieren ohne translate
 Gemeldet 2026-10-22: Auf macOS lagen die Bestätigungs-Knöpfe in Dialogen ab und zu verschoben.
@@ -25,3 +27,11 @@ Regel: Der Dialog-Körper hat `flex-auto min-h-0`, nicht `flex-1`. Verschachtelt
 
 ## macOS-WebKit unter Windows nachstellen
 Playwright bringt WebKit auch für Windows mit, und alte Playwright-Versionen bringen altes WebKit: `playwright@1.40.1` liefert WebKit 17.4, die aktuelle Version 27.2. In einem eigenen Temp-Ordner installieren, `userAgent` auf Macintosh setzen und gegen den Vite-Dev-Server (Port 1420) messen. Die echte App läuft mit einem gestubbten `__TAURI_INTERNALS__` (`sidecar_status` true, `sidecar_send` antwortet über den Listener von `sidecar://messages`). Das ist nicht derselbe Build wie WKWebView auf dem Mac, die Layout-Engine aber schon.
+
+## Auf dem Mac im echten WKWebView klicken und messen
+Geht ohne Bildschirm-Freigabe, in einem kleinen Objective-C-Programm in einem Temp-Ordner (`clang -fobjc-arc -framework Cocoa -framework WebKit`; `swiftc` kann mit der installierten Toolchain an einer SDK-Abweichung scheitern):
+- Testseite: echte Komponenten mit Vite in einem Temp-Ordner bauen (Aliase auf `apps/desktop/node_modules` für react und react-dom). Tailwind sucht Klassen nur unter dem Vite-Root, darum braucht die Einstiegs-CSS `@import ".../src/styles.css"; @source ".../src";`. Sonst fehlen die Klassen und der Dialog liegt außerhalb des Fensters.
+- Klick: `[NSApp postEvent:mouseEvent atStart:NO]`. Direkte `[web mouseDown:]` lösen im Test kein `:active` aus. Die y-Achse von NSEvent läuft von unten.
+- Fensterbild: `CGWindowListCreateImage` per `dlsym` auf das eigene Fenster. Das zeigt das zusammengesetzte Bild. `screencapture` als eigener Prozess scheitert ohne Freigabe, und `takeSnapshot` malt neu, zeigt also keine Render-Reste.
+
+Gemessen 2026-11-02 (macOS 26, `Dialog` mit `Button` ghost, secondary, primary): Der Klick fokussiert den Knopf nicht, WebKit gibt den Fokus an den Dialog (`focusin` auf `D.Content`), `:focus-visible` ist danach leer. `active:scale` rendert in allen fünf Bildern (offen, 60 ms und 400 ms gehalten, 60 ms und 600 ms nach dem Loslassen) ohne Doppelbild. Beim Öffnen hat das Schließen-X `:focus-visible`, ohne sichtbaren Klick-Effekt.
