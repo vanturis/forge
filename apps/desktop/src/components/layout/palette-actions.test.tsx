@@ -6,6 +6,9 @@ import { TAG_INFO } from "@/components/workspace/ProjectSettingsTab";
 import { buildActions, UNLISTED_SETTINGS, type ActionContext } from "./palette-actions";
 import { rank } from "./CommandPalette";
 import { NAV } from "./nav";
+import { PALETTE_ID, menuActions, menuItemState } from "./app-menu";
+import { setChatView } from "@/components/workspace/chat-view";
+import { useSessionEvents } from "@/stores/session-events";
 import { keys } from "@/lib/queries";
 
 const settingKeys = Object.keys(Settings.shape) as Array<keyof typeof Settings.shape>;
@@ -220,5 +223,44 @@ describe("palette ranking", () => {
     expect(rank("neuen branch anlegen", "neuen branch anlegen git", ["branch"])).toBe(1);
     expect(rank("dateien öffnen", "dateien öffnen explorer", ["explorer"])).toBe(3);
     expect(rank("töne", "töne", ["xyz"])).toBe(-1);
+  });
+});
+
+describe("macOS menu bar", () => {
+  it("points every item at an entry the palette has", () => {
+    const ctx = fullContext();
+    const ids = new Set<string>([PALETTE_ID]);
+    const collect = (c: ActionContext) => buildActions(c).forEach((e) => ids.add(e.id));
+    collect(ctx);
+    // the other side of the switches, and what only shows in some states
+    collect({ ...ctx, devServer: { status: "running" } as ActionContext["devServer"], testDb: { status: "running" } as ActionContext["testDb"], chatWindows: { sessions: [session.id], pinned: [] } });
+    collect({ ...ctx, session: { ...session, status: "running" } as Session });
+    collect({ ...ctx, session: { ...session, claudeSessionId: "c1" } as Session });
+    setChatView(session.id, "prompts");
+    useSessionEvents.setState({ buffers: { [session.id]: { loaded: true, lastSeq: 1, hasOlder: false, streaming: {}, usedAt: 0, events: [{ seq: 1, body: { type: "user.message", uuid: "u1", text: "Hallo" } }] } as never } });
+    const before = useUi.getState();
+    try {
+      useUi.setState({ splitRoom: 1, splitPanes: [{ id: "a", projectId: "p1", active: null }], splitStash: null });
+      collect(ctx);
+      useUi.setState({ splitPanes: [], splitStash: { main: null, panes: [] } });
+      collect(ctx);
+    } finally {
+      useUi.setState({ splitRoom: before.splitRoom, splitPanes: before.splitPanes, splitStash: before.splitStash });
+      setChatView(session.id, "all");
+      useSessionEvents.setState({ buffers: {} });
+    }
+    const unknown = menuActions().flatMap((n) => n.ids.filter((id) => !ids.has(id)));
+    expect(unknown, "Menüeintrag ohne passende Aktion in buildActions (app-menu.ts)").toEqual([]);
+  });
+
+  it("greys out what the palette does not offer and shows the current label of switches", () => {
+    const entries = new Map(buildActions(fullContext()).map((e) => [e.id, e]));
+    const items = new Map(menuActions().map((n) => [n.action, n]));
+    expect(menuItemState(items.get("phone")!, entries)).toMatchObject({ text: "Telefon einschalten", enabled: true });
+    expect(menuItemState(items.get("dev-start")!, entries)).toMatchObject({ text: "Dev-Server starten", enabled: true });
+    expect(menuItemState(items.get("session-stop")!, entries)).toMatchObject({ text: "Session stoppen", enabled: false });
+    const none = new Map(buildActions({ ...fullContext(), project: null, root: null, session: null }).map((e) => [e.id, e]));
+    expect(menuItemState(items.get("new-session")!, none).enabled).toBe(false);
+    expect(menuItemState(items.get("add-project")!, none).enabled).toBe(true);
   });
 });

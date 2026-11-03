@@ -7,7 +7,7 @@ import { openChat } from "@/components/workspace/chat-slot";
 import { hasPrimaryModifier, isMac } from "@/lib/platform";
 
 /** An open dialog owns the keyboard: switching sessions behind it would change what it acts on. */
-function dialogOpen(): boolean {
+export function dialogOpen(): boolean {
   return document.querySelector('[role="dialog"], [role="alertdialog"]') !== null;
 }
 

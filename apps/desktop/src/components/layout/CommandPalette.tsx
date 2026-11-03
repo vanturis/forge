@@ -1,23 +1,22 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import * as D from "@radix-ui/react-dialog";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, CornerDownLeft, Search } from "lucide-react";
-import { call, keys, useCrew, useDevChannel, useGitHubAccount, usePhoneState, useProjects, useRuntimeInfo, useSearch, useSession, useSettings, useTemplates } from "@/lib/queries";
-import type { ProjectWithStatus, PromptTemplate } from "@forge/protocol";
-import { useChatWindows } from "@/lib/chat-windows";
+import { useSearch } from "@/lib/queries";
+import { isTauri } from "@/lib/rpc";
+import { isMac } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 import { OVERLAY_MOTION } from "@/lib/motion";
-import { splitActive, useUi } from "@/stores/ui";
+import { useUi } from "@/stores/ui";
 import { Kbd, Spinner } from "@/components/ui/misc";
 import { Skeleton } from "@/components/ui/skeleton";
 import { HIT_ROLE_LABEL, openSearchHit, Snippet } from "@/components/search/SearchHits";
 import { buildActions, type PaletteDialog, type PaletteEntry, type PaletteGroup } from "./palette-actions";
 import { usePaletteSources } from "./palette-sources";
 import { PaletteDialogs } from "./PaletteDialogs";
+import { useActionContext } from "./action-context";
+import { AppMenu } from "./AppMenu";
 import { t } from "@/i18n";
 
-const NO_TEMPLATES: PromptTemplate[] = [];
-const NO_AGENTS: ProjectWithStatus[] = [];
 const GROUP_ORDER: PaletteGroup[] = ["Aktionen", "Einstellungen", "Projekte", "Sessions", "Erweiterungen", "Wissen", "Dateien", "Commits", "In Verläufen"];
 
 /** Rows per group; without a query only the most useful groups show. */
@@ -63,6 +62,7 @@ export function CommandPalette() {
         </D.Portal>
       </D.Root>
       <PaletteDialogs dialog={dialog} onClose={() => setDialog(null)} />
+      {isMac && isTauri() && <AppMenu openDialog={setDialog} />}
     </>
   );
 }
@@ -72,37 +72,11 @@ function PaletteBody({ onClose, openDialog }: { onClose: () => void; openDialog:
   const [index, setIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const listId = useId();
-  const qc = useQueryClient();
-  const view = useUi((s) => s.view);
-  const activeProjectId = useUi((s) => s.activeProjectId);
-  const activeSessions = useUi((s) => s.activeSession);
-  const projects = useProjects();
+  const ctx = useActionContext(openDialog);
+  const { project } = ctx;
   const hits = useSearch(query, 8);
-  const settings = useSettings().data;
-  const models = useRuntimeInfo().data?.models;
-  const phone = usePhoneState().data;
-  const githubConnected = !!useGitHubAccount().data;
-  const devChannel = useDevChannel(githubConnected).data;
-  const remote = useQuery({ queryKey: keys.remote, queryFn: () => call("remote.state", {}) }).data;
-  const projectId = view === "workspace" ? activeProjectId : null;
-  const project = projects.data?.find((p) => p.id === projectId) ?? null;
-  const root = project?.parentId ? (projects.data?.find((p) => p.id === project.parentId) ?? null) : project;
-  const allProjects = projects.data;
-  const agents = useMemo(() => (root ? (allProjects ?? []).filter((p) => p.parentId === root.id && p.exists) : NO_AGENTS), [allProjects, root]);
-  const devServer = useQuery({ queryKey: keys.devServer(projectId ?? ""), queryFn: () => call("devserver.state", { projectId: projectId! }), enabled: !!projectId }).data;
-  const testDb = useQuery({ queryKey: keys.testDb(projectId ?? ""), queryFn: () => call("testdb.state", { projectId: projectId! }), enabled: !!projectId, staleTime: Infinity }).data;
-  const session = useSession(projectId ? splitActive(activeSessions[projectId]).sessionId : null).data ?? null;
   const sources = usePaletteSources(query, project);
-  const templates = useTemplates(projectId).data ?? NO_TEMPLATES;
-  const crew = useCrew(root?.gitEnabled ? root.id : null).crew;
-  const chatSessions = useChatWindows((s) => s.sessions);
-  const chatPinned = useChatWindows((s) => s.pinned);
-  const chatWindows = useMemo(() => ({ sessions: chatSessions, pinned: chatPinned }), [chatSessions, chatPinned]);
-
-  const actions = useMemo(
-    () => buildActions({ qc, project, root, agents, session, settings, models: models ?? [], devServer, testDb, phone, remote, githubConnected, devChannel, templates, chatWindows, crew, openDialog }),
-    [qc, project, root, agents, session, settings, models, devServer, testDb, phone, remote, githubConnected, devChannel, templates, chatWindows, crew, openDialog],
-  );
+  const actions = useMemo(() => buildActions(ctx), [ctx]);
 
   const indexed = useMemo(
     () => [...actions, ...sources.entries].map((e) => ({ e, label: fold(e.label), hay: fold(`${e.label} ${e.keywords ?? ""} ${e.hint ?? ""}`) })),

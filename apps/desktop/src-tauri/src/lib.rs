@@ -134,7 +134,8 @@ pub fn run() {
     // Before Tauri starts any thread; the sidecar and the terminals inherit the variables.
     #[cfg(unix)]
     shell_env::apply();
-    // On macOS Tauri's default menu stays: without its Edit menu, Cmd+C/V/X/A/Z do nothing in the webview.
+    // On macOS Tauri's default menu stays until the UI sets FORGE's own (AppMenu.tsx); both carry the
+    // Edit menu, without which Cmd+C/V/X/A/Z do nothing in the webview.
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
