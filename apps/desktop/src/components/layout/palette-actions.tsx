@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, Zap, type LucideIcon } from "lucide-react";
-import { openQuickChat } from "@/lib/quick-chat";
+import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
+import { isTmpChat } from "@forge/protocol";
+import { openTempChat } from "@/lib/temp-chat";
 import type {
   Crew,
   AppInstallState,
@@ -542,13 +543,15 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
       });
     }
 
-    act("knowledge-merge", t.layout.actions.knowledgeMerge, icon(Combine), () => ui.openKnowledge(KNOWLEDGE_MERGE_REQUEST), {
+    // A temporary chat is no project to set up: no knowledge, panels, profiles, settings, groups or tags.
+    const temp = isTmpChat(project);
+    if (!temp) act("knowledge-merge", t.layout.actions.knowledgeMerge, icon(Combine), () => ui.openKnowledge(KNOWLEDGE_MERGE_REQUEST), {
       keywords: "projektwissen einträge zusammenführen wissen aufräumen überschneidungen doppelt merge automatisch claude project knowledge entries clean up overlaps duplicates",
     });
-    act("knowledge-stale", t.layout.actions.knowledgeStale, icon(Link2Off), () => ui.openKnowledge(KNOWLEDGE_STALE_REQUEST), {
+    if (!temp) act("knowledge-stale", t.layout.actions.knowledgeStale, icon(Link2Off), () => ui.openKnowledge(KNOWLEDGE_STALE_REQUEST), {
       keywords: "projektwissen wissen veraltet verweise fehlen dateien bezeichner kaputt alt prüfen project knowledge outdated stale references missing files identifiers broken check",
     });
-    act("knowledge-recheck", t.layout.actions.knowledgeRecheck, icon(RefreshCw), () => void recheckKnowledgeRefs(qc, owner), {
+    if (!temp) act("knowledge-recheck", t.layout.actions.knowledgeRecheck, icon(RefreshCw), () => void recheckKnowledgeRefs(qc, owner), {
       keywords: "projektwissen wissen veraltet verweise dateien bezeichner prüfen aktualisieren project knowledge outdated references files identifiers recheck refresh",
     });
     act("report-project", t.layout.actions.reportProject, icon(CalendarDays), () => ui.openReport(root?.id ?? project.id), {
@@ -562,9 +565,11 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
       if (file) act("explorer-file", t.layout.actions.explorerFile, icon(FolderOpen), () => void revealInProject(project.path, file), { keywords: "datei explorer ordner windows file folder show", hint: file });
     }
     if ((root ?? project).gitEnabled) addCrewActions(ctx, act, (root ?? project).id);
-    act("terminal", t.layout.actions.terminal, icon(SquareTerminal), () => ui.openTerminal(project.id, "shell"), { keywords: "terminal shell konsole console" });
-    act("bottom", t.layout.actions.bottom, icon(PanelBottom), () => ui.toggleBottomPanel(), { hint: t.layout.actions.ctrl("J"), keywords: "unteres panel einblenden ausblenden bottom panel toggle show hide" });
-    act("right", t.layout.actions.right, icon(PanelRight), () => ui.toggleRightPanel(), { hint: t.layout.actions.ctrlShift("E"), keywords: "seitenleiste einblenden ausblenden sidebar side panel toggle show hide" });
+    if (!temp) {
+      act("terminal", t.layout.actions.terminal, icon(SquareTerminal), () => ui.openTerminal(project.id, "shell"), { keywords: "terminal shell konsole console" });
+      act("bottom", t.layout.actions.bottom, icon(PanelBottom), () => ui.toggleBottomPanel(), { hint: t.layout.actions.ctrl("J"), keywords: "unteres panel einblenden ausblenden bottom panel toggle show hide" });
+      act("right", t.layout.actions.right, icon(PanelRight), () => ui.toggleRightPanel(), { hint: t.layout.actions.ctrlShift("E"), keywords: "seitenleiste einblenden ausblenden sidebar side panel toggle show hide" });
+    }
     if (ui.splitRoom > 0) {
       act("split-add", t.layout.actions.splitAdd, icon(Columns2), () => ui.addSplitPane(), {
         keywords: "geteilte ansicht teilen split mehrere sessions projekte nebeneinander raster bereich chat daneben split view multiple side by side grid area beside",
@@ -582,6 +587,10 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
         keywords: "geteilte ansicht split mehrere sessions projekte bereiche zurück wiederherstellen raster split view reopen restore areas grid",
       });
     }
+    if (!temp) addProjectSettings(project);
+  }
+
+  function addProjectSettings(project: NonNullable<ActionContext["project"]>) {
     for (const p of PROFILE_IDS) {
       if (p === project.profile || (p === "autonomous" && project.tags.includes("sandbox-only"))) continue;
       act(`profile-${p}`, t.layout.actions.switchProfile(PROFILE_INFO[p].label), icon(Shield), () => {
@@ -642,7 +651,7 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
   });
   act("template-new", t.layout.actions.templateNew, icon(FilePlus2), () => useTemplateDialogs.getState().openEdit({ id: null, projectId: null }), { keywords: "neue vorlage anlegen prompt vorlage template speichern new create save" });
   act("report", t.layout.actions.report, icon(CalendarDays), () => ui.openReport(null), { keywords: "tagesbericht was ist heute passiert rückblick alle projekte agenten commits zusammenfassung tag gestern daily report today what happened review all projects agents summary day yesterday" });
-  act("quick-chat", t.layout.actions.quickChat, icon(Zap), () => void openQuickChat(), { hint: t.layout.actions.ctrlShift("N"), keywords: "schneller chat temporär tmp ohne projekt kurze frage quick temporary chat no project question" });
+  act("temp-chat", t.layout.actions.tempChat, icon(MessageSquareDashed), () => void openTempChat(), { hint: t.layout.actions.ctrlShift("N"), keywords: "temporärer chat schneller chat tmp ohne projekt kurze frage temporary quick chat no project question" });
   act("add-project", t.layout.actions.addProject, icon(FolderPlus), () => ui.setNewProject("import"), { hint: t.layout.actions.ctrl("O"), keywords: "projekt hinzufügen importieren ordner add project import folder" });
   act("create-project", t.layout.actions.createProject, icon(FolderPlus), () => ui.setNewProject("create"), { keywords: "neues projekt anlegen new project create" });
   act("clone-project", t.layout.actions.cloneProject, icon(FolderDown), () => ui.setNewProject("clone"), { keywords: "projekt github klonen clone repository project" });

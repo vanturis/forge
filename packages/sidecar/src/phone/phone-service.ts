@@ -1811,7 +1811,7 @@ export class PhoneService {
           await sessions.send(s.id, text);
           return tr().phone.session.sent(refFor(s.id));
         }),
-      quickChat: (prompt, o) =>
+      tempChat: (prompt, o) =>
         run(true, async () => {
           const m = tr().phone.session;
           if (!prompt.trim()) return m.emptyPrompt;

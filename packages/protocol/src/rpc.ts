@@ -350,7 +350,7 @@ export const methods = {
   "projects.import": { params: z.object({ path: z.string().min(1).max(4096), gitEnabled: z.boolean().default(true) }), result: Project },
   /** What the import dialog shows before importing; a missing or unreadable folder is no error, just no git. */
   "projects.inspectFolder": { params: z.object({ path: z.string().min(1).max(4096) }), result: z.object({ hasGit: z.boolean() }) },
-  /** The project behind quick chats, in the subfolder tmp of the folder for new projects; made on first use. */
+  /** The project behind temporary chats, in the subfolder tmp of the folder for new projects; made on first use. */
   "projects.tmpChat": { params: empty, result: Project },
   "projects.create": {
     params: z.object({

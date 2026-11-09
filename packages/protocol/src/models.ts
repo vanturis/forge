@@ -40,8 +40,10 @@ export const ProjectGroup = z.string().trim().min(1).max(60);
 
 /** Automation tags that only work with git; a project without git drops them. */
 export const GIT_TAGS: readonly string[] = ["auto-commit", "auto-push", "auto-merge", "review-required"];
-/** Marks the hidden project behind quick chats: not listed among the projects and never synced. */
+/** Marks the hidden project behind temporary chats: not listed among the projects and never synced. */
 export const TMP_CHAT_TAG = "tmp-chat";
+/** Whether the project is the one behind the temporary chats. */
+export const isTmpChat = (p: { tags?: readonly string[] } | null | undefined): boolean => !!p?.tags?.includes(TMP_CHAT_TAG);
 
 export const GitSummary = z.object({
   isRepo: z.boolean(),

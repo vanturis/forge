@@ -48,6 +48,13 @@ describe("quick chats", () => {
     expect(p.tags).not.toContain(TMP_CHAT_TAG);
   });
 
+  it("renames a temporary chat project of an earlier build", async () => {
+    const p = await pm.tmpChat();
+    db.updateProject(p.id, { name: "Schnelle Chats" });
+    pm.nameTmpChats();
+    expect(pm.get(p.id).name).not.toBe("Schnelle Chats");
+  });
+
   it("asks for the folder for new projects when none is set", async () => {
     dir = null;
     await expect(pm.tmpChat()).rejects.toMatchObject({ code: "VALIDATION" });

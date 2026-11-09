@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
-import { Bot, History, ListTree, MessageSquarePlus, RotateCcw, Search, Terminal, User } from "lucide-react";
-import type { ExternalSession, Project, Session, SessionEvent } from "@forge/protocol";
+import { Bot, History, ListTree, MessageSquareDashed, MessageSquarePlus, RotateCcw, Search, Terminal, User } from "lucide-react";
+import { isTmpChat, type ExternalSession, type Project, type Session, type SessionEvent } from "@forge/protocol";
 import { useOlderHistory, useSession, useSessionHistory, useSessions } from "@/lib/queries";
 import { isBusy, isWorking } from "@/lib/working";
 import { cn, relativeTime } from "@/lib/utils";
@@ -207,6 +207,10 @@ function NewSessionPane({ project, external }: { project: Project; external: Ext
         ) : external ? (
           <EmptyState icon={<Terminal className="h-9 w-9" />} title={t.chat.panel.resumeTitle}>
             {t.chat.panel.resumeBody(external.summary, relativeTime(external.lastModified), external.gitBranch)}
+          </EmptyState>
+        ) : isTmpChat(project) ? (
+          <EmptyState icon={<MessageSquareDashed className="h-9 w-9" />} title={t.workspace.tempChat.newTitle}>
+            {t.workspace.tempChat.newBody}
           </EmptyState>
         ) : (
           <EmptyState icon={<MessageSquarePlus className="h-9 w-9" />} title={t.chat.panel.newSessionTitle(project.name)}>

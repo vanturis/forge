@@ -1,4 +1,4 @@
-import { Download, Plus, Zap } from "lucide-react";
+import { Download, MessageSquareDashed, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { UsageWindow } from "@forge/protocol";
 import { usageItems } from "@/components/usage/UsageWindows";
@@ -17,7 +17,7 @@ import { cn, planLabel, relativeTime } from "@/lib/utils";
 import { Logo } from "./Logo";
 import { AppUpdateCard } from "./AppUpdate";
 import { splitProjects } from "@/lib/project-tree";
-import { openQuickChat } from "@/lib/quick-chat";
+import { openTempChat } from "@/lib/temp-chat";
 import { NAV } from "./nav";
 import { OpenSessions, SplitViewEntry } from "./OpenSessions";
 import { SearchField } from "./SearchField";
@@ -92,8 +92,8 @@ export function Sidebar() {
         <div className="flex items-center justify-between px-3 pb-2">
           <span className="text-body text-muted">{t.layout.sidebar.opened}</span>
           <div className="flex items-center gap-0.5">
-            <Button size="icon-sm" variant="ghost" onClick={() => void openQuickChat()} className="h-6 w-6 text-subtle hover:bg-surface-2" aria-label={t.layout.sidebar.quickChat} title={t.layout.sidebar.quickChatTitle}>
-              <Zap className="h-4 w-4" />
+            <Button size="icon-sm" variant="ghost" onClick={() => void openTempChat()} className="h-6 w-6 text-subtle hover:bg-surface-2" aria-label={t.layout.sidebar.tempChat} title={t.layout.sidebar.tempChatTitle}>
+              <MessageSquareDashed className="h-4 w-4" />
             </Button>
             <Button size="icon-sm" variant="ghost" onClick={() => setNewProject("import")} className="h-6 w-6 text-subtle hover:bg-surface-2" aria-label={t.layout.sidebar.addProject} title={t.layout.sidebar.addProject}>
               <Plus className="h-4 w-4" />
@@ -117,11 +117,11 @@ export function Sidebar() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => void openQuickChat()}
-              title={t.layout.sidebar.quickChatTitle}
+              onClick={() => void openTempChat()}
+              title={t.layout.sidebar.tempChatTitle}
               className="mt-2 h-11 w-full justify-start gap-2.5 rounded-lg border-dashed px-3 text-body-lg font-normal text-muted hover:border-border-strong hover:bg-transparent hover:text-fg"
             >
-              <Zap className="h-4 w-4" /> {t.layout.sidebar.quickChat}
+              <MessageSquareDashed className="h-4 w-4" /> {t.layout.sidebar.tempChat}
             </Button>
           </>
         )}

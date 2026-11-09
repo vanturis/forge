@@ -31,7 +31,7 @@ async function newestChange(target: string, cutoff: number): Promise<number> {
   return newest;
 }
 
-/** Removes quick chats nobody touched for 30 days, with what they left in the tmp folder. */
+/** Removes temporary chats nobody touched for 30 days, with what they left in the tmp folder. */
 export class TmpChatCleanup {
   private first: ReturnType<typeof setTimeout> | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -57,7 +57,7 @@ export class TmpChatCleanup {
       try {
         await this.clean(p, cutoff);
       } catch (e) {
-        this.d.log?.(`Schnelle Chats: Aufräumen fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`);
+        this.d.log?.(`Temporäre Chats: Aufräumen fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
   }

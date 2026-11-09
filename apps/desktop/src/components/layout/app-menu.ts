@@ -58,7 +58,7 @@ export const APP_MENU: ReadonlyArray<{ submenu: string; items: readonly MenuNode
     items: [
       a("new-session", m.newSession, { accelerator: "CmdOrCtrl+N" }),
       "-",
-      a("quick-chat", m.quickChat, { accelerator: "CmdOrCtrl+Shift+N" }),
+      a("temp-chat", m.tempChat, { accelerator: "CmdOrCtrl+Shift+N" }),
       a("add-project", m.addProject, { accelerator: "CmdOrCtrl+O" }),
       a("create-project", m.createProject),
       a("clone-project", m.cloneProject),

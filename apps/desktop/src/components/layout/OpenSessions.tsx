@@ -16,7 +16,9 @@ import { splitActive, useUi, type SplitPane } from "@/stores/ui";
 import { toast } from "@/stores/toast";
 import { useTemplateDialogs } from "@/stores/templates";
 import { useSessionUsageDialog } from "@/stores/session-usage";
+import { isTmpChat } from "@forge/protocol";
 import { ProjectIcon } from "@/components/projects/ProjectIcon";
+import { TempChatIcon } from "@/components/workspace/TempChat";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { sessionStatusLabel } from "@/components/workspace/SessionStatusBadge";
 import { focusComposer, openChat } from "@/components/workspace/chat-slot";
@@ -255,7 +257,7 @@ export function OpenSessions() {
                 title={t.layout.openSessions.projectTitle(g.projectName, splitRoom > 0 && !projectActive)}
                 className={cn("flex min-w-0 flex-1 items-center gap-2.5 px-2 py-1.5 text-left text-ui", projectActive ? "text-fg" : "text-muted hover:text-fg")}
               >
-                <ProjectIcon id={g.projectId} name={g.projectName} size={22} className="rounded-md" />
+                {isTmpChat(projects.data?.find((p) => p.id === g.projectId)) ? <TempChatIcon /> : <ProjectIcon id={g.projectId} name={g.projectName} size={22} className="rounded-md" />}
                 <span className="truncate">{g.projectName}</span>
                 {crewOf(g.projectId) && (
                   <span title={t.crew.inCrew(crewOf(g.projectId)!.name)} aria-label={t.crew.inCrew(crewOf(g.projectId)!.name)} className="flex shrink-0 items-center gap-0.5 rounded-full bg-accent/15 px-1.5 py-px text-[10px] font-semibold text-accent">

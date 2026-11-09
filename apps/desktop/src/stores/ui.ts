@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { isTmpChat } from "@forge/protocol";
 import { isChatWindow } from "@/lib/chat-windows";
 
 export type View = "home" | "projects" | "sessions" | "report" | "mcp" | "settings" | "workspace";
@@ -19,7 +20,9 @@ export const knowledgeFixRequest = (id: string) => `:fix:${id}`;
 /** Tabs that need git; a project set up without git does not show them. */
 const GIT_WORKSPACE_TABS: ReadonlySet<WorkspaceTab> = new Set(["agents", "git", "crew"]);
 /** The tabs a project shows, in the order of the tab bar. */
-export function workspaceTabsFor(project: { gitEnabled: boolean } | null | undefined): WorkspaceTab[] {
+export function workspaceTabsFor(project: { gitEnabled: boolean; tags?: readonly string[] } | null | undefined): WorkspaceTab[] {
+  // A temporary chat is only a chat: no project tabs, settings or git to look after.
+  if (isTmpChat(project)) return ["chat"];
   return WORKSPACE_TABS.filter((t) => project?.gitEnabled !== false || !GIT_WORKSPACE_TABS.has(t));
 }
 export const SETTINGS_SECTIONS = ["general", "templates", "claude", "policy", "phone", "github", "backup", "rules", "about"] as const;

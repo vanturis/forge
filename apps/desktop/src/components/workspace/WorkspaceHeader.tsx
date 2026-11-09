@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { Bot, ChevronDown, Columns2, FolderTree, GitMerge, GripHorizontal, LayoutGrid, Maximize2, SquareTerminal, Star, Tag, Wrench, X } from "lucide-react";
-import type { ProfileId } from "@forge/protocol";
+import { isTmpChat, type ProfileId } from "@forge/protocol";
+import { TempChatIcon } from "./TempChat";
 import { call, keys, useProject, useProjects } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
 import { agentLabel } from "@/lib/project-tree";
@@ -170,7 +171,7 @@ export function SplitControlBar({ projectId }: { projectId: string }) {
       <div className="flex-1" />
       {project ? (
         <>
-          <LayoutToggles project={project} />
+          {isTmpChat(project) ? <SplitButton /> : <LayoutToggles project={project} />}
           <RemoteControlButton project={project} />
         </>
       ) : (
@@ -236,6 +237,35 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
       {project.name}
     </h1>
   );
+
+  // A temporary chat has nothing to set up: no favourite, tags, permission profile or panels.
+  if (isTmpChat(project))
+    return (
+      <header className="relative flex h-12 shrink-0 items-center gap-3 border-b border-border px-5">
+        <AreaGrip area={pane ? pane.id : MAIN_AREA} />
+        <TempChatIcon size={26} className="rounded-lg" />
+        {pane ? <ProjectSwitch pane={pane} current={projectId}>{name}</ProjectSwitch> : name}
+        <span className="hidden min-w-0 truncate text-caption-lg text-subtle @2xl:inline">{t.workspace.tempChat.headerHint}</span>
+        <div className="flex-1" />
+        {controls && <SplitButton />}
+        {controls && <RemoteControlButton project={project} />}
+        {pane ? (
+          <>
+            <HeaderDivider />
+            <PaneActions pane={pane} />
+          </>
+        ) : (
+          controls && (
+            <>
+              <HeaderDivider />
+              <SyncButton />
+              <AlwaysOnTopButton />
+              <PhoneButton />
+            </>
+          )
+        )}
+      </header>
+    );
 
   return (
     <header className="relative flex h-12 shrink-0 items-center gap-3 border-b border-border px-5">

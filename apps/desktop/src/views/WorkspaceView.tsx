@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { Activity, Bot, FolderTree, GitCompare, BookOpen, FileText, FlaskConical, GitBranch, MessageSquare, Settings2, Users } from "lucide-react";
+import { isTmpChat } from "@forge/protocol";
 import { call, keys, useProject } from "@/lib/queries";
 import { errorMessage, RpcCallError } from "@/lib/rpc";
 import { useUi, workspaceTabsFor, type WorkspaceTab } from "@/stores/ui";
@@ -80,7 +81,9 @@ function Workspace({ projectId }: { projectId: string }) {
   const visibleTabs = workspaceTabsFor(project);
   const workspaceTab = useWorkspaceTab(project);
   const narrow = useNarrow();
-  const showRight = rightPanelOpen && !narrow && workspaceTab === "chat";
+  // A temporary chat is only the chat: no tab row, side or bottom panel.
+  const temp = isTmpChat(project);
+  const showRight = rightPanelOpen && !narrow && workspaceTab === "chat" && !temp;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -97,7 +100,7 @@ function Workspace({ projectId }: { projectId: string }) {
 
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
-          <Collapse open={toolbarOpen}>
+          <Collapse open={toolbarOpen && !temp}>
             <div className="flex h-12 shrink-0 items-center gap-1 border-b border-border px-4">
               <TabBar<WorkspaceTab>
                 size="lg"
@@ -132,7 +135,7 @@ function Workspace({ projectId }: { projectId: string }) {
             {workspaceTab === "crew" && <CrewTab project={project} />}
             {workspaceTab === "settings" && <ProjectSettingsTab project={project} />}
           </div>
-          <BottomPanel project={project} />
+          {!temp && <BottomPanel project={project} />}
         </div>
         {showRight && <RightPanel projectId={projectId} />}
       </div>

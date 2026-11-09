@@ -202,6 +202,13 @@ export const workspace = {
     reveal: `Im ${fm} zeigen`,
     copyPath: "Pfad kopieren",
   },
+  tempChat: {
+    badge: "Temporär",
+    hint: "Temporärer Chat ohne Projekt, im Ordner tmp und ohne Git. Er wird 30 Tage nach der letzten Änderung gelöscht.",
+    headerHint: "Ohne Projekt, wird nach 30 Tagen gelöscht",
+    newTitle: "Neuer temporärer Chat",
+    newBody: "Für schnelle Fragen, die zu keinem Projekt gehören. Der Chat läuft im Ordner tmp ohne Git und wird 30 Tage nach der letzten Änderung gelöscht, ebenso die Dateien, die dabei entstehen.",
+  },
   latestFile: {
     loading: "Zuletzt bearbeitete Datei wird geladen",
     editing: "wird bearbeitet",

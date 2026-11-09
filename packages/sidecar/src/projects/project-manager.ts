@@ -133,7 +133,13 @@ export class ProjectManager {
     return canonical;
   }
 
-  /** Two quick chats opened at once must not both import the folder. */
+  /** The project behind the temporary chats is named by FORGE, in the current language; earlier builds called it "Schnelle Chats". */
+  nameTmpChats() {
+    const name = tr().system.projects.tmpChatName;
+    for (const p of this.db.listProjects()) if (p.tags.includes(TMP_CHAT_TAG) && p.name !== name) this.db.updateProject(p.id, { name });
+  }
+
+  /** Two temporary chats opened at once must not both import the folder. */
   tmpChat(): Promise<Project> {
     return (this.tmpChatRun ??= this.ensureTmpChat().finally(() => {
       this.tmpChatRun = null;

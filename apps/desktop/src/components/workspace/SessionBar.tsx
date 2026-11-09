@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown, History, Hourglass, MessageSquarePlus, Pin, PinOff, Power, ShieldAlert, SquareArrowOutDownLeft, SquareArrowOutUpRight, Terminal, Trash2 } from "lucide-react";
-import type { ExternalSession, Project, Session } from "@forge/protocol";
+import { isTmpChat, type ExternalSession, type Project, type Session } from "@forge/protocol";
+import { TempChatBadge } from "./TempChat";
 import { openChatWindow, reattachChatWindow } from "@/lib/chat-windows";
 import { contextItems } from "@/lib/context-menu";
 import { setChatWindowPin, useChatWindowPin } from "@/lib/window-options";
@@ -127,6 +128,7 @@ export function SessionBar({
         </Badge>
       )}
       <div className="flex-1" />
+      {isTmpChat(project) && <TempChatBadge compact={compact} />}
       {session?.apiKeySource && session.apiKeySource !== "none" && (
         <Badge tone="warning" className="max-w-56 truncate">
           Auth: {session.apiKeySource}

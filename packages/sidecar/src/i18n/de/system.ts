@@ -109,7 +109,7 @@ export const system = {
     agentsDisabled: (name: string) => `In ${name} sind parallele Agenten ausgeschaltet. Sie lassen sich in den Projekt-Einstellungen wieder erlauben.`,
     gitDisabled: (name: string) => `${name} ist ohne Git eingerichtet. Git lässt sich in den Projekt-Einstellungen einschalten.`,
     folderGone: (path: string) => `Projektordner existiert nicht mehr: ${path}`,
-    tmpChatName: "Schnelle Chats",
+    tmpChatName: "Temporäre Chats",
     folderNotFound: (path: string) => `Ordner nicht gefunden: ${path}`,
     notAFolder: (path: string) => `Kein Ordner: ${path}`,
     noAccess: (path: string) => `Keine Lese-/Schreibrechte für ${path}`,

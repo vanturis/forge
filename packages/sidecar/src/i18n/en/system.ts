@@ -110,7 +110,7 @@ export const system: typeof De = {
     agentsDisabled: (name) => `Parallel agents are switched off in ${name}. You can allow them again in the project settings.`,
     gitDisabled: (name) => `${name} is set up without Git. You can turn Git on in the project settings.`,
     folderGone: (path) => `Project folder no longer exists: ${path}`,
-    tmpChatName: "Quick chats",
+    tmpChatName: "Temporary chats",
     folderNotFound: (path) => `Folder not found: ${path}`,
     notAFolder: (path) => `Not a folder: ${path}`,
     noAccess: (path) => `No read/write access to ${path}`,

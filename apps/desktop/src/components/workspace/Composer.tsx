@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUp, ListTodo, Paperclip, SlidersHorizontal, Square } from "lucide-react";
-import { findTemplates, suggestTemplates, templatePlaceholders, type EffortLevel, type Project, type PromptTemplate, type Session } from "@forge/protocol";
+import { findTemplates, isTmpChat, suggestTemplates, templatePlaceholders, type EffortLevel, type Project, type PromptTemplate, type Session } from "@forge/protocol";
 import { useRuntimeInfo, useSettings, useTemplates } from "@/lib/queries";
 import { EFFORT_LEVELS, findModel, modelLabel } from "@/lib/models";
 import { isWorking } from "@/lib/working";
@@ -16,6 +16,7 @@ import { ContextMeter } from "./ContextMeter";
 import { SessionUsageMeter } from "@/components/usage/SessionUsage";
 import { LongSessionHint } from "./handoff";
 import { RateLimitBadge } from "./RateLimitBadge";
+import { TempChatBadge } from "./TempChat";
 import { AttachmentList } from "./AttachmentList";
 import { ComposerHistoryMenu } from "./ComposerHistoryMenu";
 import { CLEAR_COMMANDS, isClearCommand, SlashCommandMenu, useSlashCommands, type Command } from "./SlashCommandMenu";
@@ -671,6 +672,7 @@ export const Composer = memo(function Composer({
           </Tooltip>
           {/* The displays give way first: still too narrow after the breakpoints, they are cut off here instead of pushing send and stop out of the window. */}
           <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+            {isTmpChat(project) && <TempChatBadge />}
             <RateLimitBadge autoContinueAt={session?.autoContinueAt ?? null} />
             {session && (
               <div className="hidden shrink-0 @xl/composer:flex">

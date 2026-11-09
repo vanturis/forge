@@ -5,7 +5,7 @@ import { keys, queryClient } from "@/lib/queries";
 import { flatTabs, groupTabs, openSessionId, openSessionTab, shownSessionIds } from "@/lib/session-tabs";
 import { openChat } from "@/components/workspace/chat-slot";
 import { hasPrimaryModifier, isMac } from "@/lib/platform";
-import { openQuickChat } from "@/lib/quick-chat";
+import { openTempChat } from "@/lib/temp-chat";
 
 /** An open dialog owns the keyboard: switching sessions behind it would change what it acts on. */
 export function dialogOpen(): boolean {
@@ -14,7 +14,7 @@ export function dialogOpen(): boolean {
 
 /**
  * App-wide shortcuts. Ctrl+K command palette, Ctrl+1..7 workspace tabs, Ctrl+J bottom panel,
- * Ctrl+Shift+E right panel, Ctrl+N new session, Ctrl+Shift+N quick chat, Ctrl+O add project,
+ * Ctrl+Shift+E right panel, Ctrl+N new session, Ctrl+Shift+N temporary chat, Ctrl+O add project,
  * Ctrl+Tab / Ctrl+Shift+Tab next / previous open session, in the order of the sidebar tree.
  */
 export function handleGlobalShortcut(e: KeyboardEvent) {
@@ -70,7 +70,7 @@ export function handleGlobalShortcut(e: KeyboardEvent) {
     ui.setNewProject("import");
     e.preventDefault();
   } else if (e.shiftKey && k === "n") {
-    void openQuickChat();
+    void openTempChat();
     e.preventDefault();
   }
 }

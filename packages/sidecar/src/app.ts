@@ -274,6 +274,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     log: (m) => opts.log?.(m),
   });
   tmpChatCleanup.start();
+  projects.nameTmpChats();
   const claudeFor = () => {
     const settings = db.getSettings();
     return { path: locateClaude(settings.claudePath), env: sessionEnv(settings.stripApiKey) };

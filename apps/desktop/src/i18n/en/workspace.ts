@@ -202,6 +202,13 @@ export const workspace: typeof De = {
     reveal: `Show in ${fm}`,
     copyPath: "Copy path",
   },
+  tempChat: {
+    badge: "Temporary",
+    hint: "Temporary chat without a project, in the tmp folder and without git. It is deleted 30 days after the last change.",
+    headerHint: "No project, deleted after 30 days",
+    newTitle: "New temporary chat",
+    newBody: "For quick questions that belong to no project. The chat runs in the tmp folder without git and is deleted 30 days after the last change, along with the files it creates.",
+  },
   latestFile: {
     loading: "Loading the last edited file",
     editing: "being edited",

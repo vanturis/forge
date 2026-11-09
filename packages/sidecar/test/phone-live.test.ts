@@ -33,7 +33,7 @@ function toolset(calls: string[] = []): PhoneToolset {
     details: rec("details"),
     sendMessage: rec("sendMessage"),
     startSession: rec("startSession"),
-    quickChat: rec("quickChat"),
+    tempChat: rec("tempChat"),
     respond: rec("respond"),
     stop: rec("stop"),
     close: rec("close"),

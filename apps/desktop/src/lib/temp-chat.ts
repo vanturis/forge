@@ -5,8 +5,8 @@ import { toast } from "@/stores/toast";
 import { useUi } from "@/stores/ui";
 import { t } from "@/i18n";
 
-/** Opens a new session in the hidden project under `<folder for new projects>/tmp`, ready to type. */
-export async function openQuickChat() {
+/** Opens a new temporary chat in the hidden project under `<folder for new projects>/tmp`, ready to type. */
+export async function openTempChat() {
   try {
     const project = await call("projects.tmpChat", {});
     await queryClient.invalidateQueries({ queryKey: keys.projects });
@@ -15,6 +15,6 @@ export async function openQuickChat() {
     ui.openProject(project.id, null);
     requestAnimationFrame(() => focusComposer({ pane: null }));
   } catch (e) {
-    toast.error(t.layout.sidebar.quickChatFailed, errorMessage(e));
+    toast.error(t.layout.sidebar.tempChatFailed, errorMessage(e));
   }
 }
