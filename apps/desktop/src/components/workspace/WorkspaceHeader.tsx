@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
-import { Bot, ChevronDown, Columns2, FolderTree, GitMerge, GripHorizontal, LayoutGrid, Maximize2, SquareTerminal, Star, Tag, Wrench, X } from "lucide-react";
+import { Bot, ChevronDown, Columns2, Eye, FolderTree, GitMerge, GripHorizontal, LayoutGrid, Maximize2, SquareTerminal, Star, Tag, Wrench, X } from "lucide-react";
 import type { ProfileId } from "@forge/protocol";
 import { call, keys, useProject, useProjects } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
@@ -56,7 +56,7 @@ export function useNarrow() {
  */
 function LayoutToggles({ project }: { project: { gitEnabled: boolean } }) {
   const workspaceTab = useWorkspaceTab(project);
-  const { toolbarOpen, toggleToolbar, rightPanelOpen, toggleRightPanel, bottomPanelOpen, toggleBottomPanel } = useUi(
+  const { toolbarOpen, toggleToolbar, rightPanelOpen, toggleRightPanel, bottomPanelOpen, toggleBottomPanel, liveFilesOpen, toggleLiveFiles } = useUi(
     useShallow((s) => ({
       toolbarOpen: s.toolbarOpen,
       toggleToolbar: s.toggleToolbar,
@@ -64,10 +64,13 @@ function LayoutToggles({ project }: { project: { gitEnabled: boolean } }) {
       toggleRightPanel: s.toggleRightPanel,
       bottomPanelOpen: s.bottomPanelOpen,
       toggleBottomPanel: s.toggleBottomPanel,
+      liveFilesOpen: s.liveFilesOpen,
+      toggleLiveFiles: s.toggleLiveFiles,
     })),
   );
   const narrow = useNarrow();
   const showRight = rightPanelOpen && !narrow && workspaceTab === "chat";
+  const showLive = liveFilesOpen && !narrow && workspaceTab === "chat";
   return (
     <div className="flex shrink-0 items-center gap-0.5">
       <Button
@@ -109,6 +112,18 @@ function LayoutToggles({ project }: { project: { gitEnabled: boolean } }) {
         className={cn(showRight && "text-accent")}
       >
         <FolderTree className="h-4 w-4" />
+      </Button>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        onClick={() => toggleLiveFiles()}
+        aria-pressed={showLive}
+        aria-label={m.liveFiles}
+        disabled={narrow || workspaceTab !== "chat"}
+        title={narrow ? m.liveFilesTooNarrow : workspaceTab !== "chat" ? m.liveFilesChatOnly : m.liveFilesTitle(showLive)}
+        className={cn(showLive && "text-accent")}
+      >
+        <Eye className="h-4 w-4" />
       </Button>
       <SplitButton />
     </div>

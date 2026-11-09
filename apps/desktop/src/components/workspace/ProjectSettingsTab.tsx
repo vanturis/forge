@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, FileText, Folders, Pencil, ShieldAlert, ShieldCheck, SlidersHorizontal, Trash2, Workflow, X } from "lucide-react";
-import { redactRemoteUrl, remoteKind, type ProfileId, type Project, type EffortLevel } from "@forge/protocol";
+import { redactRemoteUrl, remoteKind, TMP_CHAT_TAG, type ProfileId, type Project, type EffortLevel } from "@forge/protocol";
 import { call, keys, useGitStatus, useRuntimeInfo, useSettings } from "@/lib/queries";
 import { contextItems, copyText } from "@/lib/context-menu";
 import { modelLabel } from "@/lib/models";
@@ -308,7 +308,7 @@ function AutomationSection({ project, update }: SectionProps) {
       if (--saving.current === 0) intended.current = null;
     });
   };
-  const own = project.tags.filter((t) => !KNOWN_TAGS.has(t));
+  const own = project.tags.filter((t) => !KNOWN_TAGS.has(t) && t !== TMP_CHAT_TAG);
   const addOwn = () => {
     const tag = draft.trim().toLowerCase();
     if (!tag || project.tags.includes(tag)) return setDraft("");

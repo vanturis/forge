@@ -58,6 +58,7 @@ export const APP_MENU: ReadonlyArray<{ submenu: string; items: readonly MenuNode
     items: [
       a("new-session", m.newSession, { accelerator: "CmdOrCtrl+N" }),
       "-",
+      a("quick-chat", m.quickChat, { accelerator: "CmdOrCtrl+Shift+N" }),
       a("add-project", m.addProject, { accelerator: "CmdOrCtrl+O" }),
       a("create-project", m.createProject),
       a("clone-project", m.cloneProject),
@@ -111,6 +112,7 @@ export const APP_MENU: ReadonlyArray<{ submenu: string; items: readonly MenuNode
       "-",
       a("bottom", m.bottom, { accelerator: "CmdOrCtrl+J" }),
       a("right", m.right, { accelerator: "CmdOrCtrl+Shift+E" }),
+      a("live-files", m.liveFiles, { accelerator: "CmdOrCtrl+Shift+L" }),
       "-",
       a("split-add", m.splitAdd),
       a("split-close", m.splitClose),

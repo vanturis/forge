@@ -60,7 +60,7 @@ const report = (date: string) => ({
 const callMock = vi.fn(async (method: string, params: { date?: string }) => {
   switch (method) {
     case "projects.list":
-      return [{ id: "app", name: "App", parentId: null }];
+      return [{ id: "app", name: "App", parentId: null, tags: [] }];
     case "reports.daily":
       return report(params.date!);
     case "reports.dailySummary":

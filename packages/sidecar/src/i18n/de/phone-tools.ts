@@ -26,6 +26,14 @@ export const phoneTools = {
       with_changes: "nur mit agent: true, wenn der Agent auch den noch nicht committeten Stand des Projekts bekommen soll",
     },
   },
+  quick_chat: {
+    description: "Startet einen schnellen Chat ohne Projekt, für Fragen, die zu keinem Projekt gehören. Er läuft im Unterordner tmp des Ordners für neue Projekte, ohne Git.",
+    params: {
+      prompt: "Frage oder Auftrag, vollständig ausformuliert",
+      model: "nur wenn der Anrufer ein Modell nennt: opus, sonnet oder haiku",
+      effort: "Denkaufwand, nur wenn der Anrufer ihn nennt",
+    },
+  },
   respond: {
     description: "Beantwortet die offene Freigabe, Rückfrage, MCP-Rückfrage oder den Plan einer Session. allow = erlauben, Plan annehmen oder Rückfrage beantworten (answers, bei MCP-Rückfragen je Feld). deny = ablehnen oder Plan mit feedback zurückgeben.",
     params: {

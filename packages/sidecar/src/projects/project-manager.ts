@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { constants, existsSync } from "node:fs";
 import { access, mkdir, open, readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { ForgeError, GIT_TAGS, type Project, type ProjectWithStatus } from "@forge/protocol";
+import { ForgeError, GIT_TAGS, TMP_CHAT_TAG, type Project, type ProjectWithStatus } from "@forge/protocol";
 import type { Db, ProjectRecord } from "../persistence/db.js";
 import { repoNameFromUrl, validateCloneUrl, type GitEngine } from "../git/git.js";
 import { canonicalize, isInside, pathKey, validateDirName } from "../util/paths.js";
@@ -20,6 +20,8 @@ export interface CreateProjectInput {
   gitEnabled?: boolean;
 }
 
+/** Subfolder of the folder for new projects that holds the quick chats. */
+const TMP_CHAT_DIR = "tmp";
 const MAX_FILE_BYTES = 512 * 1024;
 /** Bytes per readFileChunk call: a few MB keep each protocol line small. */
 export const CHUNK_BYTES = 4 * 1024 * 1024;
@@ -51,10 +53,13 @@ async function canonicalizeExisting(p: string): Promise<string> {
 }
 
 export class ProjectManager {
+  private tmpChatRun: Promise<Project> | null = null;
+
   constructor(
     private readonly db: Db,
     private readonly git: GitEngine,
     private readonly defaultProfile: () => Project["profile"],
+    private readonly projectsDir: () => string | null = () => null,
   ) {}
 
   /** The repository's .forge/project.json wins over the commands stored on this computer. */
@@ -126,6 +131,30 @@ export class ProjectManager {
       throw new ForgeError("PATH_NOT_ACCESSIBLE", tr().system.projects.noAccess(canonical));
     }
     return canonical;
+  }
+
+  /** Two quick chats opened at once must not both import the folder. */
+  tmpChat(): Promise<Project> {
+    return (this.tmpChatRun ??= this.ensureTmpChat().finally(() => {
+      this.tmpChatRun = null;
+    }));
+  }
+
+  private async ensureTmpChat(): Promise<Project> {
+    const parent = this.projectsDir();
+    if (!parent) throw new ForgeError("VALIDATION", tr().system.sync.projectsDirFirst);
+    const target = path.join(parent, TMP_CHAT_DIR);
+    try {
+      await mkdir(target, { recursive: true });
+    } catch {
+      throw new ForgeError("PATH_NOT_ACCESSIBLE", tr().system.projects.noAccess(target));
+    }
+    const canonical = await this.assertAccessibleDir(target);
+    // A project the user already keeps in that folder stays what it is.
+    const known = this.db.findProjectByKey(pathKey(canonical));
+    if (known) return this.withExists(known);
+    const p = await this.import(canonical, null, false);
+    return this.update(p.id, { name: tr().system.projects.tmpChatName, tags: [TMP_CHAT_TAG], agentsEnabled: false });
   }
 
   /** Whether the folder already is a repository (.git folder, or .git file of a worktree or submodule). */

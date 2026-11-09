@@ -28,6 +28,14 @@ export const phoneTools: typeof De = {
       with_changes: "only with agent: true if the agent should also get the uncommitted state of the project",
     },
   },
+  quick_chat: {
+    description: "Starts a quick chat without a project, for questions that belong to no project. It runs in the subfolder tmp of the folder for new projects, without git.",
+    params: {
+      prompt: "Question or task, fully written out",
+      model: "only if the caller names a model: opus, sonnet or haiku",
+      effort: "Thinking effort, only if the caller names it",
+    },
+  },
   respond: {
     description:
       "Answers the open approval, question, MCP question or plan of a session. allow = allow, accept the plan or answer the question (answers, for MCP questions one per field). deny = refuse, or send the plan back with feedback.",

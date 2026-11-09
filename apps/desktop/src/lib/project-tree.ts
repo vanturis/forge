@@ -1,15 +1,17 @@
-import type { ProjectWithStatus } from "@forge/protocol";
+import { TMP_CHAT_TAG, type ProjectWithStatus } from "@forge/protocol";
 
 /**
  * Worktrees of parallel agents are projects of their own in the database (with `parentId`), but for
  * the user they belong to their project: lists show the projects and the agents inside them. A
- * worktree whose project is gone stands on its own, so nothing disappears.
+ * worktree whose project is gone stands on its own, so nothing disappears. The project behind the
+ * quick chats is left out: it is reached from the sidebar and the session list.
  */
 export function splitProjects(list: readonly ProjectWithStatus[]): { roots: ProjectWithStatus[]; agentsOf: Map<string, ProjectWithStatus[]> } {
   const ids = new Set(list.map((p) => p.id));
   const roots: ProjectWithStatus[] = [];
   const agentsOf = new Map<string, ProjectWithStatus[]>();
   for (const p of list) {
+    if (p.tags.includes(TMP_CHAT_TAG)) continue;
     if (p.parentId && ids.has(p.parentId)) {
       const agents = agentsOf.get(p.parentId) ?? [];
       agents.push(p);

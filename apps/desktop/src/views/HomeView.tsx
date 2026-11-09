@@ -4,6 +4,7 @@ import { CalendarDays, CheckCircle2, Database, Download, ExternalLink, FolderOpe
 import type { ResultOf } from "@forge/protocol";
 import { call, keys, useAppUpdate, useClaudeSetup, useDiagnostics, useLiveSessions, usePhoneState, useProjects } from "@/lib/queries";
 import { useModelLabel } from "@/lib/models";
+import { splitProjects } from "@/lib/project-tree";
 import { openExternal } from "@/lib/native";
 import { clockTime, cn, relativeTime } from "@/lib/utils";
 import { useActivity } from "@/stores/activity";
@@ -32,7 +33,7 @@ export function HomeView() {
   const projects = useProjects();
   const setNewProject = useUi((s) => s.setNewProject);
   const openReport = useUi((s) => s.openReport);
-  const none = projects.isSuccess && projects.data.length === 0;
+  const none = projects.isSuccess && splitProjects(projects.data).roots.length === 0;
 
   return (
     <Page

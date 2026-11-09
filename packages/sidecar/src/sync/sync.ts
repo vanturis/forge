@@ -19,6 +19,7 @@ import {
   type SyncProbe,
   type SyncStatus,
   type SyncVersion,
+  TMP_CHAT_TAG,
 } from "@forge/protocol";
 import { CLAUDE_DIRS, MAX_FILE_BYTES, TEXT_FILE } from "../backup/backup.js";
 import { claudeHome, writeAtomic } from "../config/claude-config.js";
@@ -951,7 +952,7 @@ export class SyncService {
     }
     const projects = new Map<string, Project>();
     for (const p of this.d.projects()) {
-      if (p.parentId) continue;
+      if (p.parentId || p.tags.includes(TMP_CHAT_TAG)) continue;
       if (!p.exists) {
         // Drive unplugged or folder moved: its last key stays as it was.
         const known = this.state?.projectKeys[p.id];

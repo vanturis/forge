@@ -1811,6 +1811,16 @@ export class PhoneService {
           await sessions.send(s.id, text);
           return tr().phone.session.sent(refFor(s.id));
         }),
+      quickChat: (prompt, o) =>
+        run(true, async () => {
+          const m = tr().phone.session;
+          if (!prompt.trim()) return m.emptyPrompt;
+          const found = await call("projects.tmpChat", {});
+          projectChanged(found.id);
+          const s = await sessions.start({ projectId: found.id, prompt, model: o?.model?.trim() || undefined, effort: o?.effort });
+          a.focus = s.id;
+          return m.started(refFor(s.id), found.name);
+        }),
       startSession: (projectName, prompt, o) =>
         run(true, async () => {
           const m = tr().phone.session;

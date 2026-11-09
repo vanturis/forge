@@ -17,6 +17,7 @@ import { ProjectSettingsTab } from "@/components/workspace/ProjectSettingsTab";
 import { AgentsTab } from "@/components/workspace/AgentsTab";
 import { ActivityFeed } from "@/components/workspace/ActivityFeed";
 import { FileTree } from "@/components/workspace/FileTree";
+import { LiveFilesPane } from "@/components/workspace/LiveFilesPane";
 import { BottomPanel } from "@/components/workspace/BottomPanel";
 import { DevToolsTab } from "@/components/devtools/DevToolsTab";
 import { KnowledgeTab } from "@/components/knowledge/KnowledgeTab";
@@ -70,17 +71,19 @@ function MainArea({ projectId }: { projectId: string }) {
 
 function Workspace({ projectId }: { projectId: string }) {
   const project = useProject(projectId).data!;
-  const { setWorkspaceTab, toolbarOpen, rightPanelOpen } = useUi(
+  const { setWorkspaceTab, toolbarOpen, rightPanelOpen, liveFilesOpen } = useUi(
     useShallow((s) => ({
       toolbarOpen: s.toolbarOpen,
       setWorkspaceTab: s.setWorkspaceTab,
       rightPanelOpen: s.rightPanelOpen,
+      liveFilesOpen: s.liveFilesOpen,
     })),
   );
   const visibleTabs = workspaceTabsFor(project);
   const workspaceTab = useWorkspaceTab(project);
   const narrow = useNarrow();
   const showRight = rightPanelOpen && !narrow && workspaceTab === "chat";
+  const showLive = liveFilesOpen && !narrow && workspaceTab === "chat";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -119,18 +122,21 @@ function Workspace({ projectId }: { projectId: string }) {
               />
             </div>
           </Collapse>
-          <div key={workspaceTab} className="min-h-0 flex-1 animate-view-in">
-            {workspaceTab === "chat" &&
-              (project.exists ? <ChatPanel project={project} /> : <EmptyState title={wv.chatUnavailable}>{t.views.common.folderMissing}</EmptyState>)}
-            {workspaceTab === "agents" && <AgentsTab project={project} />}
-            {workspaceTab === "git" && <GitCenter project={project} />}
-            {workspaceTab === "files" && <FilesTab project={project} />}
-            {workspaceTab === "devtools" &&
-              (project.exists ? <DevToolsTab project={project} /> : <EmptyState title={wv.devToolsUnavailable}>{t.views.common.folderMissing}</EmptyState>)}
-            {workspaceTab === "knowledge" &&
-              (project.exists ? <KnowledgeTab project={project} /> : <EmptyState title={wv.knowledgeUnavailable}>{t.views.common.folderMissing}</EmptyState>)}
-            {workspaceTab === "crew" && <CrewTab project={project} />}
-            {workspaceTab === "settings" && <ProjectSettingsTab project={project} />}
+          <div key={workspaceTab} className="flex min-h-0 flex-1 animate-view-in">
+            <div className="h-full min-w-0 flex-1">
+              {workspaceTab === "chat" &&
+                (project.exists ? <ChatPanel project={project} /> : <EmptyState title={wv.chatUnavailable}>{t.views.common.folderMissing}</EmptyState>)}
+              {workspaceTab === "agents" && <AgentsTab project={project} />}
+              {workspaceTab === "git" && <GitCenter project={project} />}
+              {workspaceTab === "files" && <FilesTab project={project} />}
+              {workspaceTab === "devtools" &&
+                (project.exists ? <DevToolsTab project={project} /> : <EmptyState title={wv.devToolsUnavailable}>{t.views.common.folderMissing}</EmptyState>)}
+              {workspaceTab === "knowledge" &&
+                (project.exists ? <KnowledgeTab project={project} /> : <EmptyState title={wv.knowledgeUnavailable}>{t.views.common.folderMissing}</EmptyState>)}
+              {workspaceTab === "crew" && <CrewTab project={project} />}
+              {workspaceTab === "settings" && <ProjectSettingsTab project={project} />}
+            </div>
+            {showLive && project.exists && <LiveFilesPane project={project} />}
           </div>
           <BottomPanel project={project} />
         </div>

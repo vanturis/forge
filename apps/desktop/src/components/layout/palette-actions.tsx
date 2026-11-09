@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, type LucideIcon } from "lucide-react";
+import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, Zap, type LucideIcon } from "lucide-react";
+import { openQuickChat } from "@/lib/quick-chat";
 import type {
   Crew,
   AppInstallState,
@@ -564,6 +565,7 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
     act("terminal", t.layout.actions.terminal, icon(SquareTerminal), () => ui.openTerminal(project.id, "shell"), { keywords: "terminal shell konsole console" });
     act("bottom", t.layout.actions.bottom, icon(PanelBottom), () => ui.toggleBottomPanel(), { hint: t.layout.actions.ctrl("J"), keywords: "unteres panel einblenden ausblenden bottom panel toggle show hide" });
     act("right", t.layout.actions.right, icon(PanelRight), () => ui.toggleRightPanel(), { hint: t.layout.actions.ctrlShift("E"), keywords: "seitenleiste einblenden ausblenden sidebar side panel toggle show hide" });
+    act("live-files", t.layout.actions.liveFiles, icon(Eye), () => ui.toggleLiveFiles(), { hint: t.layout.actions.ctrlShift("L"), keywords: "live dateien echtzeit bearbeiten geteilt neben chat mitlesen files realtime editing split beside watch" });
     if (ui.splitRoom > 0) {
       act("split-add", t.layout.actions.splitAdd, icon(Columns2), () => ui.addSplitPane(), {
         keywords: "geteilte ansicht teilen split mehrere sessions projekte nebeneinander raster bereich chat daneben split view multiple side by side grid area beside",
@@ -641,6 +643,7 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
   });
   act("template-new", t.layout.actions.templateNew, icon(FilePlus2), () => useTemplateDialogs.getState().openEdit({ id: null, projectId: null }), { keywords: "neue vorlage anlegen prompt vorlage template speichern new create save" });
   act("report", t.layout.actions.report, icon(CalendarDays), () => ui.openReport(null), { keywords: "tagesbericht was ist heute passiert rückblick alle projekte agenten commits zusammenfassung tag gestern daily report today what happened review all projects agents summary day yesterday" });
+  act("quick-chat", t.layout.actions.quickChat, icon(Zap), () => void openQuickChat(), { hint: t.layout.actions.ctrlShift("N"), keywords: "schneller chat temporär tmp ohne projekt kurze frage quick temporary chat no project question" });
   act("add-project", t.layout.actions.addProject, icon(FolderPlus), () => ui.setNewProject("import"), { hint: t.layout.actions.ctrl("O"), keywords: "projekt hinzufügen importieren ordner add project import folder" });
   act("create-project", t.layout.actions.createProject, icon(FolderPlus), () => ui.setNewProject("create"), { keywords: "neues projekt anlegen new project create" });
   act("clone-project", t.layout.actions.cloneProject, icon(FolderDown), () => ui.setNewProject("clone"), { keywords: "projekt github klonen clone repository project" });

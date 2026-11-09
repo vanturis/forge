@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { ProjectWithStatus } from "@forge/protocol";
+import { TMP_CHAT_TAG, type ProjectWithStatus } from "@forge/protocol";
 import { agentBusy, agentLabel, groupNames, groupProjects, splitProjects, withEmptyGroups } from "./project-tree";
 
 const project = (id: string, o: Partial<ProjectWithStatus> = {}): ProjectWithStatus =>
-  ({ id, name: id, path: `C:/${id}`, parentId: null, createdAt: "2026-10-01T00:00:00Z", git: null, lastSession: null, ...o }) as ProjectWithStatus;
+  ({ id, name: id, path: `C:/${id}`, parentId: null, tags: [], createdAt: "2026-10-01T00:00:00Z", git: null, lastSession: null, ...o }) as ProjectWithStatus;
 
 describe("project tree", () => {
+  it("leaves out the project behind the quick chats", () => {
+    expect(splitProjects([project("shop"), project("tmp", { tags: [TMP_CHAT_TAG] })]).roots.map((p) => p.id)).toEqual(["shop"]);
+  });
+
   it("puts agents under their project, newest first; orphans stay on their own", () => {
     const list = [
       project("shop"),

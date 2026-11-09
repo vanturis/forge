@@ -93,6 +93,7 @@ export const PHONE_TOOL_FOR: Partial<Record<MethodName, string>> = {
   "projects.list": "projects",
   "projects.get": "projects",
   "projects.import": "project",
+  "projects.tmpChat": "quick_chat",
   "projects.create": "project",
   "projects.clone": "project",
   "projects.update": "project",

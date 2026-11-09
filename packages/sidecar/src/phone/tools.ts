@@ -357,6 +357,8 @@ export interface PhoneToolset {
   details(session: string, o?: { summary?: boolean }): Promise<string>;
   sendMessage(session: string, text: string): Promise<string>;
   startSession(project: string, prompt: string, o?: StartSessionOptions): Promise<string>;
+  /** a session without a project of its own, in the subfolder tmp of the folder for new projects */
+  quickChat(prompt: string, o?: { model?: string; effort?: EffortLevel }): Promise<string>;
   respond(session: string, decision: "allow" | "deny", answers?: Record<string, string>, feedback?: string, scope?: "once" | "session"): Promise<string>;
   stop(session: string): Promise<string>;
   close(session: string): Promise<string>;
@@ -540,6 +542,15 @@ const TOOL_DEFS: readonly ToolDef[] = [
         agent: optBool(a.agent),
         withChanges: optBool(a.with_changes),
       }),
+  },
+  {
+    name: "quick_chat",
+    params: {
+      prompt: { type: "string" },
+      model: { type: "string", optional: true },
+      effort: { type: "string", optional: true, enum: EffortLevel.options },
+    },
+    run: (t, a) => t.quickChat(str(a.prompt), { model: opt(a.model), effort: opt(a.effort) as EffortLevel | undefined }),
   },
   {
     name: "respond",

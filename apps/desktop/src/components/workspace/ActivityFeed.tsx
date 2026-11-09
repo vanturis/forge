@@ -18,7 +18,7 @@ import { t } from "@/i18n";
  * empty list then means "not there yet", not "nothing happened". The feed sits next to the chat,
  * which does both.
  */
-function useHistoryLoading(projectId: string) {
+export function useHistoryLoading(projectId: string) {
   const sessionsLoading = useSessions(projectId).isLoading;
   const picking = useUi((s) => !(projectId in s.activeSession)) && sessionsLoading;
   const { sessionId } = splitActive(useUi((s) => s.activeSession[projectId]));
