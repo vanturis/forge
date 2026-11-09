@@ -165,8 +165,6 @@ interface UiState {
   toggleToolbar: (open?: boolean) => void;
   rightPanelOpen: boolean;
   bottomPanelOpen: boolean;
-  /** third area: beside the chat, the files Claude is editing in the open session */
-  liveFilesOpen: boolean;
   newProject: NewProjectMode | null;
   /** the setup assistant, opened again by hand (it opens on its own until the first setup is done) */
   setupWizard: boolean;
@@ -248,7 +246,6 @@ interface UiState {
   setWorkspaceTab: (t: WorkspaceTab) => void;
   toggleRightPanel: (open?: boolean) => void;
   toggleBottomPanel: (open?: boolean) => void;
-  toggleLiveFiles: (open?: boolean) => void;
   setNewProject: (m: NewProjectMode | null) => void;
   /** projects whose sessions the sidebar tree hides */
   collapsedGroups: string[];
@@ -331,7 +328,6 @@ export const useUi = create<UiState>((set, get) => ({
   toolbarOpen: false,
   rightPanelOpen: false,
   bottomPanelOpen: false,
-  liveFilesOpen: false,
   newProject: null,
   setupWizard: false,
   supportOpen: false,
@@ -545,7 +541,6 @@ export const useUi = create<UiState>((set, get) => ({
   toggleRightPanel: (open) => {
     set((s) => ({ rightPanelOpen: open ?? !s.rightPanelOpen }));
   },
-  toggleLiveFiles: (open) => set((s) => ({ liveFilesOpen: open ?? !s.liveFilesOpen })),
   toggleBottomPanel: (open) => {
     set((s) => ({ bottomPanelOpen: open ?? !s.bottomPanelOpen }));
   },

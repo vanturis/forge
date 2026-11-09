@@ -3,7 +3,7 @@ import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
 import { Bot, History, ListTree, MessageSquarePlus, RotateCcw, Search, Terminal, User } from "lucide-react";
 import type { ExternalSession, Project, Session, SessionEvent } from "@forge/protocol";
 import { useOlderHistory, useSession, useSessionHistory, useSessions } from "@/lib/queries";
-import { isWorking } from "@/lib/working";
+import { isBusy, isWorking } from "@/lib/working";
 import { cn, relativeTime } from "@/lib/utils";
 import { draftKey } from "@/stores/drafts";
 import { toast } from "@/stores/toast";
@@ -20,6 +20,7 @@ import { PendingMessages } from "./PendingMessages";
 import { ChatFindBar, type FindRequest } from "./ChatFindBar";
 import { CHAT_VIEWS, chatView, filterChatItems, setChatView, useChatView } from "./chat-view";
 import { InChatWindowPane } from "./InChatWindowPane";
+import { LatestFileView } from "./LatestFileView";
 import { appendStreaming, IncrementalItems, itemIndexForSeq, lastUserPrompt, reuseStableItems, rowSpacing, startsAnswer, type ChatItem, type RowSpacing } from "./chat-items";
 import { Composer } from "./Composer";
 import { SessionBar } from "./SessionBar";
@@ -121,7 +122,7 @@ export function ChatPanel({ project, detached = false, pane }: { project: Projec
         if (e.target instanceof Element && e.target.closest("textarea, input")) return;
         const seed = selectedSeed(e.currentTarget);
         const current = sessionId ? chatView(sessionId) : null;
-        const viewMenu = { all: t.chat.view.menuAll, prompts: t.chat.view.menuPrompts, answers: t.chat.view.menuAnswers };
+        const viewMenu = { all: t.chat.view.menuAll, prompts: t.chat.view.menuPrompts, answers: t.chat.view.menuAnswers, files: t.chat.view.menuFiles };
         addContextItems(e, [
           { label: seed ? t.chat.find.menuFor(seed.length > 30 ? `${seed.slice(0, 30)}…` : seed) : t.chat.find.menu, icon: <Search className="h-3.5 w-3.5" />, hint: t.layout.actions.ctrl("F"), onSelect: () => openFind(seed) },
           ...(sessionId && current
@@ -404,13 +405,15 @@ function SessionThread({ sessionId, session, project }: { sessionId: string; ses
     <>
       {view !== "all" && (
         <div className="flex shrink-0 animate-fade-in items-center justify-center gap-3 border-b border-border bg-surface px-4 py-1.5 text-small" role="status">
-          <span className="text-muted">{t.chat.view.banner(view === "prompts" ? t.chat.view.bannerPrompts : t.chat.view.bannerAnswers, items.length, allItems.length)}</span>
+          <span className="text-muted">{view === "files" ? t.chat.view.bannerFiles : t.chat.view.banner(view === "prompts" ? t.chat.view.bannerPrompts : t.chat.view.bannerAnswers, items.length, allItems.length)}</span>
           <button type="button" className="font-medium text-accent hover:underline" onClick={() => setView("all")}>
             {t.chat.view.showAll}
           </button>
         </div>
       )}
-      <div className="relative flex min-h-0 flex-1 animate-view-in flex-col">
+      {view === "files" && <LatestFileView project={project} sessionId={sessionId} working={isBusy(session?.status)} loading={!buffer?.loaded && !error} />}
+      {/* Stays mounted in the file view: scrolling and following hold on to these elements. */}
+      <div className={cn("relative flex min-h-0 flex-1 animate-view-in flex-col", view === "files" && "hidden")}>
       <div
         ref={scrollRef}
         data-chat-thread

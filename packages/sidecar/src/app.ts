@@ -50,6 +50,7 @@ import { TemplateLearner } from "./templates/learner.js";
 const SYNC_KEY_SECRET = "sync-key";
 import { Db } from "./persistence/db.js";
 import { ProjectManager } from "./projects/project-manager.js";
+import { TmpChatCleanup } from "./projects/tmp-chat-cleanup.js";
 import { createHandlers, invokeHandler, type Handlers } from "./rpc/handlers.js";
 import { RpcServer, type Writer } from "./rpc/server.js";
 import { SessionService } from "./sessions/session-service.js";
@@ -264,6 +265,15 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
   });
   void phone.init();
   sessions.useCallFocus(() => phone?.callFocus() ?? null);
+  const tmpChatCleanup = new TmpChatCleanup({
+    projects: () => projects.all(),
+    sessions: (projectId) => db.listSessions(projectId),
+    isLive: (id) => sessions.get(id).live,
+    deleteSession: (id) => sessions.delete(id, true),
+    changed: (projectId) => emit({ event: "project.updated", payload: { projectId } }),
+    log: (m) => opts.log?.(m),
+  });
+  tmpChatCleanup.start();
   const claudeFor = () => {
     const settings = db.getSettings();
     return { path: locateClaude(settings.claudePath), env: sessionEnv(settings.stripApiKey) };
@@ -493,6 +503,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
       await Promise.race([Promise.allSettled([sessions.drain(), Promise.resolve().then(() => phone?.shutdown()), testDb.stopAll(), preview.closeAll()]), limit]);
       clearTimeout(timer);
       sessions.shutdown();
+      tmpChatCleanup.stop();
       crew?.stop();
       tokenMeter.stop();
       updates.stop();

@@ -2,10 +2,8 @@ import type { SessionEvent } from "@forge/protocol";
 import { pathInside } from "@/lib/platform";
 
 const EDIT_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit"]);
-/** A session can touch hundreds of files; the pane is about what happens now. */
-const MAX_FILES = 30;
 
-export interface LiveFile {
+export interface LatestFile {
   /** relative to the project, with forward slashes */
   path: string;
   /** state of the latest edit */
@@ -28,9 +26,9 @@ function needleOf(input: Record<string, unknown>): string | null {
   return typeof last === "string" && last ? last : null;
 }
 
-/** The files the session edited inside the project, newest edit first. Files outside it cannot be read through the project. */
-export function liveFiles(events: readonly SessionEvent[], root: string): LiveFile[] {
-  const files = new Map<string, LiveFile>();
+/** The file Claude edited last in this session; files outside the project cannot be read through it and are skipped. */
+export function latestEditedFile(events: readonly SessionEvent[], root: string): LatestFile | null {
+  let file: LatestFile | null = null;
   // Going backwards, a call's result comes before the call.
   const results = new Map<string, { isError: boolean; seq: number }>();
   for (let i = events.length - 1; i >= 0; i--) {
@@ -43,22 +41,14 @@ export function liveFiles(events: readonly SessionEvent[], root: string): LiveFi
     if (b.type !== "tool.use" || !EDIT_TOOLS.has(b.name)) continue;
     const raw = b.input.file_path ?? b.input.notebook_path;
     const path = typeof raw === "string" ? projectPath(raw, root) : null;
-    if (!path) continue;
+    if (!path || (file && file.path !== path)) continue;
     const result = results.get(b.toolUseId);
-    const known = files.get(path);
-    if (known) {
-      if (!known.version && result && !result.isError) known.version = result.seq;
-      continue;
-    }
-    if (files.size >= MAX_FILES) continue;
-    files.set(path, {
-      path,
-      status: !result ? "editing" : result.isError ? "failed" : "done",
-      version: result && !result.isError ? result.seq : 0,
-      needle: needleOf(b.input),
-    });
+    const version = result && !result.isError ? result.seq : 0;
+    if (!file) file = { path, status: !result ? "editing" : result.isError ? "failed" : "done", version, needle: needleOf(b.input) };
+    else file.version = version;
+    if (file.version) break;
   }
-  return [...files.values()];
+  return file;
 }
 
 /** 1-based line where the edit's text starts, null if there is no such text. */

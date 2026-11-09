@@ -14,7 +14,7 @@ export function dialogOpen(): boolean {
 
 /**
  * App-wide shortcuts. Ctrl+K command palette, Ctrl+1..7 workspace tabs, Ctrl+J bottom panel,
- * Ctrl+Shift+E right panel, Ctrl+Shift+L live files, Ctrl+N new session, Ctrl+Shift+N quick chat, Ctrl+O add project,
+ * Ctrl+Shift+E right panel, Ctrl+N new session, Ctrl+Shift+N quick chat, Ctrl+O add project,
  * Ctrl+Tab / Ctrl+Shift+Tab next / previous open session, in the order of the sidebar tree.
  */
 export function handleGlobalShortcut(e: KeyboardEvent) {
@@ -71,9 +71,6 @@ export function handleGlobalShortcut(e: KeyboardEvent) {
     e.preventDefault();
   } else if (e.shiftKey && k === "n") {
     void openQuickChat();
-    e.preventDefault();
-  } else if (e.shiftKey && k === "l" && ui.view === "workspace") {
-    ui.toggleLiveFiles();
     e.preventDefault();
   }
 }

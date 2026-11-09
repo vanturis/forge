@@ -376,7 +376,7 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
     if (session) {
       const s = session;
       const current = chatView(s.id);
-      const labels = { all: t.chat.view.paletteAll, prompts: t.chat.view.palettePrompts, answers: t.chat.view.paletteAnswers };
+      const labels = { all: t.chat.view.paletteAll, prompts: t.chat.view.palettePrompts, answers: t.chat.view.paletteAnswers, files: t.chat.view.paletteFiles };
       for (const v of CHAT_VIEWS) {
         if (v.id === current) continue;
         act(`chat-view-${v.id}`, labels[v.id], icon(v.Icon), () => {
@@ -565,7 +565,6 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
     act("terminal", t.layout.actions.terminal, icon(SquareTerminal), () => ui.openTerminal(project.id, "shell"), { keywords: "terminal shell konsole console" });
     act("bottom", t.layout.actions.bottom, icon(PanelBottom), () => ui.toggleBottomPanel(), { hint: t.layout.actions.ctrl("J"), keywords: "unteres panel einblenden ausblenden bottom panel toggle show hide" });
     act("right", t.layout.actions.right, icon(PanelRight), () => ui.toggleRightPanel(), { hint: t.layout.actions.ctrlShift("E"), keywords: "seitenleiste einblenden ausblenden sidebar side panel toggle show hide" });
-    act("live-files", t.layout.actions.liveFiles, icon(Eye), () => ui.toggleLiveFiles(), { hint: t.layout.actions.ctrlShift("L"), keywords: "live dateien echtzeit bearbeiten geteilt neben chat mitlesen files realtime editing split beside watch" });
     if (ui.splitRoom > 0) {
       act("split-add", t.layout.actions.splitAdd, icon(Columns2), () => ui.addSplitPane(), {
         keywords: "geteilte ansicht teilen split mehrere sessions projekte nebeneinander raster bereich chat daneben split view multiple side by side grid area beside",

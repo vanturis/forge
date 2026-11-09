@@ -21,7 +21,7 @@ export interface CreateProjectInput {
 }
 
 /** Subfolder of the folder for new projects that holds the quick chats. */
-const TMP_CHAT_DIR = "tmp";
+export const TMP_CHAT_DIR = "tmp";
 const MAX_FILE_BYTES = 512 * 1024;
 /** Bytes per readFileChunk call: a few MB keep each protocol line small. */
 export const CHUNK_BYTES = 4 * 1024 * 1024;

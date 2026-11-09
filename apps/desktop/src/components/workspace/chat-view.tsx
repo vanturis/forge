@@ -1,4 +1,4 @@
-import { Bot, ListTree, User } from "lucide-react";
+import { Bot, FileCode, ListTree, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -6,13 +6,14 @@ import { cardKey, useCardState, useCardStore } from "@/stores/card-state";
 import { Tooltip } from "@/components/ui/misc";
 import type { ChatItem } from "./chat-items";
 
-/** What the chat shows: everything, only the user's prompts, or only Claude's answers (text, no tools). */
-export type ChatView = "all" | "prompts" | "answers";
+/** What the chat shows: everything, only the user's prompts, only Claude's answers (text, no tools), or the file edited last. */
+export type ChatView = "all" | "prompts" | "answers" | "files";
 
 export const CHAT_VIEWS: ReadonlyArray<{ id: ChatView; Icon: LucideIcon; label: string; title: string }> = [
   { id: "all", Icon: ListTree, label: t.chat.view.all, title: t.chat.view.allTitle },
   { id: "prompts", Icon: User, label: t.chat.view.prompts, title: t.chat.view.promptsTitle },
   { id: "answers", Icon: Bot, label: t.chat.view.answers, title: t.chat.view.answersTitle },
+  { id: "files", Icon: FileCode, label: t.chat.view.files, title: t.chat.view.filesTitle },
 ];
 
 const viewKey = (sessionId: string) => cardKey(sessionId, "chat", "view");
@@ -61,7 +62,7 @@ export function filterChatItems(items: ChatItem[], view: ChatView): FilteredItem
 
 const EMPTY: ReadonlySet<string> = new Set();
 
-/** Three small buttons in the chat's header. */
+/** Small buttons in the chat's header, one per view. */
 export function ChatViewToggle({ sessionId, compact }: { sessionId: string; compact: boolean }) {
   const [view, setView] = useChatView(sessionId);
   return (
