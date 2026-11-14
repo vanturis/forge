@@ -625,7 +625,7 @@
   line-height: 1.65;
 }
 
-/* ---- closing block: the download once more, on the dimmed background picture */
+/* ---- closing block: the download once more, on the owner's wide smithy picture (blurred a little in the file itself) */
 
 .landing-closing {
   padding-top: 120px;
@@ -639,10 +639,10 @@
   padding: 72px 40px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  /* darker in the middle, so the text stays readable on the light parts of the picture */
+  /* the picture is dark in the middle by itself; a light veil keeps the text readable where the box is narrow and the bright sides move in */
   background:
-    radial-gradient(ellipse 60% 90% at center, color-mix(in srgb, var(--color-bg) 92%, transparent), color-mix(in srgb, var(--color-bg) 70%, transparent)),
-    var(--color-surface) url("../assets/background-neutral.webp") center / cover no-repeat;
+    radial-gradient(ellipse 55% 95% at center, color-mix(in srgb, var(--color-bg) 62%, transparent), color-mix(in srgb, var(--color-bg) 18%, transparent)),
+    var(--color-surface) url("../assets/closing-smithy.webp") center / cover no-repeat;
   box-shadow: var(--shadow-raised);
   text-align: center;
 }
