@@ -1,8 +1,8 @@
 ---
 title: "Website und Statistik-Dienst services/stats (forge.vanturis.de: Landingpage auf /, Live Stats auf /stats, Coolify)"
-summary: "Next.js-Website in services/stats: Landingpage und Live Stats nach Bildvorlagen des Besitzers. Hintergrundbild, geneigtes App-Fenster, Spenden-Dialog, Stats-Karten und Diagramme, Englisch/Deutsch, mobile Ansicht, Coolify, Stolperfallen."
+summary: "Next.js-Website in services/stats: Formensprache im Cento-Stil, seit 2026-11-14 neutrale Grautöne und sparsames Orange (seriöser Auftritt), Landingpage, Live Stats, Spenden-Dialog, Englisch/Deutsch, mobile Ansicht, Coolify, Stolperfallen."
 tags: ["stats","coolify","release","stolperfalle","i18n","ui"]
-updated: "2026-10-19T18:27:15.845Z"
+updated: "2026-11-14T17:00:14.095Z"
 ---
 
 # Website und Statistik-Dienst services/stats
@@ -12,51 +12,75 @@ updated: "2026-10-19T18:27:15.845Z"
 
 Seit 2026-10-22 läuft im selben Prozess auch der **Crew-Relay** unter `/crew` (Routen `src/app/crew/...`, Kern `src/lib/crew-relay.ts`, ohne Datenbank, nur im Speicher). Details im Eintrag zur Crew-Live-Zusammenarbeit. Die FORGE-App erreicht Crews erst, wenn diese Version der Website in Coolify ausgerollt ist.
 
-## Arbeitsweise mit dem Besitzer (wichtig)
-Er liefert Bildvorlagen (1536 x 1024, in den FORGE-Uploads) und verlangt „GENAU SO“; freiere Umsetzungen wurden mehrfach scharf abgelehnt. Danach kommen viele kleine Wünsche hintereinander; jeder gilt, auch wenn er von der Vorlage abweicht. Prüfen bei 1440 x 900 und 1536 x 1024. Vergleich: Vorlage mit sharp auf gleiche Breite skalieren, gleiche Ausschnitte untereinander legen (sharp aus `services/stats/node_modules/.pnpm/sharp@*/node_modules/sharp`; `sharp.cache(false)` und Datei vorher einlesen, sonst ist sie beim Überschreiben gesperrt). Animationen im Screenshot abwarten (preview_interact mit wait ~2,5 s). preview_screenshot rendert mit Pixeldichte 1; Unschärfe auf HiDPI-Bildschirmen sieht man dort nicht.
-- Vorgaben: Hintergrund `#111418`, Orange `#ff7a1a` (Tokens in `globals.css`), keine übertriebenen Glows.
-- **Hintergrund aller Seiten**: Bild des Besitzers als `src/assets/background.webp` (dunkle geschwungene Flächen mit orange leuchtenden Kanten, 2752x1536). Datei in voller Größe, sharp `webp({quality: 95, smartSubsample: true})`. Weichzeichnen macht der Browser: `body::before` fixed, `inset: -60px`, `cover`, `filter: blur(12px)`. Ein eingebackener Blur sah verpixelt aus, das lehnt er ab. Eigene SVG-/CSS-Formen hinter dem Fenster hat er ebenfalls abgelehnt.
+## Gestaltung
+Zwei Schritte am 2026-11-14, beide auf Wunsch des Besitzers:
+1. **Formen im Cento-Stil** (rundlich, große runde Flächen, Pill-Navigation). Das ersetzt die frühere Arbeitsweise „GENAU nach Bildvorlage 1536 x 1024“.
+2. **Seriöser Auftritt.** Rückmeldung nach Schritt 1: „Das Blau im Hintergrund ist so verspielt. Es soll viel seriöser und weniger verspielt aussehen.“ Die Formen blieben, geändert wurden Farbe und Auftreten.
+
+### Farben: neutrale Grautöne (dieselben Werte wie in der App)
+Tokens in `src/app/globals.css`: `--color-bg #111112`, `--color-backdrop #0b0b0c` (nur `/crew`), `--color-surface #19191a`, `-surface-2 #202022`, `-surface-3 #29292b`, `--color-border #2c2c2f`, `-border-strong #3f3f43`, `--color-fg #ececee`, `-fg-soft #adadb2`, `--color-muted #a3a3a8`, `--color-subtle #73737a`. Orange, Rot und Grün unverändert. Das frühere blaustichige Anthrazit (`#111418`, `#1a1e25`, `#e5e7eb` usw.) darf nirgends mehr auftauchen; `themeColor` in `layout.tsx`, `manifest.ts` und `scripts/og-images.mjs` tragen die Werte als Literal und müssen bei einer Änderung mitgezogen werden.
+
+### Orange sparsam
+Orange nur für: die Primäraktion (Download, `.btn-primary`), das eine Akzentwort im Titel, kleine Icons und Daten (Sparklines, Diagramme, Balken). Keine orangefarbenen Flächen, Verläufe oder Glows als Dekoration.
+- `.icon-tile`: neutraler Kreis (`--color-surface-2` mit feinem Rahmen), Icon orange.
+- Aktiver Punkt der Kopfzeile, Tabs der Download-Seite und Tabs in `/crew`: neutrale Pill (`--color-surface-3`), nur das Icon orange. So bleibt Download der einzige gefüllte orange Button der Kopfzeile. Die Crew-Liste in der Seitenleiste von `/crew` ist weiter eine gefüllte orange Pill (wie die Hauptnavigation der App).
+- Badge „neueste“, Beitrittsanfrage in `/crew`, Betrag im Spenden-Dialog: neutral.
+- `.btn-primary:disabled` ist eine neutrale Fläche. Abgeblendetes Orange wird auf dem dunklen Grund braun.
+- Badges unter dem Hero: feiner Rahmen, keine Füllung.
+
+### Hintergrundbild
+- Hinter der Seite liegt **kein Bild mehr**: flache Fläche `--color-bg` (das frühere `body::before` mit Blur ist entfernt).
+- `src/assets/background.webp` ist die Vorlage des Besitzers (blaustichig) und wird von der Seite nicht mehr geladen. Daraus erzeugt `node scripts/background-neutral.mjs` die Datei `background-neutral.webp`: Blaustich herausgerechnet (Pixel mit Rot deutlich über Blau behalten ihre Farbe, alles andere wird grau), volle Auflösung 2752 x 1536, WebP Qualität 95.
+- Das graue Bild liegt nur in der Bühne der Startseite (`.hero-stage`) und im Schlussblock (`.closing`), abgeblendet über `--stage-dim` an `.landing` (62 % `--color-bg`, im Schlussblock 70 % außen und 92 % in der Mitte). Es soll wie eine ruhige Textur wirken; heller stellen macht es wieder zum Wallpaper.
+- Das App-Fenster ist nur der Screenshot in einem feinen Rahmen. Die Titelleiste mit drei Punkten ist entfernt.
+- `scripts/og-images.mjs` nutzt das graue Bild ohne Blur mit dunklem Verlauf (94 % links bis 62 % rechts), kein oranger Schein hinter dem Screenshot, Adresse in Grau. Nach neuen Screenshots ausführen (überschreibt `og-{de,en}.png`).
+
+### Bausteine und Typografie
+- Gemeinsame Formensprache mit der Desktop-App (Tokens in `globals.css`): Radien 4/6/10/14/18/24/9999 px, `--shadow-solid` (gefüllte Buttons), `--shadow-raised` (Karten), `--shadow-overlay` (Dialog, Menü, Kopfzeile), Bewegung 120/200/300 ms, nur opacity und transform.
+- `.btn` sind Pills (`-primary`, `-secondary`, `-outline`, `-sm`, `-lg`). `.eyebrow` klein, versal, 0.08em, gedämpft.
+- Titel kräftig, aber nicht übergroß: Hero `clamp(40px, 4.4vw, 58px)`, Live Stats `clamp(36px, 4.2vw, 52px)`, Schlussblock `clamp(28px, 3.2vw, 40px)`, Download `clamp(32px, 3.8vw, 44px)`, Laufweite -0.03em.
+- Kopfzeile: schwebende Pill, sticky mit 12px Abstand. Bis 900px zeigen Live Stats, GitHub und Unterstützen nur Icons, bis 560px auch Download. Fußzeile: runde Fläche mit Sprachumschalter.
 
 ## Landingpage (`landing.tsx`, `pages.css`)
-- Kopfzeile 76px: Wortmarke `forge-wordmark.png` (944x184). Rechts: Live Stats, GitHub, Unterstützen mit rotem Herz, Download. Die geöffnete Seite bekommt eine orange Linie unter dem Link.
-- Hero ohne Eyebrow. Titel `4.1vw` Gewicht 550, Lead `1.39vw` mit `max-width: 25.85em` (Umbruch nach „mit einer“, bei Textänderung neu prüfen).
-- Fenster: echter Screenshot der Chat-Ansicht, aufgenommen 2400x1680 (`app-{de,en}-2400.webp`), dazu mit sharp lanczos3 verkleinert 800/1200/1600; `<img srcSet sizes="(max-width: 1080px) 100vw, 50vw">`. Grund: Unter dem 3D-Transform verkleinert die GPU ohne gutes Filtern. Neue Screenshots: alle vier Breiten neu erzeugen.
-- Neigung `perspective(2000px) rotateY(-11deg)`, folgt dem Mauszeiger (`components/tilt.tsx`, `--tilt-x/-y`, ±6°/±4°, nur `pointer: fine`, nicht bei reduced motion). Stärkere Neigung (15°) machte den Screenshot unscharf.
-- Vier Blöcke darunter, alle Icons orange. Alles inkl. „Live Stats ansehen“ passt bei 1440x900 in den ersten Bildschirm. Darunter FAQ (`faq-item`, details/summary).
+- Hero: Titel links, rechts Lead, zwei Buttons und drei Fakten als Badges. Das Spaltenverhältnis 1.3fr/0.9fr ist an „Entwicklungszentrale“ gemessen (ein Wort, bricht nicht um): bei Textänderung bei 1100 und 1440 px prüfen. Unter 1080px einspaltig; bis 560px ist der Titel `clamp(28px, 9vw, 42px)`, damit das Wort bei 360px noch passt.
+- Screenshot in vier Breiten (`app-{de,en}-{800,1200,1600,2400}.webp`, aufgenommen 2400x1680, mit sharp lanczos3 verkleinert), `sizes="(max-width: 1264px) 90vw, 1072px"`. Neue Screenshots: alle vier Breiten und danach die OG-Bilder neu erzeugen.
+- Danach vier Funktionskarten (`Feature`), FAQ einspaltig (`.faq-item`, details/summary) und der Schlussblock mit Download und Live Stats (nutzt `download.title`, `download.lead`).
 
-## Mobile Ansicht (bis 560px, überarbeitet 2026-10-19 auf „ist aktuell cooked“)
-Breakpoints: 1500, 1320, 1080, 900, 560 px (`pages.css` am Ende, `globals.css` für `.feature`/`.section-head`). Bis 560px: Hero-Buttons gleich breit untereinander; Funktionsblöcke und „Was erfasst wird“ als kompakte Karten mit Icon links (`.feature` als Grid); Statistik-Karten einspaltig und kompakt (zweispaltig passt nicht: Zahlen wie „19,920“ oder lange Token-Summen laufen über); Zeitraum-Auswahl unter dem Diagrammtitel; Anteile (`.share`) mit Name und Prozent in einer Zeile und Balken darunter.
-- **Stolperfalle:** Der Spenden-Dialog (`SupportButton`) liegt im DOM innerhalb von `.topbar-nav`. Regeln wie `.topbar-nav .btn` treffen auch seine Buttons; die mobile Icon-Regel ist deshalb `.topbar-nav > .btn`.
-- Prüfen bei 360, 375, 390 px, Englisch und Deutsch, Dialog offen. Die Diagramme blenden per IntersectionObserver ein: für fullPage-Screenshots Höhe 2000 setzen, sonst bleiben sie leer.
+## Mobile Ansicht (bis 560px)
+Breakpoints: 1320, 1080, 900, 560 px. Bis 560px: Hero-Buttons gleich breit untereinander; Funktionskarten kompakt mit Icon links; Statistik-Karten einspaltig (lange Zahlen laufen sonst über); Zeitraum-Auswahl unter dem Diagrammtitel; Anteile (`.share`) mit Name und Prozent in einer Zeile und Balken darunter.
+- **Stolperfalle:** Der Spenden-Dialog (`SupportButton`) liegt im DOM innerhalb von `.topbar-nav`. Regeln wie `.topbar-nav .btn` treffen auch seine Buttons; deshalb `.topbar-nav > .btn`.
+- Prüfen bei 360, 375, 390 px, Englisch und Deutsch, Dialog offen. Die Diagramme blenden per IntersectionObserver ein: für fullPage-Screenshots Höhe 2000 setzen. preview_screenshot rendert mit Pixeldichte 1.
 
 ## Spenden-Dialog (`components/donations.tsx`, Styles in `globals.css`)
-Kurz halten: Herz-Kachel + Titel, ein Satz, Karte „Bisher gespendet“, Buttons „Beitrag über Stripe“ und „Idee oder Fehler melden“, eine Zeile Hinweis. Betrag aus Stripe (`STRIPE_SECRET_KEY` nur auf dem Live-Server); `next dev` ohne Schlüssel holt ihn von `https://forge.vanturis.de/api/v1/donations`.
+Herz im Icon-Kreis + Titel, ein Satz, Fläche „Bisher gespendet“, Buttons „Beitrag über Stripe“ (primär) und „Idee oder Fehler melden“ (sekundär), eine Zeile Hinweis. Betrag aus Stripe (`STRIPE_SECRET_KEY` nur auf dem Live-Server); `next dev` ohne Schlüssel holt ihn von `https://forge.vanturis.de/api/v1/donations`.
 
 ## Live Stats (/stats)
 `stats-page.tsx`, `live-stats.tsx`, `charts.tsx`, `tiles.ts`.
-- Sechs Karten im 3er-Raster: Tokens, Sessions, Durchläufe, Arbeitszeit, Kosten, Gerade online. Rechts je 7 Mini-Balken (`Spark`).
-- Diagrammkarten (2er-Raster, 8 Karten): Tokens pro Tag, Aktive Installationen (je `RangeSelect`, kein `<select>`); Top Modelle (3 + „Andere“); Plattformen (Ring). Seit 2026-10-19 darunter: **Versionen** (aktive Installationen je `app_version`, Top 4 nach Anzahl, absteigend nach Version sortiert, Marke „neueste“ über `newestVersion`), **Claude-Abos** (`plans`, `planName`: „max_20x“ → „Max 20x“, null = „Unbekannt“ als letzte Zeile), **Sprachen** (`languages`, Namen über `Intl.DisplayNames`), **Funktionen** (Zahlenraster: Installationen + `newInstalls30d`, aktiv 30 Tage, eigene Prompts `userTurns`, Projekte, Agenten gestartet/zusammengeführt, Telefonate). Gemeinsame Bausteine: `ShareList`, `topRows`, `withUnknown`. Skeletons für alle Karten in `ChartsSkeleton`.
-- Daten: `history` (30 Tage); `versions`, `plans`, `platforms`, `languages` jeweils über aktive Installationen der letzten 30 Tage.
-- Darunter „Was erfasst wird“ und Fußnote.
+- Sechs Karten im 3er-Raster (Tokens, Sessions, Durchläufe, Arbeitszeit, Kosten, Gerade online), rechts 7 Mini-Balken (`Spark`).
+- Acht Diagrammkarten im 2er-Raster: Tokens pro Tag, Aktive Installationen (je `RangeSelect`, kein `<select>`), Top Modelle, Plattformen (Ring), Versionen (Marke „neueste“ über `newestVersion`), Claude-Abos (`planName`, null = „Unbekannt“ als letzte Zeile), Sprachen (`Intl.DisplayNames`), Funktionen. Gemeinsame Bausteine: `ShareList`, `topRows`, `withUnknown`.
+- Skeletons: `StatsPage` mit `state: loading` nutzt dieselben Bausteine, dadurch gleiche Höhen. Platzhalter-Balken brauchen `.col-bar.skeleton-bar`/`.share-fill.skeleton-bar`, sonst gewinnt das Orange der Balken.
+- Daten: `history` (30 Tage); `versions`, `plans`, `platforms`, `languages` über aktive Installationen der letzten 30 Tage.
+
+## Crew im Browser (/crew), Gestaltung
+App-Ansicht statt Website: `crew.css` blendet per `body:has(.crew-page)` Kopf- und Fußzeile aus und setzt `--color-backdrop`. `components/crew-web/app.tsx` rendert `Shell`: Seitenleiste und Hauptfläche als zwei runde Flächen mit 10px Abstand. Unter 900px liegt die Seitenleiste oben. Leute, Chat und Aufgaben stehen ab 1280px nebeneinander, darunter Tabs. Die `.fc-*`-Regeln sind ein Nachbau des FORGE-Chats: nach einem Umbau des App-Chats dort nachziehen. Eigene Farbwerte in `crew.css` sind nur Claude-Orange, Warnung und Diff-Töne, kein Grau.
+- Zum Ansehen ohne zweite FORGE-Installation: eine temporäre Client-Seite (z. B. `src/app/crew-demo/page.tsx`), die einen `WebCrewRecord` in `localStorage` schreibt (`forge.crew.web` = Liste der IDs, `forge.crew.web.<id>` = Datensatz mit `membership: "member"`, Mitgliedern mit `presence`, `feed`, `tasks`, `requests`; `lastSeen` in der Zukunft hält Mitglieder online; Schlüssel dürfen Platzhalter sein) und nach `/crew` weiterleitet. Danach löschen.
 
 ## Erfasste Felder
-Meldung: Installations-ID, `appVersion`, `os`, Zähler (`COUNTER_KEYS` in `src/lib/report.ts`), `models`, `plan`, seit 2026-10-19 `language` (Sprache der Oberfläche, `^[a-z]{2}$`, Spalte `installs.language`, ältere Apps: null). Der Besitzer will alles Sinnvolle sehen, aber nichts, was Nutzer ausspäht (keine Inhalte, Namen, Pfade). Neues Feld: Checkliste im Eintrag zur anonymen Nutzungsstatistik. Ein alter Dienst ignoriert unbekannte Felder (zod strippt), eine neue App kann also vor dem Deploy erscheinen.
+Meldung: Installations-ID, `appVersion`, `os`, Zähler (`COUNTER_KEYS` in `src/lib/report.ts`), `models`, `plan`, `language` (`^[a-z]{2}$`). Der Besitzer will alles Sinnvolle sehen, aber nichts, was Nutzer ausspäht (keine Inhalte, Namen, Pfade). Neues Feld: Checkliste im Eintrag zur anonymen Nutzungsstatistik. Ein alter Dienst ignoriert unbekannte Felder (zod strippt).
 
-## Domain
-Neu `forge.vanturis.de`, vorher `forge-stats.vanturis.de`. Apps bis 0.1.103 melden an die alte Domain: beide Domains am Dienst lassen. Prüfen: `curl https://forge.vanturis.de/api/health` liefert `ok`.
-
-## Meldeintervall
-App meldet alle 5 Minuten, Sperre pro installId 4 Minuten (`REPORT_INTERVAL_MINUTES` in `src/lib/db.ts`), „Gerade online“ = 10 Minuten (`ONLINE_MINUTES`).
-
-## Verlauf (install_days)
-Jede angenommene Meldung schreibt `installs` und den UTC-Tag in `install_days` (FK mit CASCADE). Zuwachs pro Tag rechnet SQL (`historySql()`, LAG); der erste Stand einer Installation zählt nicht als Zuwachs (deshalb zeigt „Tokens pro Tag“ bei frischen Demodaten „Noch keine Daten“). Test: `STATS_TEST_DATABASE_URL=... pnpm test`.
+## Domain, Intervalle, Verlauf
+- `forge.vanturis.de`, vorher `forge-stats.vanturis.de`. Apps bis 0.1.103 melden an die alte Domain: beide Domains am Dienst lassen. Prüfen: `curl https://forge.vanturis.de/api/health` liefert `ok`.
+- App meldet alle 5 Minuten, Sperre pro installId 4 Minuten (`REPORT_INTERVAL_MINUTES` in `src/lib/db.ts`), „Gerade online“ = 10 Minuten (`ONLINE_MINUTES`).
+- Jede angenommene Meldung schreibt `installs` und den UTC-Tag in `install_days` (FK mit CASCADE). Zuwachs pro Tag rechnet SQL (`historySql()`, LAG); der erste Stand einer Installation zählt nicht als Zuwachs. Test: `STATS_TEST_DATABASE_URL=... pnpm test`.
 
 ## Sprachen der Seite
-Standard Englisch; Cookie `lang` > Accept-Language. `LanguageSwitch` in der Fußzeile (`.lang-btn`, zweiter = Deutsch). Texte in `src/lib/messages.ts` (`de` ist Quelle des Typs: Funktionen mit Literal-Rückgabe brauchen `: string`, sonst passt `en` nicht).
+Sprach-URLs `/de` und `/en` (siehe Eintrag zur SEO der Website); `/download` und `/crew` haben keine Sprach-URL (`/de/download` ist 404). `LanguageSwitch` in der Fußzeile und in der Seitenleiste von `/crew`. Texte in `src/lib/messages.ts` (`de` ist Quelle des Typs: Funktionen mit Literal-Rückgabe brauchen `: string`, sonst passt `en` nicht).
 
 ## Stolperfallen
-- **Nicht im pnpm-Workspace**: `pnpm install --ignore-workspace`, eigenes Lockfile. ESLint ignoriert `services/`; Typprüfung mit `pnpm exec tsc --noEmit -p .` im Ordner.
+- **Nicht im pnpm-Workspace**: `pnpm install --ignore-workspace --frozen-lockfile`, eigenes Lockfile (in einem frischen Agenten-Worktree fehlt `node_modules` der Website, FORGE installiert nur den Root-Workspace). ESLint ignoriert `services/`; Typprüfung mit `pnpm exec tsc --noEmit -p .` im Ordner. Vor dem ersten `next dev` oder `next build` meldet tsc fehlende Typen für Bild-Importe und `RouteContext`.
 - **Kein `public/`-Ordner**: Bilder statisch importieren oder per relativer `url()` in globalem CSS.
-- Dev-Server: `DATABASE_URL=<Test-DB aus dev_environment> pnpm exec next dev -p 4100` im Hintergrund (der FORGE-Dev-Server des Projekts ist die Desktop-App, nicht diese Seite). Summen sind 5 Minuten im Prozess gecacht: nach SQL-Testdaten neu starten. TaskStop beendet nur die Shell; der Next-Prozess hält Port 4100 weiter (Prozess am Port mit `Get-NetTCPConnection -LocalPort 4100` finden und beenden).
-- Lokale Demodaten: per Node-Skript mit `pg` **im Ordner services/stats** (Schreiben außerhalb des Projekts sperrt die FORGE-Policy; Skript danach löschen) in `installs` (mit `models`, `plan`, `language`) + `install_days` (Zähler aus `COUNTER_KEYS`, steigend über 30 Tage), IDs `00000000-0000-4000-8000-0000000000cN`; löschen mit `DELETE FROM installs WHERE install_id::text LIKE '00000000-0000-4000-8000-0000000000c%'`.
-- Bash-Heredocs verlieren Backslashes; Python-Edit-Skripte, die Text mit `\n` suchen, scheitern an CRLF-Arbeitskopien (`core.autocrlf=true`): lieber das Edit-Werkzeug.
+- Dev-Server: `DATABASE_URL=<Test-DB aus dev_environment> pnpm exec next dev -p 4100` im Hintergrund (der FORGE-Dev-Server des Projekts ist die Desktop-App, nicht diese Seite; die Test-DB vorher mit dev_control starten, ihr Port wechselt beim Start). Summen sind 5 Minuten im Prozess gecacht: nach SQL-Testdaten neu starten. Das Beenden der Shell beendet den Next-Prozess nicht; er hält Port 4100 weiter (Prozess mit `Get-NetTCPConnection -LocalPort 4100` finden und beenden, auch vor `pnpm build`).
+- **Vorschau-Browser: `http://localhost:4100`, nicht `127.0.0.1`.** Mit `127.0.0.1` hydriert die Seite im Dev-Modus nicht und `/crew` bleibt im Skeleton hängen.
+- `/download` leitet Windows-Besucher direkt zur Setup-Datei auf GitHub um; die Vorschau lehnt das ab. Zum Ansehen `/download?os=windows` (oder `macos`, `linux`).
+- Lokale Demodaten: per Node-Skript mit `pg` **im Ordner services/stats** (Schreiben außerhalb des Projekts sperrt die FORGE-Policy; Skript danach löschen) in `installs` (mit `models`, `plan`, `language`; `os` als `windows…`, `darwin…`, `linux…`) + `install_days` (Zähler aus `COUNTER_KEYS`, steigend über 30 Tage, ein Tag pro Zeile, damit „Tokens pro Tag“ Balken zeigt), IDs `00000000-0000-4000-8000-0000000000cN`; löschen mit `DELETE FROM installs WHERE install_id::text LIKE '00000000-0000-4000-8000-0000000000c%'`. Die Tabellen entstehen erst beim ersten Aufruf von `/stats`.
+- Bash-Heredocs verlieren Backslashes; Edit-Skripte, die Text mit `\n` suchen, scheitern an CRLF-Arbeitskopien (`core.autocrlf=true`): vorher `\r\n` normalisieren oder das Edit-Werkzeug nehmen.

@@ -1,8 +1,8 @@
 ---
 title: "SEO der Website forge.vanturis.de (Sprach-URLs /de /en, proxy.ts, hreflang, OG-Bilder, JSON-LD, Sitemap)"
-summary: "Wie die Website in services/stats für Suchmaschinen aufgebaut ist: Sprach-URLs über proxy.ts, Canonical und hreflang, OG-Bilder per Skript, strukturierte Daten, FAQ unter dem ersten Bildschirm, robots und Sitemap; nötig vor neuen Seiten, Texten oder Bildern der Website."
+summary: "Wie die Website in services/stats für Suchmaschinen aufgebaut ist: Sprach-URLs über proxy.ts, Canonical und hreflang, OG-Bilder per Skript, strukturierte Daten, FAQ auf der Landingpage, robots und Sitemap; nötig vor neuen Seiten, Texten oder Bildern der Website."
 tags: ["stats","seo","i18n","konvention","stolperfalle"]
-updated: "2026-10-19T20:22:42.430Z"
+updated: "2026-11-14T15:32:29.513Z"
 ---
 
 # SEO der Website (services/stats), eingebaut 2026-10-19
@@ -21,8 +21,8 @@ updated: "2026-10-19T20:22:42.430Z"
 - JSON-LD als `<script type="application/ld+json">` in `page.tsx` bzw. `stats/page.tsx`: Start = Organization, WebSite, SoftwareApplication (kostenlos, Windows 10/11, AGPL, Download-URL), FAQPage aus `landing.faq.items`; Stats = WebPage + BreadcrumbList. `jsonLdScript` maskiert `<`. Keine Bewertungen oder Downloadzahlen erfinden.
 
 ## Inhalte
-- FAQ-Abschnitt unter dem ersten Bildschirm der Landingpage (`landing.faq` in `messages.ts`, `<details>`, Stile `.landing-faq`/`.faq-item` in `pages.css`). Der erste Bildschirm (Vorlage des Besitzers) blieb unverändert. Antworten nur mit belegten Fakten aus README.de.md; Textregeln des Besitzers: keine Gedankenstriche, keine Metaphern.
-- **Stolperfalle (behoben 2026-10-19):** Die FAQ lag zuerst im selben Flex-Container `.landing` (min-height `calc(100svh - 77px)`) wie Hero, Karten und Stats-Link. Dadurch teilten sie sich die Fensterhöhe, der Hero schrumpfte und die Fragen waren schon im ersten Bildschirm zu sehen. Der Besitzer will den ersten Bildschirm wieder vollflächig, die Fragen und danach den Footer erst beim Scrollen. Jetzt liegen Hero, Karten und Stats-Link in `.landing-first` (trägt die volle Höhe, unter 1080 px `min-height: 0`), `.landing` hat nur noch `overflow-x: clip`. Neue Abschnitte unter dem ersten Bildschirm gehören außerhalb von `.landing-first`.
+- FAQ-Abschnitt auf der Landingpage (`landing.faq` in `messages.ts`, `<details>`, Stile `.landing-faq`/`.faq-item` in `pages.css`). Antworten nur mit belegten Fakten aus README.de.md; Textregeln des Besitzers: keine Gedankenstriche, keine Metaphern.
+- Seit dem Redesign vom 2026-11-14 (Eintrag zur Website services/stats) ist die Landingpage eine normale Abfolge von Abschnitten: Hero mit Bühne, Funktionskarten, FAQ, Schlussblock. Die frühere Vorgabe, dass der erste Bildschirm die Fensterhöhe füllt, entfiel mit dem Redesign. Die Überschrift über den Funktionskarten ist ein `<h2>` mit dem Text `landing.eyebrow`.
 
 ## OG-Bilder
 `node scripts/og-images.mjs` in services/stats erzeugt `src/assets/og-{de,en}.png` (1200x630): weichgezeichneter Seitenhintergrund, Wortmarke, Titel und Lead, App-Screenshot rechts. sharp kommt über `next` (keine eigene Abhängigkeit), Schrift sind die Systemschriften (Segoe UI unter Windows). Nach neuen Screenshots oder Texten neu erzeugen. sharp nimmt nur Overlays, die ins Bild passen: das Skript schneidet sie mit `fit()` zu.
