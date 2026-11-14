@@ -16,7 +16,7 @@ const PRIVACY = [
   { key: "delete", icon: Trash2 },
 ] as const;
 
-/** Live stats after the owner's mockup: head on the left, four cards, two charts, top models and platforms. */
+/** Live stats: head, six cards, the chart cards and what is collected. */
 export function StatsPage({ state, locale }: { state: PageState; locale: Locale }) {
   const { t } = i18n(locale);
   const s = t.stats;
@@ -44,7 +44,7 @@ export function StatsPage({ state, locale }: { state: PageState; locale: Locale 
         ) : (
           <>
             <div className="stats-meta">
-              <Skeleton width="4.5rem" style={{ height: 30, borderRadius: 999 }} />
+              <Skeleton width="4.25rem" style={{ height: 28, borderRadius: 9999 }} />
               <Skeleton width="16rem" />
             </div>
             <div className="stats-grid">

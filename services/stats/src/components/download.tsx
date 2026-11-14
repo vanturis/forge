@@ -25,7 +25,7 @@ function CopyCommand({ locale }: { locale: Locale }) {
   return (
     <div className="install-command">
       <code>{INSTALL_COMMAND}</code>
-      <button type="button" className="btn btn-outline" onClick={copy} aria-label={copied ? d.copied : d.copy}>
+      <button type="button" className="btn btn-secondary btn-sm" onClick={copy} aria-label={copied ? d.copied : d.copy}>
         {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
         <span className="install-copy-label">{copied ? d.copied : d.copy}</span>
       </button>

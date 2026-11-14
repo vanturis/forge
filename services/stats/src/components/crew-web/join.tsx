@@ -129,7 +129,7 @@ export function PendingCard({ crew, onCancel }: { crew: CrewView; onCancel: () =
       <p className="crew-muted">{crew.name} · {m.project(crew.project)}</p>
       <p>{m.pendingText}</p>
       <output className="crew-code">{crew.joinCode}</output>
-      <button type="button" className="btn btn-outline" onClick={onCancel}>
+      <button type="button" className="btn btn-secondary" onClick={onCancel}>
         {m.pendingCancel}
       </button>
     </div>
@@ -146,7 +146,7 @@ export function ClosedCard({ crew, onForget }: { crew: CrewView; onForget: () =>
       <h2>{removed ? m.removedTitle : m.rejectedTitle}</h2>
       <p className="crew-muted">{crew.name} · {m.project(crew.project)}</p>
       <p>{removed ? m.removedText : m.rejectedText}</p>
-      <button type="button" className="btn btn-outline" onClick={onForget}>
+      <button type="button" className="btn btn-secondary" onClick={onForget}>
         {m.forget}
       </button>
     </div>

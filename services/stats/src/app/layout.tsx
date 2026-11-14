@@ -38,7 +38,7 @@ async function donated(): Promise<Donations | null> {
   }
 }
 
-/** The wordmark (944 x 184): the mark and FORGE, without the line below it, as in the mockup. */
+/** The wordmark (944 x 184): the mark and FORGE, without the line below it. */
 function Logo({ label, height, base }: { label: string; height: number; base: LocaleBase }) {
   return (
     <a href={localePath("/", base)} className="logo" aria-label={label}>
@@ -56,37 +56,41 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <LocaleProvider locale={locale} base={base}>
           {/* Without JavaScript nothing scrolls into view: show the charts as they are. */}
           <noscript>
-            <style>{".reveal{opacity:1;transform:none}.reveal .col-bar,.reveal .hbar-fill{animation:none}"}</style>
+            <style>{".reveal{opacity:1;transform:none}.reveal .col-bar,.reveal .share-fill{animation:none}.reveal .area{opacity:1}"}</style>
           </noscript>
           <header className="topbar">
-            <div className="container topbar-inner">
-              <Logo label={t.header.home} height={34} base={base} />
-              <nav className="topbar-nav" aria-label={t.header.nav}>
-                <TopLinks />
-                <SupportButton donations={given} />
-                <a className="btn btn-primary" href={DOWNLOAD_PAGE} aria-label={t.header.download}>
-                  <Download aria-hidden />
-                  <span className="nav-label">{t.header.download}</span>
-                </a>
-              </nav>
+            <div className="container">
+              <div className="topbar-inner">
+                <Logo label={t.header.home} height={28} base={base} />
+                <nav className="topbar-nav" aria-label={t.header.nav}>
+                  <TopLinks />
+                  <SupportButton donations={given} />
+                  <a className="btn btn-primary" href={DOWNLOAD_PAGE} aria-label={t.header.download}>
+                    <Download aria-hidden />
+                    <span className="nav-label">{t.header.download}</span>
+                  </a>
+                </nav>
+              </div>
             </div>
           </header>
           {children}
           <footer className="footer">
-            <div className="container footer-inner">
-              <div className="footer-brand">
-                <Logo label={t.header.home} height={24} base={base} />
-                <p>{t.footer.license}</p>
-                <p>{t.footer.disclaimer}</p>
-              </div>
-              <div className="footer-side">
-                <nav className="footer-links" aria-label={t.header.nav}>
-                  <a href={localePath("/stats", base)}>{t.header.liveStats}</a>
-                  <a href={REPO_URL}>{t.header.github}</a>
-                  <a href={IMPRINT_URL}>{t.footer.imprint}</a>
-                  <a href={PRIVACY_URL}>{t.footer.privacy}</a>
-                </nav>
-                <LanguageSwitch />
+            <div className="container">
+              <div className="footer-inner">
+                <div className="footer-brand">
+                  <Logo label={t.header.home} height={24} base={base} />
+                  <p>{t.footer.license}</p>
+                  <p>{t.footer.disclaimer}</p>
+                </div>
+                <div className="footer-side">
+                  <nav className="footer-links" aria-label={t.header.nav}>
+                    <a href={localePath("/stats", base)}>{t.header.liveStats}</a>
+                    <a href={REPO_URL}>{t.header.github}</a>
+                    <a href={IMPRINT_URL}>{t.footer.imprint}</a>
+                    <a href={PRIVACY_URL}>{t.footer.privacy}</a>
+                  </nav>
+                  <LanguageSwitch />
+                </div>
               </div>
             </div>
           </footer>

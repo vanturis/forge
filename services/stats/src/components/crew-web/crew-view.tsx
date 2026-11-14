@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { ArrowUp, Bot, Check, CheckCircle2, Circle, CircleDot, Eye, GitBranch, Globe, LogOut, MessageSquare, Plus, RotateCcw, Send, Trash2, UserCheck, Users, X } from "lucide-react";
 import type { CrewView, CrewWebClient, MemberView } from "@/lib/crew-web/client";
 import { crewMessages, type CrewMessages } from "@/lib/crew-web/messages";
@@ -51,7 +51,7 @@ export function CrewBoard({ client, crew, onLeft }: { client: CrewWebClient; cre
         </div>
         {leaving ? (
           <div className="crew-confirm">
-            <button type="button" className="btn btn-outline crew-small crew-danger" onClick={() => void client.leave().then(onLeft)}>
+            <button type="button" className="btn btn-secondary btn-sm crew-danger" onClick={() => void client.leave().then(onLeft)}>
               {m.leaveConfirm}
             </button>
             <button type="button" className="crew-icon-btn" onClick={() => setLeaving(false)} aria-label={m.close} title={m.close}>
@@ -75,10 +75,10 @@ export function CrewBoard({ client, crew, onLeft }: { client: CrewWebClient; cre
             </span>
           </div>
           <div className="crew-request-actions">
-            <button type="button" className="btn btn-primary crew-small" onClick={() => void act(() => client.respond(r.id, true))}>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => void act(() => client.respond(r.id, true))}>
               {m.accept}
             </button>
-            <button type="button" className="btn btn-outline crew-small" onClick={() => void act(() => client.respond(r.id, false))}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => void act(() => client.respond(r.id, false))}>
               {m.decline}
             </button>
           </div>
@@ -103,15 +103,15 @@ export function CrewBoard({ client, crew, onLeft }: { client: CrewWebClient; cre
       </nav>
 
       <div className="crew-columns">
-        <section className="crew-col crew-col-people" aria-label={m.tabs.people}>
+        <Column id="people" label={m.tabs.people} count={tabs[1]!.count}>
           <People crew={crew} m={m} locale={locale} onWatch={(member, agent) => void act(() => client.watch(member, agent))} />
-        </section>
-        <section className="crew-col crew-col-chat" aria-label={m.tabs.chat}>
+        </Column>
+        <Column id="chat" label={m.tabs.chat}>
           <Chat client={client} crew={crew} m={m} locale={locale} onError={setError} />
-        </section>
-        <section className="crew-col crew-col-tasks" aria-label={m.tabs.tasks}>
+        </Column>
+        <Column id="tasks" label={m.tabs.tasks} count={tabs[2]!.count}>
           <Tasks client={client} crew={crew} m={m} locale={locale} act={act} />
-        </section>
+        </Column>
       </div>
 
       {crew.watch && (
@@ -126,6 +126,19 @@ export function CrewBoard({ client, crew, onLeft }: { client: CrewWebClient; cre
         />
       )}
     </div>
+  );
+}
+
+/** One of the three areas; its name stands above it where they are side by side (the tabs name it otherwise). */
+function Column({ id, label, count, children }: { id: Tab; label: string; count?: number; children: ReactNode }) {
+  return (
+    <section className={`crew-col crew-col-${id}`} aria-label={label}>
+      <h2 className="crew-col-title" aria-hidden>
+        {label}
+        {!!count && <span className="crew-count">{count}</span>}
+      </h2>
+      <div className="crew-col-body">{children}</div>
+    </section>
   );
 }
 
@@ -368,7 +381,7 @@ function Tasks({ client, crew, m, locale, act }: { client: CrewWebClient; crew: 
             </div>
           </>
         )}
-        <button type="submit" className="btn btn-primary crew-small" disabled={!title.trim()}>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={!title.trim()}>
           <Plus aria-hidden /> {m.addTask}
         </button>
       </form>

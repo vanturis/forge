@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, ChevronDown, Download, Folder, GitBranch, MessageCircle, Monitor, Settings } from "lucide-react";
+import { BarChart3, ChevronDown, Download, Folder, GitBranch, MessageCircle, Monitor, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import de800 from "@/assets/app-de-800.webp";
 import de1200 from "@/assets/app-de-1200.webp";
@@ -12,11 +12,10 @@ import { DOWNLOAD_PAGE } from "@/lib/constants";
 import { localePath, type Locale, type LocaleBase } from "@/lib/i18n";
 import { i18n, type Messages } from "@/lib/messages";
 import { Feature } from "./blocks";
-import { Tilt } from "./tilt";
 
 /**
  * The app screenshot (taken at 2400 x 1680) in four widths: the browser picks the one closest to the
- * window's size on screen. Scaled down on the GPU under the 3D turn, a far larger file looked pixelated.
+ * window's size on screen instead of scaling a far larger file down.
  */
 const SHOTS = { de: [de800, de1200, de1600, de2400], en: [en800, en1200, en1600, en2400] } as const;
 
@@ -29,7 +28,7 @@ const FEATURES: { key: FeatureKey; icon: LucideIcon }[] = [
   { key: "workflow", icon: Settings },
 ];
 
-/** The start page: one full screen with the app window, four cards and the way to the live stats; the questions below it. */
+/** The start page: title and lead, the app window on its stage, four cards, the questions and the download once more. */
 export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) {
   const { t } = i18n(locale);
   const l = t.landing;
@@ -38,37 +37,37 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
   const shot = shots[shots.length - 1]!;
   return (
     <main className="landing">
-      {/* The first screen fills the window; the questions and the footer come only when scrolling. */}
-      <div className="landing-first">
       <section className="hero">
-        <div className="container hero-inner">
-          <div className="hero-text">
+        <div className="container">
+          <div className="hero-inner">
             <h1 className="hero-title">
               <span>{l.title}</span>
               <span className="hero-title-accent">{l.titleAccent}</span>
             </h1>
-            <p className="hero-lead">{l.lead}</p>
-            <div className="hero-actions">
-              <a className="btn btn-primary btn-lg" href={DOWNLOAD_PAGE}>
-                <Download aria-hidden />
-                {l.download}
-              </a>
-              <a className="btn btn-outline btn-lg" href={stats}>
-                <BarChart3 aria-hidden />
-                {l.liveStats}
-              </a>
+            <div className="hero-side">
+              <p className="hero-lead">{l.lead}</p>
+              <div className="hero-actions">
+                <a className="btn btn-primary btn-lg" href={DOWNLOAD_PAGE}>
+                  <Download aria-hidden />
+                  {l.download}
+                </a>
+                <a className="btn btn-outline btn-lg" href={stats}>
+                  <BarChart3 aria-hidden />
+                  {l.liveStats}
+                </a>
+              </div>
+              <ul className="hero-facts">
+                <li>
+                  <Monitor aria-hidden />
+                  {l.facts.platforms}
+                </li>
+                <li>{l.facts.openSource}</li>
+                <li>{l.facts.earlyAccess}</li>
+              </ul>
             </div>
-            <ul className="hero-facts">
-              <li>
-                <Monitor size={15} aria-hidden />
-                {l.facts.platforms}
-              </li>
-              <li>{l.facts.openSource}</li>
-              <li>{l.facts.earlyAccess}</li>
-            </ul>
           </div>
 
-          <Tilt className="hero-shot">
+          <div className="hero-stage">
             <div className="window">
               <div className="window-bar" aria-hidden>
                 <span className="window-lights">
@@ -80,7 +79,7 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
               <img
                 src={shots[2].src}
                 srcSet={shots.map((s) => `${s.src} ${s.width}w`).join(", ")}
-                sizes="(max-width: 1080px) 100vw, 50vw"
+                sizes="(max-width: 1264px) 90vw, 1072px"
                 width={shot.width}
                 height={shot.height}
                 alt={l.screenshotAlt}
@@ -88,26 +87,20 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
                 fetchPriority="high"
               />
             </div>
-          </Tilt>
+          </div>
         </div>
       </section>
 
-      <section className="container landing-features" aria-label={l.eyebrow}>
+      <section className="container landing-features" aria-labelledby="features-title">
+        <h2 id="features-title" className="eyebrow">
+          {l.eyebrow}
+        </h2>
         <div className="features">
           {FEATURES.map(({ key, icon }, i) => (
             <Feature key={key} icon={icon} title={l.features[key].title} text={l.features[key].text} index={i} />
           ))}
         </div>
       </section>
-
-      <div className="container landing-foot">
-        <a className="stats-link" href={stats}>
-          <BarChart3 aria-hidden />
-          {l.liveStats}
-          <ArrowRight aria-hidden className="btn-arrow" />
-        </a>
-      </div>
-      </div>
 
       <section className="container landing-faq" id="faq" aria-labelledby="faq-title">
         <header className="section-head">
@@ -119,11 +112,30 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
             <details key={item.q} className="faq-item">
               <summary>
                 <h3>{item.q}</h3>
-                <ChevronDown aria-hidden className="faq-chevron" />
+                <span className="faq-toggle" aria-hidden>
+                  <ChevronDown />
+                </span>
               </summary>
               <p>{item.a}</p>
             </details>
           ))}
+        </div>
+      </section>
+
+      <section className="container landing-closing" aria-labelledby="closing-title">
+        <div className="closing">
+          <h2 id="closing-title">{t.download.title}</h2>
+          <p>{t.download.lead}</p>
+          <div className="closing-actions">
+            <a className="btn btn-primary btn-lg" href={DOWNLOAD_PAGE}>
+              <Download aria-hidden />
+              {l.download}
+            </a>
+            <a className="btn btn-outline btn-lg" href={stats}>
+              <BarChart3 aria-hidden />
+              {l.liveStats}
+            </a>
+          </div>
         </div>
       </section>
     </main>

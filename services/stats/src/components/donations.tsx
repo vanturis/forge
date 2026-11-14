@@ -40,7 +40,7 @@ export function SupportButton({ donations }: { donations: Donations | null }) {
       >
         <div className="modal-body">
           <header className="modal-head">
-            <span className="modal-icon" aria-hidden>
+            <span className="icon-tile" aria-hidden>
               <Heart />
             </span>
             <h2 id={titleId}>{m.title}</h2>
@@ -65,7 +65,7 @@ export function SupportButton({ donations }: { donations: Donations | null }) {
               <Heart aria-hidden />
               {m.pay}
             </a>
-            <a className="btn btn-outline" href={FEEDBACK_URL} title={m.feedbackTitle}>
+            <a className="btn btn-secondary" href={FEEDBACK_URL} title={m.feedbackTitle}>
               <Lightbulb aria-hidden />
               {m.feedback}
               <ExternalLink className="modal-external" aria-hidden />

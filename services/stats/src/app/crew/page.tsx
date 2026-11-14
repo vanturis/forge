@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 /** The crew in the browser: invite links from FORGE (…/crew#forge-crew1.…) open here. */
 export default function CrewPage() {
   return (
-    <main className="container crew-page">
+    <main className="crew-page">
       <CrewApp />
     </main>
   );

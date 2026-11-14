@@ -50,7 +50,7 @@ export function WatchPanel({ watch, member, onClose, onRetry }: { watch: WatchVi
             {watch.state === "transferring" && watch.total ? ` · ${m.watchProgress(watch.received, watch.total)}` : ""}
           </span>
           {over && (
-            <button type="button" className="btn btn-outline crew-small" onClick={onRetry}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onRetry}>
               <RotateCcw aria-hidden /> {m.watchRetry}
             </button>
           )}

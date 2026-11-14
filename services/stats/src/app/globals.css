@@ -1,9 +1,12 @@
 /*
- * Design tokens after the FORGE app (apps/desktop/src/styles.css, @theme), with the background and the
- * orange of the owner's landing page mockup. Dark only. Page layout lives in pages.css.
+ * Design tokens and primitives of the website. Colours as in the FORGE app (apps/desktop/src/styles.css);
+ * radii, shadows and motion are the shape language shared with the app: round surfaces, pill buttons,
+ * soft shadows, no glows. Dark only. Page layout lives in pages.css.
  */
 :root {
   --color-bg: #111418;
+  /* window background of the crew app view (/crew), one step below --color-bg, as in the app */
+  --color-backdrop: #0d1014;
   --color-surface: #1a1e25;
   --color-surface-2: #21262e;
   --color-surface-3: #292f38;
@@ -24,6 +27,7 @@
 
   /* Inter from @fontsource-variable/inter (layout.tsx); the app uses the same family. */
   --font-sans: "Inter Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
 
   --text-caption: 11px;
   --text-small: 12px;
@@ -31,15 +35,27 @@
   --text-ui: 14px;
   --text-lead: 17px;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* smallest parts, small parts, controls and menu items, fields and list rows, cards and menus, large surfaces, pills */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-input: 14px;
+  --radius-panel: 18px;
+  --radius-card: 24px;
+  --radius-full: 9999px;
 
-  --ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* filled buttons, cards and panels, floating things (dialog, menu, top bar) */
+  --shadow-solid: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-overlay: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.5), 0 28px 56px -16px rgb(0 0 0 / 0.7);
 
-  --page-width: 1392px;
-  --page-gutter: 72px;
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --page-width: 1200px;
+  --page-gutter: 32px;
 
   color-scheme: dark;
 }
@@ -54,6 +70,11 @@ html,
 body {
   margin: 0;
   padding: 0;
+}
+
+html {
+  /* jump targets stay below the floating top bar */
+  scroll-padding-top: 96px;
 }
 
 /* a column, so the footer sits at the bottom of the window on short pages (see .footer) */
@@ -75,7 +96,8 @@ body {
 /*
  * The background picture of every page (owner's file) in its full 2752 x 1536 at WebP quality 95, washed
  * out by the browser: a blur baked into a smaller file showed blocks and bands on the dark gradients.
- * Drawn larger than the screen so the blurred edges stay outside.
+ * Drawn larger than the screen so the blurred edges stay outside. Held back, so the surfaces carry the page;
+ * the stage of the start page shows it sharp.
  */
 body::before {
   position: fixed;
@@ -84,6 +106,7 @@ body::before {
   background: url("../assets/background.webp") center / cover no-repeat;
   content: "";
   filter: blur(12px);
+  opacity: 0.4;
   pointer-events: none;
 }
 
@@ -116,7 +139,7 @@ a {
   padding-right: var(--page-gutter);
 }
 
-/* ---- buttons, after components/ui/button.tsx */
+/* ---- buttons: pills. Primary filled orange, secondary a neutral surface, outline a fine border. */
 
 .btn {
   display: inline-flex;
@@ -124,143 +147,183 @@ a {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  height: 44px;
-  padding: 0 22px;
+  height: 40px;
+  padding: 0 18px;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  font-size: 17px;
-  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-fg);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  letter-spacing: -0.005em;
   white-space: nowrap;
+  cursor: pointer;
   user-select: none;
   transition:
-    color 120ms var(--ease-snappy),
-    background-color 120ms var(--ease-snappy),
-    border-color 120ms var(--ease-snappy),
-    transform 120ms var(--ease-snappy);
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .btn:active {
-  transform: scale(0.97);
-  transition-duration: 75ms;
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn svg {
-  width: 18px;
-  height: 18px;
-}
-
-.btn-outline {
-  border-color: var(--color-border);
-  color: var(--color-fg);
-}
-
-.btn-outline:hover {
-  background: var(--color-surface-2);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
 }
 
 .btn-primary {
   background: var(--color-accent);
   color: var(--color-accent-fg);
+  box-shadow: var(--shadow-solid);
 }
 
 .btn-primary:hover {
   background: var(--color-accent-strong);
 }
 
+.btn-secondary {
+  background: var(--color-surface-2);
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-3);
+}
+
+.btn-outline {
+  border-color: var(--color-border-strong);
+}
+
+.btn-outline:hover {
+  background: var(--color-surface-2);
+}
+
+.btn-sm {
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  font-size: var(--text-body);
+}
+
+.btn-sm svg {
+  width: 14px;
+  height: 14px;
+}
+
 .btn-lg {
-  gap: 12px;
-  height: 58px;
-  padding: 0 32px;
-  font-size: 18px;
+  gap: 10px;
+  height: 48px;
+  padding: 0 24px;
+  font-size: 15px;
 }
 
 .btn-lg svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---- an icon on a round accent tile: cards, dialog, simple pages */
+
+.icon-tile {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.icon-tile svg {
   width: 20px;
   height: 20px;
-}
-
-
-.btn-arrow {
-  transition: transform 160ms var(--ease-snappy);
-}
-
-a:hover > .btn-arrow {
-  transform: translateX(3px);
+  stroke-width: 1.75;
 }
 
 /* ---- eyebrow and section heads */
 
 .eyebrow {
   display: block;
-  color: var(--color-accent);
-  font-size: 14px;
+  color: var(--color-muted);
+  font-size: var(--text-small);
   font-weight: 600;
-  letter-spacing: 0.24em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .section-head {
-  max-width: 36rem;
+  max-width: 40rem;
   margin: 0 auto 40px;
   text-align: center;
 }
 
 .section-head h2 {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: clamp(30px, 3.4vw, 40px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
 }
 
 .section-head p {
-  margin-top: 8px;
+  margin-top: 12px;
   color: var(--color-muted);
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
-/* ---- feature cards: icon, title, one line, centred */
+/* ---- feature cards: icon tile, title, a few words */
 
 .features {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 32px 24px;
+  gap: 16px;
 }
 
 .feature {
-  text-align: center;
-}
-
-.feature-icon {
-  width: 30px;
-  height: 30px;
-  color: var(--color-accent);
+  padding: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
 }
 
 .feature h3 {
-  margin-top: 18px;
+  margin-top: 28px;
   font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .feature p {
-  max-width: 15rem;
-  margin: 8px auto 0;
+  margin-top: 8px;
   color: var(--color-muted);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 14.5px;
+  line-height: 1.6;
 }
 
-/* ---- language switch: two flag buttons in one outline, the chosen one filled */
+/* ---- language switch: two flag buttons in one pill, the chosen one filled */
 
 .lang-switch {
   display: inline-flex;
   flex-shrink: 0;
   gap: 2px;
-  height: 32px;
+  height: 36px;
   margin: 0;
-  padding: 2px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
 }
 
 .lang-btn {
@@ -268,9 +331,9 @@ a:hover > .btn-arrow {
   align-items: center;
   gap: 6px;
   height: 100%;
-  padding: 0 8px;
+  padding: 0 11px;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-muted);
   font: inherit;
@@ -278,19 +341,19 @@ a:hover > .btn-arrow {
   font-weight: 500;
   cursor: pointer;
   transition:
-    color 120ms var(--ease-snappy),
-    background-color 120ms var(--ease-snappy);
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .lang-btn:hover {
-  background: var(--color-surface-2);
   color: var(--color-fg);
 }
 
 .lang-btn-on,
 .lang-btn-on:hover {
-  background: var(--color-surface-3);
+  background: var(--color-bg);
   color: var(--color-fg);
+  box-shadow: var(--shadow-raised);
 }
 
 .lang-btn:not(.lang-btn-on) .flag {
@@ -305,7 +368,7 @@ a:hover > .btn-arrow {
   overflow: hidden;
   border-radius: 2px;
   box-shadow: 0 0 0 1px var(--color-border-strong);
-  transition: opacity 120ms var(--ease-snappy);
+  transition: opacity var(--duration-fast) var(--ease-out);
 }
 
 .flag svg {
@@ -314,38 +377,52 @@ a:hover > .btn-arrow {
   height: 100%;
 }
 
-/* ---- simple pages (error, not found) */
+/* ---- simple pages (error, not found): one round panel in the middle */
 
 .content {
   display: flex;
-  flex-direction: column;
-  gap: 24px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
   padding-top: 64px;
   padding-bottom: 96px;
 }
 
+.notice {
+  display: flex;
+  width: min(520px, 100%);
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding: 48px 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+  text-align: center;
+}
+
 .intro h1 {
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 30px;
+  font-weight: 600;
   line-height: 1.2;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 .intro p {
-  margin-top: 8px;
-  max-width: 48ch;
+  max-width: 44ch;
+  margin: 10px auto 0;
   color: var(--color-muted);
-  font-size: var(--text-lead);
+  font-size: 16px;
+  line-height: 1.6;
 }
 
-/* ErrorBanner of components/ui/misc.tsx */
 .error-banner {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
-  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  border-radius: var(--radius-input);
   background: var(--color-danger-soft);
 }
 
@@ -367,7 +444,7 @@ a:hover > .btn-arrow {
   color: var(--color-subtle);
 }
 
-/* ---- Skeleton of components/ui/skeleton.tsx; it sits in the line of the text it stands for */
+/* ---- skeleton: it sits in the line of the text it stands for */
 
 .skeleton {
   display: inline-block;
@@ -375,12 +452,12 @@ a:hover > .btn-arrow {
   height: 0.8em;
   vertical-align: middle;
   border-radius: var(--radius-sm);
-  background: var(--color-surface-2);
+  background: var(--color-surface-3);
   animation: forge-shimmer 1.4s ease-in-out infinite;
 }
 
 .skeleton-bar {
-  background: var(--color-surface-2);
+  background: var(--color-surface-3);
   animation: forge-shimmer 1.4s ease-in-out infinite;
 }
 
@@ -394,7 +471,7 @@ a:hover > .btn-arrow {
   }
 }
 
-/* ---- live indicator */
+/* ---- live indicator: a dot, with a ring that fades while on */
 
 .live-dot {
   position: relative;
@@ -408,7 +485,6 @@ a:hover > .btn-arrow {
 
 .live-dot-on {
   background: var(--color-success);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--color-success) 60%, transparent);
 }
 
 .live-dot-on::after {
@@ -428,99 +504,84 @@ a:hover > .btn-arrow {
   }
 }
 
+/* status as a pill: dot and text */
 .live-badge {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 7px;
-  padding: 2px 10px 2px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  font-size: var(--text-caption);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  gap: 8px;
+  height: 28px;
+  padding: 0 12px 0 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
   color: var(--color-muted);
+  font-size: var(--text-small);
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .live-badge-on {
-  border-color: color-mix(in srgb, var(--color-success) 35%, transparent);
   background: var(--color-success-soft);
   color: var(--color-success);
 }
 
-/* ---- support dialog behind "Unterstützen", after the SupportDialog of the app */
+/* ---- support dialog behind "Unterstützen": no lines between head, text and buttons */
 
 .modal {
-  width: min(400px, calc(100vw - 2 * var(--page-gutter, 24px)));
+  width: min(420px, calc(100vw - 2 * var(--page-gutter, 24px)));
   max-height: calc(100vh - 48px);
   margin: auto;
   padding: 0;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
   color: var(--color-fg);
-  box-shadow: 0 24px 64px rgb(0 0 0 / 50%);
-  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-overlay);
 }
 
 .modal[open] {
-  animation: forge-rise 220ms var(--ease-snappy);
+  animation: forge-rise var(--duration-base) var(--ease-out);
 }
 
 .modal::backdrop {
-  background: rgb(0 0 0 / 55%);
-  backdrop-filter: blur(3px);
+  background: rgb(0 0 0 / 0.6);
 }
 
 .modal-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 22px 24px 20px;
+  gap: 18px;
+  padding: 24px;
 }
 
 .modal-head {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-/* the heart in an orange tile, like the icons of the cards */
-.modal-icon {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-lg);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-}
-
-.modal-icon svg {
-  width: 18px;
-  height: 18px;
+  gap: 14px;
 }
 
 .modal-head h2 {
   flex: 1;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   line-height: 24px;
+  letter-spacing: -0.02em;
 }
 
 .modal-close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border: 0;
-  border-radius: var(--radius-md);
-  background: transparent;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
   color: var(--color-muted);
   cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .modal-close:hover {
@@ -535,18 +596,17 @@ a:hover > .btn-arrow {
 
 .modal-text {
   color: var(--color-muted);
-  font-size: var(--text-ui);
-  line-height: 21px;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 /* "Bisher gespendet": the figure as large as the numbers of the stats cards */
 .donated {
   display: flex;
   flex-direction: column;
-  padding: 14px 16px;
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--color-surface-2) 70%, transparent);
+  padding: 16px 18px;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-2);
 }
 
 .donated-label {
@@ -557,10 +617,10 @@ a:hover > .btn-arrow {
 .donated-value {
   margin-top: 2px;
   color: var(--color-accent);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 600;
-  line-height: 34px;
-  letter-spacing: -0.01em;
+  line-height: 36px;
+  letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
 
@@ -572,23 +632,12 @@ a:hover > .btn-arrow {
 .modal-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .modal-actions .btn {
   width: 100%;
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.modal-actions .btn svg {
-  width: 17px;
-  height: 17px;
-  flex-shrink: 0;
-}
-
-.modal-actions .btn-outline {
-  background: color-mix(in srgb, var(--color-surface) 40%, transparent);
+  height: 44px;
 }
 
 .modal-external {
@@ -603,7 +652,7 @@ a:hover > .btn-arrow {
   text-align: center;
 }
 
-/* ---- motion: entrances and scroll reveal; prefers-reduced-motion below cuts them to their end state */
+/* ---- motion: entrances and scroll reveal, only opacity and transform; prefers-reduced-motion below cuts them to their end state */
 
 .sr-only {
   position: absolute;
@@ -624,12 +673,19 @@ a:hover > .btn-arrow {
   }
 }
 
+/* movement without fading: for the large picture of the first screen (LCP) */
+@keyframes forge-lift {
+  from {
+    transform: translateY(20px);
+  }
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(14px);
   transition:
-    opacity 600ms var(--ease-snappy),
-    transform 600ms var(--ease-snappy);
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
 }
 
 .reveal.in-view {
@@ -639,7 +695,7 @@ a:hover > .btn-arrow {
 
 @media (max-width: 1080px) {
   :root {
-    --page-gutter: 32px;
+    --page-gutter: 24px;
   }
 
   .features {
@@ -652,27 +708,19 @@ a:hover > .btn-arrow {
     --page-gutter: 16px;
   }
 
-  .btn {
-    height: 40px;
-    padding: 0 14px;
-    font-size: 15px;
-  }
-
-  .btn-lg {
-    height: 50px;
-    padding: 0 22px;
-    font-size: 16px;
-  }
-
   .section-head {
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
 
   .section-head h2 {
-    font-size: 24px;
+    font-size: 28px;
   }
 
-  /* centred blocks one below the other were a long column with little text: compact cards, icon on the left */
+  .section-head p {
+    font-size: 15px;
+  }
+
+  /* one below the other: compact cards, icon on the left */
   .features {
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
@@ -681,20 +729,14 @@ a:hover > .btn-arrow {
   .feature {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 14px;
+    column-gap: 16px;
     align-items: start;
-    padding: 14px 16px;
-    border: 1px solid var(--color-border);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--color-surface) 88%, transparent);
-    text-align: left;
+    padding: 18px;
+    border-radius: var(--radius-panel);
   }
 
-  .feature-icon {
+  .feature .icon-tile {
     grid-row: span 2;
-    width: 24px;
-    height: 24px;
-    margin-top: 1px;
   }
 
   .feature h3 {
@@ -704,18 +746,17 @@ a:hover > .btn-arrow {
   }
 
   .feature p {
-    max-width: none;
-    margin: 2px 0 0;
+    margin-top: 2px;
     font-size: 14.5px;
-    line-height: 1.45;
+    line-height: 1.5;
+  }
+
+  .notice {
+    padding: 36px 24px;
   }
 
   .lang-code {
     display: none;
-  }
-
-  .lang-btn {
-    padding: 0 5px;
   }
 }
 

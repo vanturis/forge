@@ -3,23 +3,25 @@ import type { LucideIcon } from "lucide-react";
 
 // Small building blocks shared by the start page and the statistics.
 
-/** Eyebrow line above a title, in the accent colour and letter-spaced like the start page. */
+/** Eyebrow line above a title: small, upper case, letter-spaced, muted. */
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return <span className={className ? `eyebrow ${className}` : "eyebrow"}>{children}</span>;
 }
 
-/** Icon, title and one line of text, centred: the four cards of the start page and the privacy notes. */
+/** A round card with an icon tile, a title and a few words: the four cards of the start page and the privacy notes. */
 export function Feature({ icon: Icon, title, text, index = 0 }: { icon: LucideIcon; title: string; text: string; index?: number }) {
   return (
     <article className="feature" style={{ "--i": index } as CSSProperties}>
-      <Icon className="feature-icon" aria-hidden />
+      <span className="icon-tile" aria-hidden>
+        <Icon />
+      </span>
       <h3>{title}</h3>
       <p>{text}</p>
     </article>
   );
 }
 
-/** One card of the statistics: icon, a large number with its label and a line below, the last days as small bars. */
+/** One card of the statistics: icon tile, the label above a large number, a line below, the last days as small bars. */
 export function Stat({
   icon: Icon,
   label,
@@ -40,13 +42,15 @@ export function Stat({
 }) {
   return (
     <div className="stat" style={{ "--i": index } as CSSProperties}>
-      <Icon className="stat-icon" aria-hidden />
+      <span className="icon-tile" aria-hidden>
+        <Icon />
+      </span>
       <div className="stat-body">
+        <div className="stat-label">{label}</div>
         <div className="stat-value">
           {value}
           {unit && <span className="stat-unit">{unit}</span>}
         </div>
-        <div className="stat-label">{label}</div>
         <div className="stat-sub">{sub}</div>
       </div>
       {spark}

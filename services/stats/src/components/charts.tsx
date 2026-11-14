@@ -11,9 +11,9 @@ import { Skeleton } from "./blocks";
 import { useI18n } from "./locale";
 import { Reveal } from "./motion";
 
-// The cards of the live stats: the four of the owner's mockup (tokens per day as columns, active
-// installations as an area, the top models as share bars, the platforms as a ring), below them the
-// versions, Claude plans and languages as share bars and the feature counters as figures.
+// The cards of the live stats: tokens per day as columns, active installations as an area, the top
+// models as share bars, the platforms as a ring, below them the versions, Claude plans and languages
+// as share bars and the feature counters as figures.
 
 /** Height of the plot area; the x-axis band comes below. */
 const PLOT_H = 116;
@@ -44,7 +44,9 @@ function ChartCard({ icon: Icon, title, sub, action, children }: { icon: LucideI
   return (
     <section className="chart-card" aria-label={title}>
       <div className="chart-head">
-        <Icon className="chart-icon" aria-hidden />
+        <span className="icon-tile" aria-hidden>
+          <Icon />
+        </span>
         <div className="chart-title">
           <h3>{title}</h3>
           <p>{sub}</p>
@@ -487,14 +489,16 @@ export function ChartsSkeleton() {
   const m = t.stats.charts;
   const head = (Icon: LucideIcon, title: string, range: boolean) => (
     <div className="chart-head">
-      <Icon className="chart-icon" aria-hidden />
+      <span className="icon-tile" aria-hidden>
+        <Icon />
+      </span>
       <div className="chart-title">
         <h3>{title}</h3>
         <p>
           <Skeleton width="11rem" />
         </p>
       </div>
-      {range && <Skeleton width="128px" style={{ height: 36, borderRadius: 6 }} />}
+      {range && <Skeleton width="136px" style={{ height: 36, borderRadius: 9999 }} />}
     </div>
   );
   const plot = (seed: number) => (

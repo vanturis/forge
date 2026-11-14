@@ -1,44 +1,193 @@
 /*
- * The crew in the browser (/crew), after the Crew tab of the app (apps/desktop/src/components/crew).
- * Phone first: one column with tabs; from 1000px people, chat and tasks side by side.
+ * The crew in the browser (/crew): an app view, built like the FORGE window. A sidebar and the main
+ * area float as two round surfaces on the darker window background; navigation and tabs are pills.
+ * Phone first: the sidebar lies on top as a bar, one column with tabs; from 1280px people, chat and
+ * tasks stand side by side.
  */
 
+/* the app view fills the window: no top bar, footer or background picture of the website */
+body:has(.crew-page) {
+  background: var(--color-backdrop);
+}
+
+body:has(.crew-page)::before,
+body:has(.crew-page) > .topbar,
+body:has(.crew-page) > .footer {
+  display: none;
+}
+
 .crew-page {
-  --crew-top: 76px;
   /* FORGE's chat colors and sizes the website does not have (apps/desktop/src/styles.css) */
   --color-claude: #d97757;
   --color-warning: #d9a23b;
   --color-warning-soft: #d9a23b1f;
   --color-diff-add: #3fb97a1a;
   --color-diff-del: #f0605a1a;
-  --font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
   --text-caption-lg: 11.5px;
+  --crew-gap: 10px;
   display: flex;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
   flex-direction: column;
-  padding-top: 20px;
-  padding-bottom: 24px;
+  padding: var(--crew-gap);
 }
 
-.crew-app,
-.crew-intro {
+/* ---- shell: sidebar and main area */
+
+.crew-shell {
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--crew-gap);
 }
 
-.crew-intro {
+.crew-side,
+.crew-main {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-raised);
+}
+
+/* phone: logo and language in one row, the crews below it, scrolling sideways */
+.crew-side {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  padding-top: 24px;
+  gap: 10px;
+  padding: 10px 10px 10px 16px;
+}
+
+.crew-logo {
+  display: inline-flex;
+  justify-self: start;
+  border-radius: var(--radius-sm);
+}
+
+.crew-logo img {
+  display: block;
+  width: 123px;
+  height: 24px;
+}
+
+.crew-side-nav {
+  min-width: 0;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  margin-left: -6px;
+}
+
+.crew-side-heading {
+  display: none;
+  padding: 0 14px 8px;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.crew-nav {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.crew-nav-item {
+  display: inline-flex;
+  min-width: 0;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  max-width: 220px;
+  padding: 0 16px 0 14px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-fg-soft);
+  font: inherit;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.crew-nav-item:hover {
+  background: var(--color-surface-2);
+  color: var(--color-fg);
+}
+
+/* the open crew: a filled pill */
+.crew-nav-item[aria-pressed="true"] {
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  box-shadow: var(--shadow-solid);
+}
+
+.crew-nav-item .live-dot {
+  margin: 0 4px;
+}
+
+.crew-nav-item[aria-pressed="true"] .live-dot,
+.crew-nav-item[aria-pressed="true"] .live-dot::after {
+  background: var(--color-accent-fg);
+}
+
+.crew-nav-item.skeleton-bar {
+  width: 140px;
+  cursor: default;
+}
+
+.crew-side-foot {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.crew-page .flag svg {
+  width: 100%;
+  height: 100%;
+}
+
+.crew-main {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* joining, waiting, closed: one card in the middle of the main area */
+.crew-scroll {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+
+.crew-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  margin: auto;
+  width: 100%;
 }
 
 .crew-intro .intro {
   max-width: 560px;
   text-align: center;
-}
-
-.crew-intro .intro p {
-  margin-inline: auto;
 }
 
 .crew-muted {
@@ -73,64 +222,38 @@
   flex-shrink: 0;
 }
 
-.crew-page .btn {
-  font-size: var(--text-ui);
-  height: 40px;
-  padding: 0 16px;
-}
-
-/* .btn-outline was made for links; a <button> would keep the browser's grey */
-.crew-page .btn-outline {
-  background: transparent;
-  font-family: inherit;
-}
-
-.crew-page .btn-outline:hover {
-  background: var(--color-surface-2);
-}
-
-.crew-page .btn-primary {
-  border: 0;
-  font-family: inherit;
-  cursor: pointer;
-}
-
-.crew-page .btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.crew-page .btn.crew-small {
-  height: 32px;
-  padding: 0 12px;
-  font-size: var(--text-body);
-  gap: 6px;
-}
-
 .crew-wide {
   width: 100%;
 }
 
-.crew-danger {
+.crew-page .btn.crew-wide {
+  height: 44px;
+}
+
+.crew-danger,
+.crew-page .btn.crew-danger {
   color: var(--color-danger);
 }
 
+/* a round button with one icon, on a neutral surface */
 .crew-icon-btn {
   display: inline-grid;
   place-items: center;
   width: 36px;
   height: 36px;
   flex-shrink: 0;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
   color: var(--color-muted);
   cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .crew-icon-btn:hover {
-  border-color: var(--color-border);
-  background: var(--color-surface-2);
+  background: var(--color-surface-3);
   color: var(--color-fg);
 }
 
@@ -138,10 +261,10 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 0 7px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  color: var(--color-muted);
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-3);
+  color: var(--color-fg-soft);
   font-size: var(--text-caption);
   font-weight: 500;
   line-height: 18px;
@@ -155,14 +278,16 @@
 .crew-count {
   display: inline-grid;
   place-items: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
   background: var(--color-surface-3);
   color: var(--color-fg-soft);
   font-size: var(--text-caption);
   font-weight: 600;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- cards: join, pending, closed */
@@ -170,24 +295,30 @@
 .crew-card {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
   width: min(520px, 100%);
-  margin-inline: auto;
-  padding: 24px;
+  margin: auto;
+  padding: 22px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.crew-intro .crew-card {
+  margin: 0;
 }
 
 .crew-card h2 {
   font-size: 20px;
-  font-weight: 650;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .crew-card-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .crew-field {
@@ -205,7 +336,7 @@
   margin-bottom: 6px;
   color: var(--color-fg-soft);
   font-size: var(--text-body);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .crew-field small {
@@ -214,7 +345,7 @@
 }
 
 .crew-join textarea {
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-family: var(--font-mono);
   word-break: break-all;
 }
 
@@ -225,15 +356,21 @@
 .crew-page input,
 .crew-page textarea {
   width: 100%;
-  padding: 9px 12px;
+  padding: 10px 14px;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-input);
   background: var(--color-bg);
   color: var(--color-fg);
   font: inherit;
   /* 16px keeps iOS from zooming into the field */
   font-size: 16px;
   resize: vertical;
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.crew-page input::placeholder,
+.crew-page textarea::placeholder {
+  color: var(--color-subtle);
 }
 
 .crew-page input:focus,
@@ -259,15 +396,14 @@
 
 .crew-swatch[aria-pressed="true"] {
   border-color: var(--color-fg);
-  box-shadow: 0 0 0 2px var(--color-bg) inset;
+  box-shadow: 0 0 0 2px var(--color-surface) inset;
 }
 
 .crew-invite-preview {
   display: flex;
   gap: 10px;
   padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-input);
   background: var(--color-success-soft);
 }
 
@@ -301,16 +437,16 @@
 
 .crew-pending {
   align-items: center;
+  padding: 36px 24px;
   text-align: center;
 }
 
 .crew-code {
-  padding: 10px 20px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-lg);
+  padding: 12px 24px;
+  border-radius: var(--radius-panel);
   background: var(--color-bg);
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.08em;
 }
@@ -321,41 +457,15 @@
   color: var(--color-danger);
 }
 
-/* ---- crews of this browser */
-
-.crew-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.crew-chip-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-fg-soft);
-  font: inherit;
-  font-size: var(--text-body);
-  cursor: pointer;
-}
-
-.crew-chip-btn[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
-  background: var(--color-accent-soft);
-  color: var(--color-fg);
-}
-
 /* ---- the board */
 
 .crew-board {
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   gap: 12px;
+  padding: 14px 12px 12px;
 }
 
 .crew-board-head {
@@ -363,19 +473,24 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding: 0 4px 0 8px;
 }
 
 .crew-board-title {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .crew-board-title h1 {
+  overflow: hidden;
   font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .crew-board-title p {
@@ -387,10 +502,15 @@
   font-size: var(--text-body);
 }
 
+.crew-board-title p > span:not(.crew-ellipsis) {
+  flex-shrink: 0;
+}
+
 .crew-confirm {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .crew-request {
@@ -398,9 +518,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 12px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent);
-  border-radius: var(--radius-lg);
+  padding: 12px 14px 12px 16px;
+  border-radius: var(--radius-panel);
   background: var(--color-accent-soft);
 }
 
@@ -430,14 +549,15 @@
   gap: 8px;
 }
 
+/* tabs: pills in a pill, the chosen one filled */
 .crew-tabs {
   display: grid;
+  flex-shrink: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   padding: 4px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
 }
 
 .crew-tabs button {
@@ -447,52 +567,87 @@
   gap: 6px;
   height: 36px;
   border: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   background: transparent;
   color: var(--color-muted);
   font: inherit;
   font-size: var(--text-body);
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.crew-tabs button:hover {
+  color: var(--color-fg);
 }
 
 .crew-tabs button[aria-selected="true"] {
-  background: var(--color-surface-3);
-  color: var(--color-fg);
+  background: var(--color-accent);
+  color: var(--color-accent-fg);
+  box-shadow: var(--shadow-solid);
+}
+
+.crew-tabs button[aria-selected="true"] .crew-count {
+  background: rgb(255 255 255 / 0.22);
+  color: var(--color-accent-fg);
 }
 
 .crew-columns {
   display: grid;
   min-height: 0;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .crew-col {
   display: flex;
   min-width: 0;
+  min-height: 0;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
 }
 
-/* phone: only the chosen tab */
-@media (max-width: 999px) {
+/* the name of a column, only where the three stand side by side */
+.crew-col-title {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px 10px;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.crew-col-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.crew-col-people .crew-col-body,
+.crew-col-tasks .crew-col-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.crew-col-chat .crew-col-body {
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+/* only the chosen tab */
+@media (max-width: 1279px) {
   .crew-board[data-tab="chat"] .crew-col:not(.crew-col-chat),
   .crew-board[data-tab="people"] .crew-col:not(.crew-col-people),
   .crew-board[data-tab="tasks"] .crew-col:not(.crew-col-tasks) {
     display: none;
   }
-}
-
-.crew-col-chat {
-  /* the composer stays in view: the feed scrolls inside */
-  height: calc(100dvh - var(--crew-top) - 200px);
-  min-height: 360px;
-}
-
-.crew-col-people,
-.crew-col-tasks {
-  padding: 12px;
 }
 
 /* ---- chat */
@@ -509,15 +664,17 @@
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 14px;
-  padding: 14px;
+  gap: 16px;
+  padding: 18px 16px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
 }
 
 .crew-feed-item {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .crew-feed-body {
@@ -536,6 +693,10 @@
   font-size: var(--text-body);
 }
 
+.crew-feed-body header strong {
+  font-weight: 600;
+}
+
 .crew-feed-body time {
   margin-left: auto;
   color: var(--color-subtle);
@@ -548,8 +709,8 @@
 
 .crew-feed-turn .crew-feed-body > p,
 .crew-feed-push .crew-feed-body > p {
-  padding: 8px 10px;
-  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  border-radius: var(--radius-input);
   background: var(--color-surface-2);
   color: var(--color-fg-soft);
   font-size: var(--text-body);
@@ -577,27 +738,28 @@
 .crew-files ul {
   margin: 4px 0 0;
   padding-left: 18px;
-  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-family: var(--font-mono);
   overflow-wrap: anywhere;
 }
 
 .crew-composer {
   display: flex;
+  flex-shrink: 0;
   align-items: flex-end;
   gap: 8px;
-  padding: 10px;
-  border-top: 1px solid var(--color-border);
+  padding: 0 10px 10px;
 }
 
 .crew-composer textarea {
   max-height: 160px;
-  min-height: 40px;
+  min-height: 44px;
   field-sizing: content;
   resize: none;
 }
 
 .crew-page .crew-send {
-  width: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
 }
 
@@ -606,17 +768,16 @@
 .crew-people {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .crew-person {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-2);
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
 }
 
 .crew-person > header {
@@ -637,6 +798,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  font-weight: 600;
 }
 
 .crew-person-name > span {
@@ -668,7 +830,7 @@
   width: 22px;
   height: 22px;
   flex-shrink: 0;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--color-accent-soft);
   color: var(--color-accent);
   font-size: var(--text-small);
@@ -715,10 +877,10 @@
   top: -2px;
   left: 0;
   width: 10px;
-  height: 17px;
-  border-bottom: 1px solid var(--color-border);
-  border-left: 1px solid var(--color-border);
-  border-bottom-left-radius: var(--radius-md);
+  height: 19px;
+  border-bottom: 1px solid var(--color-border-strong);
+  border-left: 1px solid var(--color-border-strong);
+  border-bottom-left-radius: var(--radius-sm);
   content: "";
   pointer-events: none;
 }
@@ -729,7 +891,7 @@
   bottom: 0;
   left: 0;
   width: 1px;
-  background: var(--color-border);
+  background: var(--color-border-strong);
   content: "";
   pointer-events: none;
 }
@@ -740,14 +902,15 @@
   min-width: 0;
   flex-direction: column;
   gap: 2px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   border: 0;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-muted);
   font: inherit;
   font-size: var(--text-body);
   text-align: left;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 button.crew-tree-row {
@@ -756,7 +919,7 @@ button.crew-tree-row {
 
 button.crew-tree-row:hover,
 button.crew-tree-row:focus-visible {
-  background: var(--color-surface-3);
+  background: var(--color-surface-2);
   color: var(--color-fg);
 }
 
@@ -772,7 +935,8 @@ button.crew-tree-row:focus-visible {
 }
 
 .crew-tree-branch {
-  flex-shrink: 1;
+  /* the branch gives way before the title does */
+  flex-shrink: 4;
   color: var(--color-subtle);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -859,7 +1023,7 @@ button.crew-tree-row:hover .crew-tree-eye {
   bottom: -1px;
   width: 10px;
   height: 10px;
-  border: 2px solid var(--color-surface-2);
+  border: 2px solid var(--color-surface);
   border-radius: 50%;
   background: var(--color-subtle);
 }
@@ -873,13 +1037,16 @@ button.crew-tree-row:hover .crew-tree-eye {
 .crew-tasks {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
 .crew-task-form {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
 }
 
 .crew-task-form .btn {
@@ -891,6 +1058,7 @@ button.crew-tree-row:hover .crew-tree-eye {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  padding: 2px 4px;
   font-size: var(--text-small);
 }
 
@@ -898,27 +1066,31 @@ button.crew-tree-row:hover .crew-tree-eye {
 .crew-task-actions button {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   height: 28px;
-  padding: 0 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: transparent;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
   color: var(--color-fg-soft);
   font: inherit;
   font-size: var(--text-small);
+  font-weight: 500;
   cursor: pointer;
-}
-
-.crew-assignee button[aria-pressed="true"] {
-  border-color: color-mix(in srgb, var(--color-accent) 50%, transparent);
-  background: var(--color-accent-soft);
-  color: var(--color-fg);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
 }
 
 .crew-task-actions button:hover,
 .crew-assignee button:hover {
   background: var(--color-surface-3);
+  color: var(--color-fg);
+}
+
+.crew-assignee button[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .crew-task-actions button.crew-danger {
@@ -935,17 +1107,18 @@ button.crew-tree-row:hover .crew-tree-eye {
   align-items: center;
   gap: 8px;
   margin: 0 0 8px;
-  color: var(--color-fg-soft);
-  font-size: var(--text-small);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  padding: 0 8px;
+  color: var(--color-muted);
+  font-size: var(--text-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .crew-task-group ul {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -954,10 +1127,9 @@ button.crew-tree-row:hover .crew-tree-eye {
 .crew-task {
   display: flex;
   gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface-2);
+  padding: 12px 14px;
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
 }
 
 .crew-task > svg {
@@ -971,6 +1143,10 @@ button.crew-tree-row:hover .crew-tree-eye {
 
 .crew-task-done > svg {
   color: var(--color-success);
+}
+
+.crew-task-body strong {
+  font-weight: 600;
 }
 
 .crew-task-done strong {
@@ -990,41 +1166,38 @@ button.crew-tree-row:hover .crew-tree-eye {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-/* ---- a session live, drawn like FORGE's chat (ChatPanel, ChatRow, ToolCard; sizes of apps/desktop/src/styles.css) */
+/* ---- a session live, drawn like FORGE's chat (ChatPanel, ChatRow, ToolCard; sizes of apps/desktop/src/styles.css).
+   A dialog over the board: no lines between head and body, a round close button. */
 
 .crew-watch {
   position: fixed;
   inset: 0;
   z-index: 40;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  padding: 24px;
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
-  backdrop-filter: blur(4px);
+  background: rgb(0 0 0 / 0.6);
 }
 
 .crew-watch-panel {
   display: flex;
-  width: min(900px, 100%);
-  height: min(90dvh, 100%);
+  width: 100%;
   flex-direction: column;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
   background: var(--color-bg);
   overflow: hidden;
+  animation: forge-rise var(--duration-base) var(--ease-out);
 }
 
 .crew-watch-panel > header {
   display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  gap: 10px 12px;
+  padding: 16px 16px 12px 20px;
 }
 
 .crew-watch-title {
@@ -1036,8 +1209,9 @@ button.crew-tree-row:hover .crew-tree-eye {
 }
 
 .crew-watch-title strong {
-  font-size: var(--text-ui);
+  font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .crew-watch-sub {
@@ -1051,24 +1225,27 @@ button.crew-tree-row:hover .crew-tree-eye {
 
 .crew-watch-model {
   flex-shrink: 0;
-  padding: 0 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-subtle);
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
+  color: var(--color-muted);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+  line-height: 18px;
 }
 
 .crew-watch-body {
   min-height: 0;
   flex: 1;
-  padding: 0 24px 24px;
+  padding: 0 20px 24px;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
 }
 
 .crew-watch-body > .error-banner {
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 /* ---- FORGE chat (fc-) */
@@ -1228,10 +1405,9 @@ button.crew-tree-row:hover .crew-tree-eye {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-2);
   color: var(--color-muted);
 }
 
@@ -1316,7 +1492,7 @@ button.crew-tree-row:hover .crew-tree-eye {
   gap: 8px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -1359,7 +1535,7 @@ button.crew-tree-row:hover .crew-tree-eye {
   color: var(--color-subtle);
   opacity: 0;
   transition:
-    transform 120ms var(--ease-snappy),
+    transform 120ms var(--ease-out),
     opacity 120ms;
 }
 
@@ -1425,7 +1601,7 @@ button.crew-tree-row:hover .crew-tree-eye {
 }
 
 .fc-diff {
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   font-family: var(--font-mono);
   font-size: var(--text-small);
   line-height: 1.625;
@@ -1493,7 +1669,7 @@ button.crew-tree-row:hover .crew-tree-eye {
 .fc-pre-box {
   max-height: 18rem;
   margin: 0;
-  padding: 8px;
+  padding: 10px 12px;
   overflow: auto;
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -1522,9 +1698,8 @@ button.crew-tree-row:hover .crew-tree-eye {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--color-warning) 40%, transparent);
-  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  border-radius: var(--radius-input);
   background: var(--color-warning-soft);
   font-size: var(--text-body);
 }
@@ -1538,7 +1713,7 @@ button.crew-tree-row:hover .crew-tree-eye {
   margin: 6px 0 4px;
   padding: 8px;
   overflow: auto;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   background: color-mix(in srgb, var(--color-bg) 60%, transparent);
   color: color-mix(in srgb, var(--color-fg) 90%, transparent);
   font-family: var(--font-mono);
@@ -1600,23 +1775,19 @@ button.crew-tree-row:hover .crew-tree-eye {
 }
 
 .fc-forge {
-  padding: 8px 12px;
-  border: 1px solid;
-  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  border-radius: var(--radius-input);
 }
 
 .fc-forge-accent {
-  border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
   background: var(--color-accent-soft);
 }
 
 .fc-forge-warning {
-  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
   background: var(--color-warning-soft);
 }
 
 .fc-forge-danger {
-  border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
   background: var(--color-danger-soft);
 }
 
@@ -1656,7 +1827,7 @@ button.crew-tree-row:hover .crew-tree-eye {
   height: 14px;
   place-items: center;
   border: 1.5px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
 }
 
 .fc-todo-done {
@@ -1804,7 +1975,7 @@ button.crew-tree-row:hover .crew-tree-eye {
 
 .markdown code {
   padding: 0.1em 0.35em;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   background: var(--color-surface-3);
   font-family: var(--font-mono);
   font-size: 0.86em;
@@ -1817,8 +1988,7 @@ button.crew-tree-row:hover .crew-tree-eye {
 
 .markdown pre {
   margin: 0;
-  padding: 10px 14px;
-  border: 1px solid var(--color-border);
+  padding: 12px 14px;
   border-radius: var(--radius-md);
   background: var(--color-surface);
   font-size: 12.5px;
@@ -1847,8 +2017,9 @@ button.crew-tree-row:hover .crew-tree-eye {
 
 .markdown blockquote {
   margin: 0.75em 0;
-  padding-left: 12px;
-  border-left: 2px solid var(--color-border-strong);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
   color: var(--color-muted);
 }
 
@@ -1888,9 +2059,9 @@ button.crew-tree-row:hover .crew-tree-eye {
   width: 24px;
   height: 24px;
   place-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-2);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-3);
   color: var(--color-muted);
   opacity: 0;
   cursor: pointer;
@@ -1923,21 +2094,35 @@ button.crew-tree-row:hover .crew-tree-eye {
 .crew-sk-title {
   width: 180px;
   height: 22px;
+  margin: 3px 0;
 }
 
 .crew-sk-sub {
   width: 140px;
   height: 12px;
+  margin: 3px 0;
 }
 
-.crew-sk-tab {
+.crew-skeleton .crew-sk-tab {
   height: 36px;
+  border-radius: var(--radius-full);
 }
 
 .crew-sk-line {
   width: 85%;
   height: 14px;
-  border-radius: var(--radius-sm);
+}
+
+.crew-skeleton .crew-sk-avatar {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.crew-skeleton .crew-sk-card {
+  height: 96px;
+  border-radius: var(--radius-panel);
 }
 
 .fc-sk-lines {
@@ -1966,12 +2151,12 @@ button.crew-tree-row:hover .crew-tree-eye {
 
 .sk-text {
   height: 13px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
 }
 
 .sk-tool {
   height: 15px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
 }
 
 .sk-w40 {
@@ -2002,57 +2187,143 @@ button.crew-tree-row:hover .crew-tree-eye {
   width: 85%;
 }
 
-.crew-skeleton .crew-col-chat {
-  gap: 14px;
-  padding: 14px;
+/* narrow phones: the three tabs fit without their icons */
+@media (max-width: 420px) {
+  .crew-tabs button > svg {
+    display: none;
+  }
 }
 
-/* ---- wide: three columns, no tabs */
+/* ---- from 900px: the sidebar on the left, the live session as a dialog in the window */
 
-@media (min-width: 1000px) {
+@media (min-width: 900px) {
+  .crew-shell {
+    flex-direction: row;
+  }
+
+  .crew-side,
+  .crew-main {
+    border-radius: var(--radius-card);
+  }
+
+  .crew-side {
+    display: flex;
+    width: 264px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .crew-logo {
+    align-self: flex-start;
+    margin: 22px 24px 20px;
+  }
+
+  .crew-logo img {
+    width: 144px;
+    height: 28px;
+  }
+
+  .crew-side-nav {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    margin: 0;
+    padding: 8px 12px 12px;
+    overflow-y: auto;
+  }
+
+  .crew-side-heading {
+    display: block;
+  }
+
+  .crew-nav {
+    flex-direction: column;
+    gap: 2px;
+    overflow: visible;
+  }
+
+  .crew-nav-item {
+    width: 100%;
+    max-width: none;
+  }
+
+  .crew-nav-item.skeleton-bar {
+    width: 100%;
+  }
+
+  .crew-side-foot {
+    padding: 12px;
+  }
+
+  .crew-scroll {
+    padding: 40px 32px;
+  }
+
+  .crew-card {
+    padding: 28px;
+  }
+
+  .crew-board {
+    gap: 16px;
+    padding: 22px 16px 16px;
+  }
+
+  .crew-board-head {
+    padding: 0 8px 0 12px;
+  }
+
+  .crew-tabs {
+    align-self: flex-start;
+    grid-template-columns: repeat(3, auto);
+  }
+
+  .crew-tabs button {
+    padding: 0 18px;
+  }
+
+  .crew-watch {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .crew-watch-panel {
+    width: min(920px, 100%);
+    height: min(90dvh, 100%);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-overlay);
+  }
+
+  .crew-watch-panel > header {
+    padding: 20px 20px 14px 24px;
+  }
+
+  .crew-watch-body {
+    padding: 0 24px 24px;
+  }
+}
+
+/* ---- wide: people, chat and tasks side by side, no tabs */
+
+@media (min-width: 1280px) {
   .crew-tabs {
     display: none;
   }
 
   .crew-columns {
-    grid-template-columns: 300px minmax(0, 1fr) 340px;
+    grid-template-columns: 300px minmax(0, 1fr) 320px;
     gap: 16px;
-    height: calc(100dvh - var(--crew-top) - 150px);
-    min-height: 480px;
   }
 
-  .crew-col-chat {
-    height: auto;
-    min-height: 0;
-  }
-
-  .crew-col-people,
-  .crew-col-tasks {
-    overflow-y: auto;
+  .crew-col-title {
+    display: flex;
   }
 
   .crew-skeleton .crew-columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@media (max-width: 560px) {
-  .crew-page {
-    --crew-top: 64px;
-    padding-top: 12px;
-  }
-
-  .crew-card {
-    padding: 18px;
-  }
-
-  .crew-watch {
-    padding: 0;
-  }
-
-  .crew-watch-panel {
-    height: 100dvh;
-    border: 0;
-    border-radius: 0;
+    grid-template-columns: 300px minmax(0, 1fr) 320px;
   }
 }
