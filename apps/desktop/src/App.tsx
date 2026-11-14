@@ -24,6 +24,9 @@ import { UsageStatsPrompt } from "@/components/setup/UsageStatsPrompt";
 import { SupportDialog } from "@/components/settings/SupportSettings";
 import { ClaudeLoginDialog, ClaudeLogoutDialog } from "@/components/settings/ClaudeLoginDialog";
 import { Logo } from "@/components/layout/Logo";
+import { TitleBar } from "@/components/layout/TitleBar";
+import { hasTitleBar } from "@/lib/title-bar";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
@@ -76,6 +79,19 @@ export function App({ chatWindow = null }: { chatWindow?: ChatWindowTarget | nul
     return off;
   }, [isChat]);
 
+  // FORGE's own title bar (Windows) is there in every state, also while starting: it carries the window buttons.
+  return (
+    <div className="flex h-full min-w-0 flex-col">
+      {hasTitleBar && <TitleBar mode={boot.state === "up" && !isChat ? "main" : "bare"} />}
+      <div className="min-h-0 min-w-0 flex-1">
+        <Screen boot={boot} chatWindow={chatWindow} />
+      </div>
+    </div>
+  );
+}
+
+function Screen({ boot, chatWindow }: { boot: Boot; chatWindow: ChatWindowTarget | null }) {
+  const isChat = chatWindow !== null;
   if (boot.state === "no-tauri") {
     return (
       <Centered>
@@ -130,7 +146,7 @@ function Shell() {
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Sidebar and main area float as two rounded panels on the window backdrop. */}
-      <div className="flex min-h-0 min-w-0 flex-1 gap-2.5 p-2.5">
+      <div className={cn("flex min-h-0 min-w-0 flex-1 gap-2.5 px-2.5 pb-2.5", !hasTitleBar && "pt-2.5")}>
         <ErrorBoundary>
           <Sidebar />
         </ErrorBoundary>

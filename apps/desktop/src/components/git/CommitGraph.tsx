@@ -119,7 +119,7 @@ export function CommitGraph({
                 title={`${c.subject}\n${c.shortHash} · ${c.author} · ${relativeTime(c.date)}`}
                 className={cn(
                   "flex w-full items-center gap-1 rounded-md pr-3 text-left transition-colors duration-120 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent",
-                  isSelected ? "bg-accent-soft ring-1 ring-inset ring-accent/40" : "hover:bg-surface-2",
+                  isSelected ? "bg-surface-3 ring-1 ring-inset ring-border-strong" : "hover:bg-surface-2",
                 )}
                 style={{ height: ROW_H }}
               >

@@ -19,10 +19,8 @@ import { ProjectIcon } from "@/components/projects/ProjectIcon";
 import { PROFILE_IDS, PROFILE_INFO, ProfileBadge, ProfileIcon } from "@/components/projects/ProfileBadge";
 import { tagLabel } from "@/components/workspace/ProjectSettingsTab";
 import { RemoteControlButton } from "@/components/workspace/RemoteControl";
-import { PhoneButton } from "@/components/layout/PhoneButton";
-import { AlwaysOnTopButton } from "@/components/layout/AlwaysOnTopButton";
-import { SyncButton } from "@/components/layout/SyncButton";
-import { HeaderDivider } from "@/components/layout/Page";
+import { InTitleBar } from "@/components/layout/TitleBar";
+import { AppButtons, HeaderDivider } from "@/components/layout/Page";
 import { useSplitLayout } from "./chat-slot";
 import { CrewPresence } from "@/components/crew/CrewPresence";
 import { t } from "@/i18n";
@@ -171,7 +169,7 @@ export function SplitControlBar({ projectId }: { projectId: string }) {
       <div className="flex-1" />
       {project ? (
         <>
-          {isTmpChat(project) ? <SplitButton /> : <LayoutToggles project={project} />}
+          <InTitleBar>{isTmpChat(project) ? <SplitButton /> : <LayoutToggles project={project} />}</InTitleBar>
           <RemoteControlButton project={project} />
         </>
       ) : (
@@ -181,10 +179,7 @@ export function SplitControlBar({ projectId }: { projectId: string }) {
           ))}
         </div>
       )}
-      <HeaderDivider />
-      <SyncButton />
-      <AlwaysOnTopButton />
-      <PhoneButton />
+      <AppButtons divider />
     </div>
   );
 }
@@ -247,7 +242,11 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
         {pane ? <ProjectSwitch pane={pane} current={projectId}>{name}</ProjectSwitch> : name}
         <span className="hidden min-w-0 truncate text-caption-lg text-subtle @2xl:inline">{t.workspace.tempChat.headerHint}</span>
         <div className="flex-1" />
-        {controls && <SplitButton />}
+        {controls && (
+          <InTitleBar>
+            <SplitButton />
+          </InTitleBar>
+        )}
         {controls && <RemoteControlButton project={project} />}
         {pane ? (
           <>
@@ -255,14 +254,7 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
             <PaneActions pane={pane} />
           </>
         ) : (
-          controls && (
-            <>
-              <HeaderDivider />
-              <SyncButton />
-              <AlwaysOnTopButton />
-              <PhoneButton />
-            </>
-          )
+          controls && <AppButtons divider />
         )}
       </header>
     );
@@ -317,7 +309,11 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
           <span className="hidden @5xl:inline">{m.finishAgent}</span>
         </Button>
       )}
-      {controls && <LayoutToggles project={project} />}
+      {controls && (
+        <InTitleBar>
+          <LayoutToggles project={project} />
+        </InTitleBar>
+      )}
       {controls && <RemoteControlButton project={project} />}
 
       <DropdownMenu
@@ -345,15 +341,8 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
           <PaneActions pane={pane} />
         </>
       ) : (
-        controls && (
-          // App-wide switches, apart from the project's own controls.
-          <>
-            <HeaderDivider />
-            <SyncButton />
-            <AlwaysOnTopButton />
-            <PhoneButton />
-          </>
-        )
+        // App-wide switches, apart from the project's own controls.
+        controls && <AppButtons divider />
       )}
     </header>
   );

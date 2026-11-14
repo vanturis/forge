@@ -3,6 +3,8 @@ import { useProject, useSession } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
 import { reportChatWindow, type ChatWindowTarget } from "@/lib/chat-windows";
 import { loadChatWindowPin } from "@/lib/window-options";
+import { hasTitleBar } from "@/lib/title-bar";
+import { cn } from "@/lib/utils";
 import { splitActive, useUi } from "@/stores/ui";
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 import { Toaster } from "@/components/layout/Toaster";
@@ -38,7 +40,7 @@ export function ChatWindowShell({ target }: { target: ChatWindowTarget }) {
   else content = <ChatPanel project={project.data} detached />;
 
   return (
-    <div className="flex h-full min-w-0 flex-col p-2">
+    <div className={cn("flex h-full min-w-0 flex-col px-2 pb-2", !hasTitleBar && "pt-2")}>
       {/* One floating panel, like the main area of the main window. */}
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-bg shadow-sm">
         <ErrorBoundary>{content}</ErrorBoundary>

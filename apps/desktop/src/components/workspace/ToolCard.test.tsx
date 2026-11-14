@@ -101,11 +101,11 @@ describe("FORGE notices in the chat", () => {
     });
     const { container } = render(<ItemView item={notice("commit", "Auto-Commit")} sessionId="s1" live={false} projectDir="C:\p1" />);
     expect(screen.getByText("FORGE")).toBeTruthy();
-    expect(container.querySelector(".bg-accent-soft")).toBeTruthy();
+    expect(container.querySelector("[data-forge-highlight]")).toBeTruthy();
     cleanup();
     const plain = render(<ItemView item={notice("compact", "Kontext komprimiert")} sessionId="s1" live={false} projectDir="C:\p1" />);
     expect(screen.queryByText("FORGE")).toBeNull();
-    expect(plain.container.querySelector(".bg-accent-soft")).toBeNull();
+    expect(plain.container.querySelector("[data-forge-highlight]")).toBeNull();
   });
 });
 

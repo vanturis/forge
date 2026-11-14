@@ -23,9 +23,9 @@
 </p>
 
 <p align="center">
-  <img src=".github/assets/demo.gif" alt="Claude takes a screenshot of the running web app and fixes a button with invisible text, FORGE shows before and after; then the profile switches to Autonomous, three parallel agents build new sections on their own branches and FORGE merges them" width="100%">
+  <img src=".github/assets/demo.gif" alt="A tour through FORGE: home, projects and sessions; a session in which Claude takes a screenshot of the running web app, fixes a button with invisible text and three parallel agents build new sections that FORGE merges; then the Git view, files, the command palette, extensions and settings" width="100%">
   <br>
-  <sub>Claude looks at the running app and fixes the broken button. Then three agents work in parallel, each on its own branch, and FORGE merges their work.</sub>
+  <sub>A tour through FORGE: a session with a screenshot of the running app, a fix and three parallel agents, then Git, files, search and settings.</sub>
 </p>
 
 <table>

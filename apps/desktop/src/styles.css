@@ -4,23 +4,23 @@
 
 /* Design tokens. Components use these via Tailwind classes (bg-surface, text-muted …), never raw colors. */
 @theme {
-  /* FORGE brand (Branding Kit): Forge Orange #F97316, Light #E5E7EB; dark surfaces a neutral anthracite (kit: #111827) with only a hint of blue. */
+  /* FORGE brand: Forge Orange #F97316 on neutral grays. The surfaces carry no blue cast, so the UI reads calm and serious. */
   /* the window behind the floating panels of the shell: a step below bg, so sidebar and main area stand out */
-  --color-backdrop: #0d1014;
-  --color-bg: #14171d;
-  --color-sidebar: #1a1e25;
-  --color-surface: #1a1e25;
-  --color-surface-2: #21262e;
-  --color-surface-3: #292f38;
-  --color-border: #2b313a;
-  --color-border-strong: #3c444f;
-  --color-fg: #e5e7eb;
-  --color-muted: #9ca3ae;
-  --color-subtle: #6b7280;
+  --color-backdrop: #0b0b0c;
+  --color-bg: #131314;
+  --color-sidebar: #19191a;
+  --color-surface: #19191a;
+  --color-surface-2: #202022;
+  --color-surface-3: #29292b;
+  --color-border: #2c2c2f;
+  --color-border-strong: #3f3f43;
+  --color-fg: #ececee;
+  --color-muted: #a3a3a8;
+  --color-subtle: #73737a;
   /* Orange sparingly: active elements, primary buttons, highlights. */
   --color-accent: #f97316;
   --color-accent-strong: #ea580c;
-  --color-accent-soft: #f973161f;
+  --color-accent-soft: #f9731617;
   --color-accent-fg: #ffffff;
   --color-success: #3fb97a;
   --color-success-soft: #3fb97a1f;
@@ -54,7 +54,7 @@
   --color-tile-fuchsia: #d77ef0;
   --color-tile-pink: #e0679f;
   /* backdrop behind dialogs and the command palette */
-  --color-overlay: #0a0c1099;
+  --color-overlay: #050506a6;
 
   --font-sans: "Geist Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", "Cascadia Code", "Consolas", ui-monospace, monospace;

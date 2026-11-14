@@ -247,7 +247,7 @@ export function GitCenter({ project }: { project: Project }) {
                         <li
                           key={b.name}
                           onContextMenu={contextItems(() => items)}
-                          className={cn("group flex h-10 items-center gap-2.5 rounded-md px-2.5", b.current ? "bg-accent-soft" : "hover:bg-surface-2")}
+                          className={cn("group flex h-10 items-center gap-2.5 rounded-md px-2.5", b.current ? "bg-surface-3" : "hover:bg-surface-2")}
                         >
                           <GitBranch className={cn("h-4 w-4 shrink-0", b.current ? "text-accent" : "text-muted")} />
                           <span className="flex min-w-0 flex-1 flex-col">
@@ -303,7 +303,7 @@ export function GitCenter({ project }: { project: Project }) {
                       aria-current={active ? "true" : undefined}
                       className={cn(
                         "flex h-11 w-full items-center gap-2.5 rounded-md px-2.5 text-left",
-                        active ? "bg-accent-soft ring-1 ring-inset ring-accent/40" : "hover:bg-surface-2",
+                        active ? "bg-surface-3 ring-1 ring-inset ring-border-strong" : "hover:bg-surface-2",
                       )}
                     >
                       <Tag className="h-4 w-4 shrink-0 text-muted" />

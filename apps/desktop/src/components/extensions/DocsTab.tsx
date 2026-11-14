@@ -62,7 +62,7 @@ export function DocsTab({ kind, projectId }: { kind: ConfigDocKind; projectId?: 
                 onClick={() => setSelected(d)}
                 className={cn(
                   "w-full rounded-md px-2 py-1.5 text-left",
-                  selected?.name === d.name && selected.scope === d.scope ? "bg-accent-soft" : "hover:bg-surface-3",
+                  selected?.name === d.name && selected.scope === d.scope ? "bg-surface-3" : "hover:bg-surface-2",
                 )}
               >
                 <div className="flex items-center gap-1.5 text-body">

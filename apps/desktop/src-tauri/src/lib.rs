@@ -214,6 +214,12 @@ pub fn run() {
                 });
             });
             i18n::load(&handle);
+            // Windows: FORGE draws its own title bar (TitleBar.tsx), so the main window has no native frame.
+            // Resizing at the edges and the rounded corners of Windows 11 stay (tauri keeps both for frameless windows).
+            #[cfg(windows)]
+            if let Some(main) = app.get_webview_window(chat_windows::MAIN) {
+                let _ = main.set_decorations(false);
+            }
             screenshot::start(&handle);
             #[cfg(target_os = "linux")]
             if let Some(main) = app.get_webview_window(chat_windows::MAIN) {

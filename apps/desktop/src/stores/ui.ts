@@ -296,9 +296,10 @@ type Prefs = Pick<UiState, "activeProjectId" | "toolbarOpen" | "collapsedGroups"
 /** Reopens the last project on start. Side and bottom panel always start closed and open only on request. */
 function loadPrefs(): Partial<UiState> {
   try {
-    const p = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") as Partial<Prefs>;
+    const p = JSON.parse(localStorage.getItem(PREFS_KEY) ?? "{}") as Partial<Prefs> & { toolbarShown?: unknown };
     return {
-      ...(typeof p.toolbarOpen === "boolean" ? { toolbarOpen: p.toolbarOpen } : {}),
+      // Read from toolbarShown only: the older field toolbarOpen holds the former default (closed) of everyone who never touched it.
+      ...(typeof p.toolbarShown === "boolean" ? { toolbarOpen: p.toolbarShown } : {}),
       ...(Array.isArray(p.collapsedGroups) ? { collapsedGroups: p.collapsedGroups.filter((g): g is string => typeof g === "string") } : {}),
       ...(Array.isArray(p.collapsedProjectGroups) ? { collapsedProjectGroups: p.collapsedProjectGroups.filter((g): g is string => typeof g === "string") } : {}),
       ...(typeof p.activeProjectId === "string" ? { activeProjectId: p.activeProjectId, view: "workspace" as const } : {}),
@@ -316,7 +317,7 @@ function savePrefs(s: Prefs) {
   try {
     localStorage.setItem(
       PREFS_KEY,
-      JSON.stringify({ activeProjectId: s.activeProjectId, toolbarOpen: s.toolbarOpen, collapsedGroups: s.collapsedGroups, collapsedProjectGroups: s.collapsedProjectGroups, splitPanes: s.splitPanes, splitStash: s.splitStash }),
+      JSON.stringify({ activeProjectId: s.activeProjectId, toolbarShown: s.toolbarOpen, collapsedGroups: s.collapsedGroups, collapsedProjectGroups: s.collapsedProjectGroups, splitPanes: s.splitPanes, splitStash: s.splitStash }),
     );
   } catch {
     /* preferences are optional */
@@ -328,7 +329,7 @@ export const useUi = create<UiState>((set, get) => ({
   activeProjectId: null,
   activeSession: {},
   workspaceTab: "chat",
-  toolbarOpen: false,
+  toolbarOpen: true,
   rightPanelOpen: false,
   bottomPanelOpen: false,
   newProject: null,

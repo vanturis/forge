@@ -267,6 +267,12 @@ export const layout: typeof De = {
     registered: "registered",
     registeringShort: "registering …",
   },
+  titleBar: {
+    minimize: "Minimize",
+    maximize: "Maximize",
+    restore: "Restore",
+    close: "Close",
+  },
   searchField: {
     label: "Search and commands (Ctrl+K)",
     placeholder: "Search …",

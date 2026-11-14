@@ -25,6 +25,7 @@ import { DevChannelBadge } from "./DevChannelBadge";
 import { SupportButton } from "@/components/settings/SupportSettings";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { TokenRate } from "./TokenRate";
+import { hasTitleBar } from "@/lib/title-bar";
 import { locale, t } from "@/i18n";
 
 export function Sidebar() {
@@ -46,18 +47,23 @@ export function Sidebar() {
 
   return (
     <aside className="flex w-64 shrink-0 select-none flex-col overflow-hidden rounded-2xl border border-border bg-sidebar shadow-sm">
-      <div className="flex items-center px-5 pb-4 pt-5">
-        <Logo height={34} />
-      </div>
+      {/* With FORGE's own title bar (Windows) logo, search and support sit up there. */}
+      {!hasTitleBar && (
+        <>
+          <div className="flex items-center px-5 pb-4 pt-5">
+            <Logo height={34} />
+          </div>
 
-      <div className="flex items-center gap-1.5 px-3">
-        <div className="min-w-0 flex-1">
-          <SearchField />
-        </div>
-        <SupportButton />
-      </div>
+          <div className="flex items-center gap-1.5 px-3">
+            <div className="min-w-0 flex-1">
+              <SearchField />
+            </div>
+            <SupportButton />
+          </div>
+        </>
+      )}
 
-      <nav className="flex flex-col gap-0.5 px-3 pt-3" aria-label={t.layout.sidebar.mainNav}>
+      <nav className={cn("flex flex-col gap-0.5 px-3", hasTitleBar ? "pt-4" : "pt-3")} aria-label={t.layout.sidebar.mainNav}>
         {NAV.map((n) => {
           const active = view === n.view || (n.view === "projects" && view === "workspace");
           const count = counts[n.view];

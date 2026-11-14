@@ -28,8 +28,8 @@ const LINKS: ReadonlyArray<{ Icon: LucideIcon; label: string; description: strin
   { Icon: Gauge, ...ts.stats, href: STATS_PAGE_URL },
 ];
 
-/** Small red heart in the sidebar, right of the search field: opens the support dialog. */
-export function SupportButton() {
+/** Small red heart in the sidebar, right of the search field (`compact` in the title bar): opens the support dialog. */
+export function SupportButton({ compact = false }: { compact?: boolean }) {
   const open = useUi((u) => u.setSupportOpen);
   return (
     <Tooltip content={ts.title}>
@@ -45,8 +45,8 @@ export function SupportButton() {
           ])
         }
         aria-label={ts.title}
-        // Same box as the search field next to it.
-        className="h-10 w-10 rounded-full border border-border bg-surface-2 text-danger shadow-xs transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-danger"
+        // In the sidebar the same box as the search field next to it.
+        className={compact ? "text-danger hover:text-danger" : "h-10 w-10 rounded-full border border-border bg-surface-2 text-danger shadow-xs transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-danger"}
       >
         <Heart className="h-4 w-4 fill-current" />
       </Button>

@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 export interface SettingsSectionDef<Id extends string> {
   id: Id;
   label: string;
-  hint: string;
+  /** what the section holds, shown as tooltip */
+  hint?: string;
   Icon: LucideIcon;
   /** shown as a branch under this section, like in a file tree */
   parent?: Id;
@@ -19,33 +20,36 @@ export function SettingsLayout<Id extends string>({
   current,
   onSelect,
   label,
+  wide,
   children,
 }: {
   sections: ReadonlyArray<SettingsSectionDef<Id>>;
   current: Id;
   onSelect: (id: Id) => void;
   label: string;
+  /** lists and tables instead of form rows: the content takes the width that is left */
+  wide?: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="mx-auto flex max-w-6xl gap-8">
-      <nav className="sticky top-0 flex w-56 shrink-0 flex-col gap-1 self-start" aria-label={label}>
+      <nav className="sticky top-0 flex w-52 shrink-0 flex-col gap-0.5 self-start" aria-label={label}>
         {sections
           .filter((x) => !x.parent)
           .map((x) => {
             const children = sections.filter((c) => c.parent === x.id);
             return (
-              <div key={x.id} className="flex flex-col gap-1">
+              <div key={x.id} className="flex flex-col gap-0.5">
                 <SectionButton section={x} active={x.id === current} onSelect={onSelect} />
                 {children.length > 0 && (
                   // Tree lines from the parent's icon (20px in): a bend to each child, the trunk runs on to the next one.
-                  <div className="ml-5 flex flex-col gap-1">
+                  <div className="ml-5 flex flex-col gap-0.5">
                     {children.map((c, i) => (
                       <div
                         key={c.id}
                         className={cn(
-                          "relative pl-4 before:absolute before:left-0 before:-top-1 before:h-[calc(50%+0.25rem)] before:w-3 before:rounded-bl-md before:border-b before:border-l before:border-border-strong",
-                          i < children.length - 1 && "after:absolute after:-bottom-1 after:left-0 after:top-1/2 after:border-l after:border-border-strong",
+                          "relative pl-4 before:absolute before:left-0 before:-top-0.5 before:h-[calc(50%+0.125rem)] before:w-3 before:rounded-bl-md before:border-b before:border-l before:border-border-strong",
+                          i < children.length - 1 && "after:absolute after:-bottom-0.5 after:left-0 after:top-1/2 after:border-l after:border-border-strong",
                         )}
                       >
                         <SectionButton section={c} active={c.id === current} onSelect={onSelect} />
@@ -59,7 +63,7 @@ export function SettingsLayout<Id extends string>({
       </nav>
 
       {/* Keyed per section: each switch fades the new section in. */}
-      <div key={current} className="flex min-w-0 max-w-3xl flex-1 animate-view-in flex-col gap-6 pb-10">
+      <div key={current} className={cn("flex min-w-0 flex-1 animate-view-in flex-col gap-6 pb-10", !wide && "max-w-3xl")}>
         {children}
       </div>
     </div>
@@ -68,19 +72,18 @@ export function SettingsLayout<Id extends string>({
 
 function SectionButton<Id extends string>({ section: x, active, onSelect }: { section: SettingsSectionDef<Id>; active: boolean; onSelect: (id: Id) => void }) {
   return (
+    // Second level of navigation: the same pill as the main navigation, neutral instead of orange (like the active tab).
     <button
       onClick={() => onSelect(x.id)}
       aria-current={active ? "page" : undefined}
+      title={x.hint}
       className={cn(
-        "flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left transition-[color,background-color,transform] duration-120 active:scale-[0.98]",
-        active ? "bg-accent-soft text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+        "flex h-9 w-full items-center gap-3 rounded-full px-3.5 text-left text-body-lg font-medium transition-[color,background-color,box-shadow,transform] duration-120 active:scale-[0.98]",
+        active ? "bg-surface-3 text-fg shadow-xs" : "text-muted hover:bg-surface-2 hover:text-fg",
       )}
     >
-      <x.Icon className={cn("mt-0.5 h-4 w-4 shrink-0", active && "text-accent")} />
-      <span className="min-w-0">
-        <span className="block text-body-lg">{x.label}</span>
-        <span className="block truncate text-caption text-subtle">{x.hint}</span>
-      </span>
+      <x.Icon className={cn("h-4 w-4 shrink-0", active && "text-accent")} />
+      <span className="min-w-0 truncate">{x.label}</span>
     </button>
   );
 }
@@ -88,8 +91,8 @@ function SectionButton<Id extends string>({ section: x, active, onSelect }: { se
 /** A titled card of settings rows. */
 export function Group({ title, description, action, danger, children }: { title: ReactNode; description?: ReactNode; action?: ReactNode; danger?: boolean; children: ReactNode }) {
   return (
-    <section className={cn("overflow-hidden rounded-xl border bg-surface", danger ? "border-danger/30" : "border-border")}>
-      <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
+    <section className={cn("overflow-hidden rounded-xl border bg-surface shadow-sm", danger ? "border-danger/30" : "border-border")}>
+      <header className="flex items-center justify-between gap-4 border-b border-border px-4 py-3.5">
         <LabelWithDescription description={description}>
           <h2 className="text-ui font-semibold">{title}</h2>
         </LabelWithDescription>

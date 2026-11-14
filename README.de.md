@@ -23,9 +23,9 @@
 </p>
 
 <p align="center">
-  <img src=".github/assets/demo.gif" alt="Claude macht einen Screenshot der laufenden Web-App und behebt einen Knopf mit unsichtbarer Schrift, FORGE zeigt Vorher und Nachher; danach wechselt das Profil auf Autonomous, drei parallele Agenten bauen neue Abschnitte auf eigenen Branches und FORGE führt sie zusammen" width="100%">
+  <img src=".github/assets/demo.gif" alt="Ein Rundgang durch FORGE: Start, Projekte und Sessions; eine Session, in der Claude einen Screenshot der laufenden Web-App macht, einen Knopf mit unsichtbarer Schrift behebt und drei parallele Agenten neue Abschnitte bauen, die FORGE zusammenführt; danach Git-Ansicht, Dateien, Befehlspalette, Erweiterungen und Einstellungen" width="100%">
   <br>
-  <sub>Claude sieht sich die laufende App an und behebt den kaputten Knopf. Danach arbeiten drei Agenten parallel, jeder auf eigenem Branch, und FORGE führt ihre Arbeit zusammen.</sub>
+  <sub>Ein Rundgang durch FORGE: eine Session mit Screenshot der laufenden App, einer Korrektur und drei parallelen Agenten, danach Git, Dateien, Suche und Einstellungen.</sub>
 </p>
 
 <table>

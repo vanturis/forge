@@ -1,26 +1,37 @@
 ---
-title: "Logo und Branding-Dateien neu erzeugen (logo-mark.svg, logo.svg, Wortmarke, Icons, Banner, Screenshots)"
-summary: "Wo das FORGE-Logo überall steckt und wie man alle Varianten (App-Icons, Wortmarke, Installer-Bilder, Banner, Social Preview, README-Screenshots, Website-Wortmarke, Stats-Favicons) aus den Quellen neu erzeugt."
-tags: ["branding","release","installer","tauri","stolperfalle"]
-updated: "2026-10-19T16:09:46.098Z"
+title: "Logo und Branding neu erzeugen (logo.svg, Wortmarke, Icons, Banner, Social Preview, Screenshots, demo.gif)"
+summary: "Wo das FORGE-Logo überall steckt und wie man alle Varianten (App-Icons, Wortmarke, Installer-Bilder, Banner, Social Preview, README-Screenshots, Landingpage-Bilder, OG-Bilder, demo.gif) aus den Quellen neu erzeugt."
+tags: ["branding","release","installer","tauri","stolperfalle","preview"]
+updated: "2026-11-14T17:18:37.868Z"
 ---
 
-Stand 2026-10-19: neues Logo nach Vorlage des Besitzers (oranger Funke oben, heller Amboss, auf dunkler Kachel mit orangem Leuchtrand). Vorlage war ein KI-Rasterbild; die Formen sind von Hand als Vektor nachgebaut.
+# Logo und Branding-Dateien neu erzeugen
+
+Stand 2026-11-14 (nach dem Redesign: neutrale Grautöne, eigene Titelleiste). Logo seit 2026-10-19: oranger Funke oben, heller Amboss, auf dunkler Kachel mit orangem Leuchtrand; die Formen sind von Hand als Vektor nachgebaut.
 
 ## Quellen
 - `apps/desktop/src/assets/logo-mark.svg`: nur die Bildmarke (ohne Kachel).
 - `apps/desktop/src/assets/logo.svg`: App-Icon = Kachel + Leuchtrand + Marke (Pfade aus logo-mark.svg kopiert, `transform` skaliert). Beide zusammen ändern. Kopie: `services/stats/src/app/icon.svg`.
-- `apps/desktop/src/assets/forge-logo.png` (945 x 223): Wortmarke = gerenderte Marke (248 px breit) + Schriftzug „FORGE / Claude Development Studio“. Der Schriftzug ist nur als Raster vorhanden (Schrift unbekannt). Gleiche Datei in `apps/installer/ui/assets/`. Seitenverhältnis 945/223 steht in `Logo.tsx` und `apps/installer/ui/index.html` (width 110 bei 26 px).
-- Website: `services/stats/src/assets/forge-wordmark.png` (944 x 184) = Marke + „FORGE“ ohne Unterzeile, aus forge-logo.png zusammengesetzt (Ausschnitte siehe Eintrag zum Statistik-Dienst). Ändert sich forge-logo.png, neu erzeugen.
+- `apps/desktop/src/assets/forge-logo.png`: Wortmarke (Marke + Schriftzug „FORGE“), nur als Raster vorhanden. Gleiche Datei in `apps/installer/ui/assets/`. Das Seitenverhältnis steht in `Logo.tsx` und `apps/installer/ui/index.html`.
+- Website: `services/stats/src/assets/forge-wordmark.png` (944 x 184). Ändert sich forge-logo.png, neu erzeugen.
 
 ## Erzeugen
-- Rendern geht mit sharp aus `node_modules/.pnpm/sharp@*/node_modules/sharp` (librsvg, kann feGaussianBlur). Kein PIL auf dem Rechner.
-- App-Icons: in `apps/desktop` `pnpm tauri icon src/assets/logo.svg`; danach die erzeugten Ordner für Android und iOS unter `src-tauri/icons/` löschen (nicht im Repo). Der Installer (apps/installer) nutzt `../desktop/src-tauri/icons/icon.ico`.
-- NSIS-Bilder: `powershell -File apps/desktop/src-tauri/installer/render.ps1` (rendert header.html/sidebar.html mit Chrome).
-- Banner: `.github/assets/banner/banner.{de,en}.html` mit Chrome headless rendern: `--window-size=1280,640 --force-device-scale-factor=2 --virtual-time-budget=4000 --screenshot=...` → `banner.png` / `banner-en.png`; `social-preview.png` = deutsches Banner bei Faktor 1. Die Social Preview muss in den GitHub-Repo-Einstellungen von Hand hochgeladen werden.
-- README-Screenshots (2880x1800): Logo sitzt in der Seitenleiste bei (40,40), 88 px hoch. Statt neu aufzunehmen kann man die Fläche 420x92 ab (38,38) mit `#1a1e25` (26,30,37) füllen und die Wortmarke auf 88 px Höhe darüberlegen.
+- Rendern geht mit sharp aus `services/stats/node_modules/.pnpm/sharp@*/node_modules/sharp` (Einstieg `dist/index.cjs`, `sharp.cache(false)`). Kein PIL auf dem Rechner. ffmpeg ist per WinGet installiert (`Gyan.FFmpeg`), Chrome unter `C:/Program Files/Google/Chrome/Application/chrome.exe`.
+- App-Icons: in `apps/desktop` `pnpm tauri icon src/assets/logo.svg`; danach die erzeugten Ordner für Android und iOS unter `src-tauri/icons/` löschen. Der Installer nutzt `../desktop/src-tauri/icons/icon.ico`.
+- NSIS-Bilder: `powershell -File apps/desktop/src-tauri/installer/render.ps1`.
 - Stats-Favicons: `icon.svg` = logo.svg, `apple-icon.png` 256x256 aus logo.svg.
 
+## Screenshots der App (immer zuerst, alles andere baut darauf auf)
+Aufnahme über die Browser-Brücke aus dem Eintrag zur Formensprache (Port 1430) mit Chrome headless per CDP bei Pixeldichte 2 (`Emulation.setDeviceMetricsOverride`, `Page.captureScreenshot`):
+- README: `.github/assets/screenshots/start.png`, `projekte.png`, `en/start.png`, `en/projects.png`, je 2880x1800 (1440x900).
+- Landingpage: Chat-Ansicht mit leerer Session und Text im Composer, 2400x1680 (1200x840), als `services/stats/src/assets/app-{de,en}-2400.webp` und mit lanczos3 verkleinert auf 1600, 1200, 800 (`webp({quality: 84, smartSubsample: true})`).
+- Vor der Aufnahme per RPC: `settings.update` mit `language` und `limitWarnings: false` (sonst steht „Limit gegen …“ in der Claude-Karte), danach `system.usage` mit `refresh: true` (sonst bleiben die Fensternamen in der alten Sprache), dann `about:blank` und mit `?lang=` laden. Toasts vor dem Bild entfernen. Testsessions und der Ordner „Temporäre Chats“ aus der Datenkopie löschen (`sessions.delete`, `projects.remove`).
+
+## Danach neu erzeugen
+- OG-Bilder: in `services/stats` `node scripts/og-images.mjs` (nimmt `app-{lang}-1600.webp`).
+- Banner und Social Preview: `.github/assets/banner/banner.{de,en}.html` + `banner.css` zeigen links Wortmarke, Titel und Chips, rechts den README-Screenshot `screenshots/start.png` bzw. `en/start.png` in rundem Rahmen (kein Icon, keine Glows, neutrale Grautöne). Rendern: Chrome `--headless=new --window-size=1280,640 --force-device-scale-factor=2 --virtual-time-budget=5000 --screenshot=…` → `banner.png` / `banner-en.png`; `social-preview.png` = deutsches Banner bei Faktor 1. Die Social Preview muss in den GitHub-Repo-Einstellungen von Hand hochgeladen werden.
+- `demo.gif` (README, 1100x700, ca. 24 s, unter 1 MB): ein Rundgang aus Einzelbildern statt eines Videos. Ein Skript klickt sich per CDP durch die Brücke (englische Oberfläche): Start, Projekte, Sessions, die Session „Landing page testimonials and FAQ“ in sieben Scrollschritten, Git, Dateien, Befehlspalette mit „git“, Erweiterungen, Einstellungen, Start. Jedes Bild bekommt eine Standzeit; zusammengesetzt mit `ffmpeg -f concat -safe 0 -i list.txt -fps_mode vfr -vf "split[a][b];[a]palettegen=max_colors=160:stats_mode=full[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" -loop 0 demo.gif` (`list.txt`: `file`/`duration`, letztes Bild doppelt). Alt-Text und Unterzeile stehen in README.md und README.de.md und müssen zum Inhalt passen. Das frühere GIF war eine Bildschirmaufnahme des Besitzers mit echten Claude-Läufen.
+
 ## Stolperfallen
-- Write/Edit außerhalb des Projekts ist im Autonomous-Profil gesperrt; Hilfsdateien im Repo ablegen und danach löschen (Bash darf nach `/c/tmp/...` schreiben).
-- Die Landingpage-Bilder `services/stats/src/assets/app-{de,en}.webp` (1600x1000) sind aus `.github/assets/screenshots/projekte.png` und `en/projects.png` erzeugt; nach neuen Screenshots mitziehen.
+- Write/Edit außerhalb des Projekts ist im Autonomous-Profil gesperrt; Hilfsdateien unter `apps/desktop/node_modules/.cache/` ablegen (ignoriert).
+- Reiter in schmalen Fenstern zeigen nur Icons: per `aria-label` suchen, nicht per Text.

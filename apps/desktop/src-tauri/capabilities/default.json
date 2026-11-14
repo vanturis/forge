@@ -1,10 +1,14 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Minimal rights for the main window and detached chat windows:core events, folder and file pickers, Windows notifications, opening https links and local dev servers.",
+  "description": "Minimal rights for the main window and detached chat windows:core events, folder and file pickers, Windows notifications, opening https links and local dev servers, and the buttons and drag area of FORGE's own title bar (Windows).",
   "windows": ["main", "chat-*"],
   "permissions": [
     "core:default",
+    "core:window:allow-start-dragging",
+    "core:window:allow-minimize",
+    "core:window:allow-toggle-maximize",
+    "core:window:allow-close",
     "dialog:allow-open",
     "dialog:allow-save",
     "notification:allow-is-permission-granted",

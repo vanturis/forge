@@ -2,7 +2,7 @@ import { Blocks, PackageSearch, PenLine, Server, Webhook, type LucideIcon } from
 import { useProject } from "@/lib/queries";
 import { useUi, type ExtensionsTab, type SkillsTab } from "@/stores/ui";
 import { Page } from "@/components/layout/Page";
-import { TabBar } from "@/components/ui/tabs";
+import { SettingsLayout, type SettingsSectionDef } from "@/components/settings/layout";
 import { DocsTab } from "@/components/extensions/DocsTab";
 import { HooksTab } from "@/components/extensions/HooksTab";
 import { McpTab } from "@/components/extensions/McpTab";
@@ -21,38 +21,35 @@ export const SKILLS_TAB_DEFS: ReadonlyArray<{ value: SkillsTab; label: string; I
   { value: "own", label: t.views.extensions.tabOwnSkills, Icon: PenLine },
 ];
 
+type Section = ExtensionsTab | SkillsTab;
+
+/** The menu on the left, like the settings: the tabs, with the two kinds of skills as a branch under Skills. */
+const SECTIONS: ReadonlyArray<SettingsSectionDef<Section>> = EXTENSION_TAB_DEFS.flatMap((def) => [
+  { id: def.value, label: def.label, Icon: def.Icon },
+  ...(def.value === "skills" ? SKILLS_TAB_DEFS.map((sub) => ({ id: sub.value, label: sub.label, Icon: sub.Icon, parent: "skills" as const })) : []),
+]);
+
+const isSkillsTab = (id: Section): id is SkillsTab => SKILLS_TAB_DEFS.some((d) => d.value === id);
+
 /** Claude Code extensions: MCP servers, skills and hooks, for the user and the open project. */
 export function ExtensionsView() {
   const tab = useUi((s) => s.extensionsTab);
-  const setTab = useUi((s) => s.setExtensionsTab);
   const skillsTab = useUi((s) => s.skillsTab);
-  const setSkillsTab = useUi((s) => s.setSkillsTab);
+  const openExtensions = useUi((s) => s.openExtensions);
   const projectId = useUi((s) => s.activeProjectId) ?? undefined;
   const project = useProject(projectId ?? null);
+  // Under Skills one of its two branches is always the shown one.
+  const current: Section = tab === "skills" ? skillsTab : tab;
   return (
     <Page
       title={t.views.extensions.title}
       subtitle={project.data ? t.views.extensions.subtitleProject(project.data.name) : t.views.extensions.subtitleGlobal}
     >
-      <div className="mb-4">
-        <TabBar<ExtensionsTab> value={tab} onChange={setTab} tabs={EXTENSION_TAB_DEFS.map((def) => ({ value: def.value, label: def.label, icon: <def.Icon className="h-3.5 w-3.5" /> }))} />
-      </div>
-      <div className="max-w-5xl">
+      <SettingsLayout sections={SECTIONS} current={current} onSelect={(id) => (isSkillsTab(id) ? openExtensions("skills", id) : openExtensions(id))} label={t.views.extensions.title} wide>
         {tab === "mcp" && <McpTab projectId={projectId} />}
-        {tab === "skills" && (
-          <>
-            <div className="mb-3">
-              <TabBar<SkillsTab>
-                value={skillsTab}
-                onChange={setSkillsTab}
-                tabs={SKILLS_TAB_DEFS.map((def) => ({ value: def.value, label: def.label, icon: <def.Icon className="h-3.5 w-3.5" /> }))}
-              />
-            </div>
-            {skillsTab === "marketplace" ? <SkillMarketplace /> : <DocsTab kind="skill" projectId={projectId} />}
-          </>
-        )}
+        {tab === "skills" && (skillsTab === "marketplace" ? <SkillMarketplace /> : <DocsTab kind="skill" projectId={projectId} />)}
         {tab === "hooks" && <HooksTab projectId={projectId} />}
-      </div>
+      </SettingsLayout>
     </Page>
   );
 }

@@ -2,10 +2,27 @@ import type { ReactNode } from "react";
 import { AlwaysOnTopButton } from "./AlwaysOnTopButton";
 import { SyncButton } from "./SyncButton";
 import { PhoneButton } from "./PhoneButton";
+import { hasTitleBar } from "@/lib/title-bar";
 
 /** Thin vertical line between groups of header controls. */
 export function HeaderDivider() {
   return <span className="mx-1 h-5 w-px shrink-0 bg-border" aria-hidden />;
+}
+
+/**
+ * Sync, pin and phone at the right end of a header. Where FORGE draws its own title bar (Windows) they
+ * sit there instead and the header keeps the room.
+ */
+export function AppButtons({ divider = false }: { divider?: boolean }) {
+  if (hasTitleBar) return null;
+  return (
+    <>
+      {divider && <HeaderDivider />}
+      <SyncButton />
+      <AlwaysOnTopButton />
+      <PhoneButton />
+    </>
+  );
 }
 
 export function Page({ title, subtitle, actions, children }: { title: string; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
@@ -18,10 +35,7 @@ export function Page({ title, subtitle, actions, children }: { title: string; su
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {actions}
-          {actions && <HeaderDivider />}
-          <SyncButton />
-          <AlwaysOnTopButton />
-          <PhoneButton />
+          <AppButtons divider={!!actions} />
         </div>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto px-7 pb-6 pt-3">{children}</div>

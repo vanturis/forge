@@ -548,7 +548,7 @@ function confetti() {
   canvas.width = Math.round(w * dpr);
   canvas.height = Math.round(h * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const COLORS = ["#f97316", "#fdba74", "#ea580c", "#e5e7eb", "#9ca3ae", "#3fb97a"];
+  const COLORS = ["#f97316", "#fdba74", "#ea580c", "#ececee", "#a3a3a8", "#3fb97a"];
   const pieces = [];
   for (const side of [-1, 1]) {
     for (let i = 0; i < 70; i++) {

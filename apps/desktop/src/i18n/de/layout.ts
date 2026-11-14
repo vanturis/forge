@@ -268,6 +268,12 @@ export const layout = {
     registered: "angemeldet",
     registeringShort: "meldet sich an …",
   },
+  titleBar: {
+    minimize: "Minimieren",
+    maximize: "Maximieren",
+    restore: "Verkleinern",
+    close: "Schließen",
+  },
   searchField: {
     label: "Suchen und Befehle (Strg+K)",
     placeholder: "Suchen …",

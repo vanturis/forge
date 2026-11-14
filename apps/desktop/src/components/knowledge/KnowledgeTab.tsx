@@ -177,7 +177,7 @@ export function KnowledgeTab({ project }: { project: Project }) {
                     aria-current={current === e.id ? "true" : undefined}
                     className={cn(
                       "w-full rounded-lg px-3 py-2 text-left transition-colors duration-120",
-                      current === e.id ? "bg-accent-soft" : "hover:bg-surface-2",
+                      current === e.id ? "bg-surface-3" : "hover:bg-surface-2",
                     )}
                   >
                     <div className="truncate text-body font-medium">{e.title}</div>

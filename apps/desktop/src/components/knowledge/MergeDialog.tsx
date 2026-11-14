@@ -181,7 +181,7 @@ export function MergeDialog({
                       disabled={!on && others.length >= MAX_OTHERS}
                       className={cn(
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors duration-120 disabled:opacity-50",
-                        on ? "bg-accent-soft" : "hover:bg-surface-2",
+                        on ? "bg-surface-3" : "hover:bg-surface-2",
                       )}
                     >
                       <span className={cn("flex h-4 w-4 shrink-0 items-center justify-center rounded border", on ? "border-accent bg-accent text-accent-fg" : "border-border-strong")}>

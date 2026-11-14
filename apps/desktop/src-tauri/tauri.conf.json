@@ -19,7 +19,7 @@
         "minWidth": 1100,
         "minHeight": 700,
         "theme": "Dark",
-        "backgroundColor": "#14171d",
+        "backgroundColor": "#0b0b0c",
         "center": true
       },
       {
@@ -31,7 +31,7 @@
         "minWidth": 520,
         "minHeight": 500,
         "theme": "Dark",
-        "backgroundColor": "#14171d"
+        "backgroundColor": "#0b0b0c"
       }
     ],
     "security": {

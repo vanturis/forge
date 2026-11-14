@@ -103,7 +103,7 @@ export function SplitViewEntry() {
     <div
       className={cn(
         "group/split mb-2 flex items-center rounded-lg border border-accent/30 transition-colors duration-120",
-        onScreen ? "bg-accent-soft text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+        onScreen ? "bg-surface-3 text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
       )}
     >
       <button

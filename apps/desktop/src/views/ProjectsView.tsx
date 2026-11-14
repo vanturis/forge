@@ -61,7 +61,8 @@ export function ProjectsView() {
       return true;
     });
   }, [roots, agentsOf, q, filter, activeGroup]);
-  const agentCount = (projects.data?.length ?? 0) - roots.length;
+  // Counted from the grouped agents: the folder of the temporary chats is neither a root nor an agent.
+  const agentCount = useMemo(() => [...agentsOf.values()].reduce((n, agents) => n + agents.length, 0), [agentsOf]);
   const filtering = q.trim() !== "" || filter !== "all";
   const sections = useMemo(() => {
     const list = groupProjects(items);

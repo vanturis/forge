@@ -289,6 +289,11 @@ pub async fn open_chat_window(app: AppHandle, target: ChatTarget, title: String,
     config.title = window_title(&title);
     // Pinned one by one; the main window's setting does not carry over.
     config.always_on_top = pinned;
+    // Like the main window: on Windows the web side draws the title bar.
+    #[cfg(windows)]
+    {
+        config.decorations = false;
+    }
     let cursor = if drag { app.cursor_position().ok() } else { None };
     if let Some(c) = cursor {
         // Torn-off tab: the window appears with its title bar under the cursor.

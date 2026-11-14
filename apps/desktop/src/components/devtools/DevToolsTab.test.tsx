@@ -47,7 +47,7 @@ describe("DevToolsTab", () => {
     show();
     const nav = screen.getByRole("navigation", { name: "Bereiche der Dev-Tools" });
     // Dev-Server first, its .env and database as branches below it, the .env above the database.
-    const labels = [...nav.querySelectorAll("button")].map((b) => b.querySelector("span span")?.textContent);
+    const labels = [...nav.querySelectorAll("button")].map((b) => b.textContent);
     expect(labels).toEqual(["Dev-Server", "Test-.env", "Test-Datenbank"]);
     expect(screen.getByText("Ausgabe des Dev-Servers")).toBeTruthy();
     expect(screen.queryByLabelText("Port der Test-Datenbank")).toBeNull();
