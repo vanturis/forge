@@ -77,6 +77,10 @@ beforeEach(() => {
     usageStats: true,
     usageStatsAsked: true,
     language: "de",
+    colorScheme: "default",
+    customSchemes: [],
+    windowOpacity: 100,
+    designAsked: false,
   };
   account = { login: "me", id: 1, name: "Me", avatarUrl: null, profileUrl: "https://github.com/me" };
   callMock.mockImplementation(async (method: string, params: Record<string, unknown>) => {
@@ -142,9 +146,14 @@ describe("setup assistant", () => {
     fireEvent.click(screen.getByRole("button", { name: /Weiter/ }));
     await waitFor(() => expect(calls("git.setIdentity")).toEqual([{ name: "Tjorven", email: "alt@example.com" }]));
 
+    // The design step: a scheme is saved the moment it is chosen.
+    fireEvent.click(await screen.findByRole("radio", { name: /Gruvbox/ }));
+    await waitFor(() => expect(calls("settings.update")).toContainEqual({ colorScheme: "gruvbox" }));
+    fireEvent.click(screen.getByRole("button", { name: /Weiter/ }));
+
     expect(await screen.findByText("shop")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Fertig/ }));
-    await waitFor(() => expect(calls("settings.update")).toContainEqual({ setupDone: true, syncAsked: true }));
+    await waitFor(() => expect(calls("settings.update")).toContainEqual({ setupDone: true, syncAsked: true, designAsked: true }));
     await waitFor(() => expect(screen.queryByText("FORGE einrichten")).toBeNull());
     // Answered in the assistant: no second question.
     expect(screen.queryByText("FORGE-Daten über GitHub synchronisieren?")).toBeNull();
@@ -154,7 +163,7 @@ describe("setup assistant", () => {
     account = null;
     setup();
     fireEvent.click(await screen.findByRole("button", { name: /Überspringen/ }));
-    await waitFor(() => expect(calls("settings.update")).toEqual([{ setupDone: true, syncAsked: true }]));
+    await waitFor(() => expect(calls("settings.update")).toEqual([{ setupDone: true, syncAsked: true, designAsked: true }]));
     expect(calls("sync.now")).toEqual([]);
     // Skipped is answered: the question for older installations does not follow right after.
     await waitFor(() => expect(screen.queryByText("FORGE einrichten")).toBeNull());

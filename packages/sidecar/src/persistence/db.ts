@@ -1,7 +1,7 @@
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 import type { SessionTotals, UsageCall } from "../claude/session-usage.js";
 import type { UsageSample } from "../claude/usage-forecast.js";
-import { CrewMirror, DEFAULT_DISABLED_POLICY_RULES, SEARCH_MARK_END, SEARCH_MARK_START, type ContextUsage, type EffortLevel, type ModelTokens, type ForgeUsagePurpose, type PermissionMode, type ProfileId, type Project, type PhoneCallRecord, type PromptTemplate, type SearchFilter, type SearchHit, type Session, type SessionEvent, type SessionEventBody, type SessionStatus, type Settings } from "@forge/protocol";
+import { CrewMirror, DEFAULT_DISABLED_POLICY_RULES, DEFAULT_SCHEME_ID,SEARCH_MARK_END, SEARCH_MARK_START, type ContextUsage, type EffortLevel, type ModelTokens, type ForgeUsagePurpose, type PermissionMode, type ProfileId, type Project, type PhoneCallRecord, type PromptTemplate, type SearchFilter, type SearchHit, type Session, type SessionEvent, type SessionEventBody, type SessionStatus, type Settings } from "@forge/protocol";
 
 // Append only: an install stores how many it ran (user_version), so inserting one shifts the rest.
 export const MIGRATIONS: string[] = [
@@ -484,6 +484,10 @@ export const DEFAULT_SETTINGS: Settings = {
   usageStats: true,
   usageStatsAsked: false,
   language: "en",
+  colorScheme: DEFAULT_SCHEME_ID,
+  customSchemes: [],
+  windowOpacity: 100,
+  designAsked: false,
 };
 
 /** When FORGE last looked for repeated messages, and the learned templates the user deleted (normalized text). */

@@ -11,7 +11,10 @@ import { startChatWindowEvents } from "./lib/chat-window-events";
 import { startPushOnClose } from "./lib/push-on-close";
 import { isScreenshotWindow, startScreenshotReceiver } from "./lib/screenshot";
 import { ScreenshotOverlay } from "./components/screenshot/ScreenshotOverlay";
+import { paintStoredDesign } from "./lib/design";
 import "./styles.css";
+
+paintStoredDesign();
 
 const root = createRoot(document.getElementById("root")!);
 

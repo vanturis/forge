@@ -6,6 +6,41 @@ export const settings = {
   languageHint: "Sprache der Oberfläche, der Meldungen von FORGE und des Telefons. Beim Umschalten lädt FORGE seine Fenster neu, laufende Sessions arbeiten weiter.",
   languageNotSaved: "Sprache nicht gespeichert",
 
+  design: {
+    schemeTitle: "Farbschema",
+    schemeDescription: "Gilt für alle Fenster von FORGE. Ein Rechtsklick auf ein Schema bietet Kopieren, Bearbeiten und Löschen.",
+    pickerLabel: "Farbschema wählen",
+    newScheme: "Eigenes Schema",
+    ownBadge: "Eigenes",
+    apply: "Anwenden",
+    edit: "Bearbeiten",
+    duplicate: "Als Vorlage für ein eigenes Schema",
+    delete: "Löschen",
+    tooMany: (max: number) => `Mehr als ${max} eigene Schemata gehen nicht. Lösche zuerst eines.`,
+    deleteTitle: (name: string) => `Farbschema „${name}“ löschen?`,
+    deleteText: "Das lässt sich nicht rückgängig machen. War es gewählt, gilt danach wieder das Schema FORGE.",
+    windowTitle: "Fenster",
+    opacityLabel: "Deckkraft",
+    opacityDescription: "Unter 100 % scheint durch, was hinter FORGE liegt. Gilt für das Hauptfenster und die Chat-Fenster.",
+    percent: (p: number) => `${p} %`,
+    syncOn: "Farbschema, eigene Schemata und Deckkraft gleicht FORGE über GitHub mit deinen anderen PCs ab.",
+    syncOff: "Mit der Synchronisierung über GitHub gelten Farbschema, eigene Schemata und Deckkraft auch auf deinen anderen PCs.",
+    syncOpen: "Synchronisierung einrichten",
+    editor: {
+      newTitle: "Eigenes Farbschema",
+      editTitle: "Farbschema bearbeiten",
+      description: "Das Fenster zeigt die Farben sofort. Übernommen werden sie erst mit Speichern.",
+      name: "Name",
+      namePlaceholder: "z. B. Mitternacht",
+      basedOn: "Farben übernehmen von",
+      basedOnPlaceholder: "Schema wählen",
+      copyName: (name: string) => `${name} Kopie`,
+      pick: (label: string) => `${label}: Farbe wählen`,
+      save: "Speichern",
+      colors: { bg: "Hintergrund", surface: "Flächen", fg: "Text", accent: "Akzent", success: "Erfolg", warning: "Warnung", danger: "Fehler" },
+    },
+  },
+
   idleClose: {
     off: "Aus",
     hours: (h: number) => (h === 1 ? "1 Stunde" : `${h} Stunden`),
@@ -71,6 +106,8 @@ export const settings = {
   },
 
   backup: {
+    showOlder: (n: number) => `Ältere anzeigen (${n})`,
+    showFewer: "Weniger anzeigen",
     reason: {
       start: "Beim Start",
       manual: "Von Hand",

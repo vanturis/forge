@@ -1,3 +1,5 @@
+import { SCHEME_PRESETS } from "@forge/protocol";
+
 /** German descriptions of the phone tools for the model (Claude or Gemini Live). Keys: tool name, then parameter (array items as "param.item"). */
 export const phoneTools = {
   status: {
@@ -295,6 +297,8 @@ export const phoneTools = {
       ask_push_on_close: "beim Schließen von FORGE fragen, ob alles noch nicht Gepushte committet und gepusht werden soll",
       usage_stats: "anonyme Nutzungsstatistik: alle 5 Minuten Summen wie Tokens, Projekte und Agenten ohne Inhalte an den Statistik-Dienst von FORGE; aus löscht die gesendeten Daten dort",
       language: "Sprache von FORGE für Oberfläche, Meldungen und Telefon: en Englisch, de Deutsch. Danach sprichst du in der neuen Sprache",
+      color_scheme: `Farbschema der Oberfläche, nach Name: ${SCHEME_PRESETS.map((x) => x.name).join(", ")} oder ein eigenes Schema des Nutzers. FORGE ist der Standard`,
+      window_opacity: "Deckkraft der FORGE-Fenster in Prozent, 50 bis 100. 100 ist deckend, darunter scheint durch, was hinter FORGE liegt",
       policy_rule: "Regel der Sperrliste",
       policy_rule_on: "true schaltet die Regel ein, false aus",
     },

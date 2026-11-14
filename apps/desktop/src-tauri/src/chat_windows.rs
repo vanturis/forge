@@ -221,6 +221,7 @@ impl ChatWindows {
 
     fn pin<R: Runtime>(&self, app: &AppHandle<R>, w: &WebviewWindow<R>, on: bool) -> Result<(), String> {
         w.set_always_on_top(on).map_err(|e| e.to_string())?;
+        crate::opacity::reapply(&w.as_ref().window());
         let changed = {
             let mut pinned = self.pinned.lock().unwrap();
             if on {
@@ -387,6 +388,7 @@ pub fn update_chat_window(app: AppHandle, window: WebviewWindow, session_id: Opt
 pub fn set_always_on_top(app: AppHandle, on: bool) {
     if let Some(main) = app.get_webview_window(MAIN) {
         let _ = main.set_always_on_top(on);
+        crate::opacity::reapply(&main.as_ref().window());
     }
 }
 

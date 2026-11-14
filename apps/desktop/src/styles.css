@@ -256,6 +256,29 @@
   --syntax-line-number: #6e7681;
 }
 
+/*
+ * A color scheme with a light background (lib/design.ts sets data-tone; only the user's own schemes can
+ * be light): code in the colors of VS Code "Light Modern", and a lighter veil behind dialogs.
+ */
+:root[data-tone="light"] {
+  --syntax-fg: #3b3b3b;
+  --syntax-keyword: #0000ff;
+  --syntax-control: #af00db;
+  --syntax-string: #a31515;
+  --syntax-number: #098658;
+  --syntax-comment: #008000;
+  --syntax-function: #795e26;
+  --syntax-variable: #001080;
+  --syntax-type: #267f99;
+  --syntax-constant: #0070c1;
+  --syntax-regexp: #811f3f;
+  --syntax-escape: #ee0000;
+  --syntax-tag-bracket: #800000;
+  --syntax-invalid: #cd3131;
+  --syntax-line-number: #6e7681;
+  --color-overlay: #1b1b1f66;
+}
+
 /* No motion for those who asked for none: animations and transitions end right away. */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -615,3 +638,34 @@ body {
   text-decoration-color: currentColor;
 }
 
+/* Slider (components/ui/slider.tsx): the part left of the thumb is filled, --slider-fill says how far. */
+.slider {
+  appearance: none;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.slider:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-accent) var(--slider-fill), var(--color-surface-3) var(--slider-fill));
+}
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 999px;
+  background: var(--color-fg);
+  box-shadow: var(--shadow-md);
+  transition: transform 120ms var(--ease-snappy);
+}
+.slider:active::-webkit-slider-thumb {
+  transform: scale(1.1);
+}

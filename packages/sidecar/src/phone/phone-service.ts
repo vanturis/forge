@@ -36,6 +36,10 @@ import {
   SUPPORT_LINKS,
   ELICITATION_TOOL,
   elicitationFields,
+  activeColorScheme,
+  colorSchemes,
+  WINDOW_OPACITY_MAX,
+  WINDOW_OPACITY_MIN,
 } from "@forge/protocol";
 import type { Db } from "../persistence/db.js";
 import { limitWarning } from "../claude/usage.js";
@@ -501,6 +505,12 @@ function settingText(s: Settings, key: keyof ForgeSettingsPatch | "alwaysOnTop")
       return m.settings.askPushOnClose(s.askPushOnClose);
     case "usageStats":
       return m.settings.usageStats(s.usageStats);
+    case "colorScheme": {
+      const scheme = activeColorScheme(s);
+      return m.settings.colorScheme(scheme.custom ? asData(scheme.name) : scheme.name);
+    }
+    case "windowOpacity":
+      return m.settings.windowOpacity(s.windowOpacity);
     case "debugLogs":
       return m.settings.debugLogs(s.debugLogs);
     case "stripApiKey":
@@ -3239,6 +3249,18 @@ export class PhoneService {
             update.defaultProjectDir = patch.defaultProjectDir.trim() || null;
             changed.push("defaultProjectDir");
           }
+          if (patch.colorScheme !== undefined) {
+            const want = patch.colorScheme.trim().toLowerCase();
+            const all = colorSchemes(cur.customSchemes);
+            const scheme = all.find((x) => x.id === want || x.name.toLowerCase() === want) ?? all.find((x) => want.length > 2 && x.name.toLowerCase().includes(want));
+            if (!scheme) throw new Error(tr().phone.settings.noColorScheme(asData(patch.colorScheme), all.map((x) => (x.custom ? asData(x.name) : x.name)).join(", ")));
+            update.colorScheme = scheme.id;
+            changed.push("colorScheme");
+          }
+          if (patch.windowOpacity !== undefined) {
+            update.windowOpacity = Math.min(WINDOW_OPACITY_MAX, Math.max(WINDOW_OPACITY_MIN, Math.round(patch.windowOpacity)));
+            changed.push("windowOpacity");
+          }
           const rule = patch.policyRule;
           if (rule && patch.policyRuleOn === undefined && !changed.length) return tr().phone.settings.rule(policyRuleLabel(rule), !cur.disabledPolicyRules.includes(rule));
           if (rule && patch.policyRuleOn !== undefined) {
@@ -3246,7 +3268,7 @@ export class PhoneService {
             update.disabledPolicyRules = patch.policyRuleOn ? off : [...off, rule];
             changed.push("policyRule");
           }
-          if (!changed.length) return `${(["defaultModel", "defaultEffort", "defaultProfile", "defaultProjectDir", ...flags, "updateChannel", "subagentEffort", "idleCloseMinutes", "longSessionTokens", "alwaysOnTop", "policyRule"] as const).map((k) => settingText(cur, k)).join(", ")}.`;
+          if (!changed.length) return `${(["defaultModel", "defaultEffort", "defaultProfile", "defaultProjectDir", ...flags, "updateChannel", "subagentEffort", "idleCloseMinutes", "longSessionTokens", "alwaysOnTop", "colorScheme", "windowOpacity", "policyRule"] as const).map((k) => settingText(cur, k)).join(", ")}.`;
           const next = await call("settings.update", update);
           return tr().phone.settings.saved(changed.map((k) => settingText(next, k)).join(", "));
         }),

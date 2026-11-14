@@ -9,11 +9,13 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-accent text-accent-fg shadow-md hover:bg-accent-strong",
+        // Important: tailwind-merge takes the size class text-body for a color and would drop the color before it.
+        // On FORGE's orange that went unseen (white next to near-white); a light accent needs its dark text.
+        primary: "bg-accent text-accent-fg! shadow-md hover:bg-accent-strong",
         secondary: "bg-surface-3 text-fg shadow-xs hover:bg-border-strong",
         ghost: "text-muted hover:text-fg hover:bg-surface-3 active:bg-border-strong",
         outline: "border border-border text-fg shadow-xs hover:border-border-strong hover:bg-surface-3",
-        danger: "bg-danger text-accent-fg shadow-md hover:opacity-90",
+        danger: "bg-danger text-accent-fg! shadow-md hover:opacity-90",
         "danger-ghost": "text-danger hover:bg-danger-soft",
       },
       size: {

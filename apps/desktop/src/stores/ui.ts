@@ -25,7 +25,7 @@ export function workspaceTabsFor(project: { gitEnabled: boolean; tags?: readonly
   if (isTmpChat(project)) return ["chat"];
   return WORKSPACE_TABS.filter((t) => project?.gitEnabled !== false || !GIT_WORKSPACE_TABS.has(t));
 }
-export const SETTINGS_SECTIONS = ["general", "templates", "claude", "policy", "phone", "github", "backup", "rules", "about"] as const;
+export const SETTINGS_SECTIONS = ["general", "design", "templates", "claude", "policy", "phone", "github", "backup", "rules", "about"] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 export const DEV_TOOLS_SECTIONS = ["server", "database", "env"] as const;
 export type DevToolsSection = (typeof DEV_TOOLS_SECTIONS)[number];
@@ -235,6 +235,9 @@ interface UiState {
   /** opens the daily report, for one project or all */
   openReport: (projectId: string | null) => void;
   settingsSection: SettingsSection;
+  /** what the design settings should open once they are shown (palette: a new color scheme) */
+  designRequest: "new" | null;
+  setDesignRequest: (designRequest: "new" | null) => void;
   /** opens the settings at one section */
   openSettings: (section: SettingsSection) => void;
   extensionsTab: ExtensionsTab;
@@ -425,6 +428,8 @@ export const useUi = create<UiState>((set, get) => ({
   reportProjectId: null,
   openReport: (reportProjectId) => set({ view: "report", reportProjectId }),
   settingsSection: "general",
+  designRequest: null,
+  setDesignRequest: (designRequest) => set({ designRequest }),
   openSettings: (settingsSection) => set({ view: "settings", settingsSection }),
   extensionsTab: "mcp",
   setExtensionsTab: (extensionsTab) => set({ extensionsTab }),

@@ -1,3 +1,4 @@
+import { SCHEME_PRESETS } from "@forge/protocol";
 import type { phoneTools as De } from "../de/phone-tools.js";
 
 /** English descriptions of the phone tools for the model (Claude or Gemini Live). */
@@ -321,6 +322,8 @@ export const phoneTools: typeof De = {
       usage_stats:
         "Anonymous usage statistics: every 5 minutes totals like tokens, projects and agents, without content, to FORGE's statistics service; off deletes the data sent there",
       language: "Language of FORGE for the interface, messages and the phone: en English, de German. Afterwards you speak the new language",
+      color_scheme: `Color scheme of the interface, by name: ${SCHEME_PRESETS.map((x) => x.name).join(", ")} or one of the user's own schemes. FORGE is the default`,
+      window_opacity: "Opacity of the FORGE windows in percent, 50 to 100. 100 is solid, below that what lies behind FORGE shows through",
       policy_rule: "Rule of the blocklist",
       policy_rule_on: "true switches the rule on, false off",
     },

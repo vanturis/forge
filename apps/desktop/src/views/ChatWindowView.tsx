@@ -15,6 +15,7 @@ import { TitleTooltips } from "@/components/ui/title-tooltips";
 import { EmptyState, ErrorBanner } from "@/components/ui/misc";
 import { ChatPanel, ChatPanelSkeleton } from "@/components/workspace/ChatPanel";
 import { useLanguageSync } from "@/i18n/sync";
+import { useDesignSync } from "@/lib/design";
 import { t } from "@/i18n";
 import { ClaudeLoginRequiredNotice } from "@/components/settings/ClaudeLoginDialog";
 
@@ -24,6 +25,7 @@ import { ClaudeLoginRequiredNotice } from "@/components/settings/ClaudeLoginDial
  */
 export function ChatWindowShell({ target }: { target: ChatWindowTarget }) {
   useLanguageSync();
+  useDesignSync();
   useReportShownSession(target.projectId);
   useEffect(() => void loadChatWindowPin(), []);
   const project = useProject(target.projectId);

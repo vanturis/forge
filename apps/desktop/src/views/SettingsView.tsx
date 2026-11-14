@@ -9,6 +9,7 @@ import {
   FileText,
   FolderOpen,
   Info,
+  Palette,
   Phone,
   Cloud,
   RefreshCw,
@@ -55,6 +56,7 @@ import { InstallRepairSettings } from "@/components/layout/InstallRepair";
 import { supportsFullInstall } from "@/lib/app-install";
 import { LanguageSelect } from "@/components/settings/LanguageSelect";
 import { cn, planLabel } from "@/lib/utils";
+import { DesignSettings } from "@/components/settings/DesignSettings";
 import { CrewProfileSettings } from "@/components/settings/CrewProfileSettings";
 import { t } from "@/i18n";
 
@@ -64,6 +66,7 @@ type Save = (patch: Partial<Settings>) => Promise<void>;
 
 export const SECTIONS: ReadonlyArray<SettingsSectionDef<SettingsSection>> = [
   { id: "general", label: sv.sections.general.label, hint: sv.sections.general.hint, Icon: SlidersHorizontal },
+  { id: "design", label: sv.sections.design.label, hint: sv.sections.design.hint, Icon: Palette },
   { id: "templates", label: sv.sections.templates.label, hint: sv.sections.templates.hint, Icon: FileStack },
   { id: "claude", label: sv.sections.claude.label, hint: sv.sections.claude.hint, Icon: SquareTerminal },
   { id: "policy", label: sv.sections.policy.label, hint: sv.sections.policy.hint, Icon: ShieldBan },
@@ -100,6 +103,8 @@ export function SettingsView() {
           <FormSkeleton groups={2} label={sv.loading} />
         ) : current.id === "general" ? (
           <GeneralSection s={s} save={save} />
+        ) : current.id === "design" ? (
+          <DesignSettings s={s} save={save} />
         ) : current.id === "templates" ? (
           <TemplatesSettings />
         ) : current.id === "claude" ? (

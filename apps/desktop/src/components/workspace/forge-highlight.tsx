@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/** Colour of a FORGE card: neutral with an orange icon for what FORGE did, yellow and red when it was refused or failed. */
+/** Colour of a FORGE card: the accent of the color scheme for what FORGE did, yellow and red when it was refused or failed. */
 export type ForgeTone = "accent" | "warning" | "danger";
 
 export const FORGE_ICON_TONE: Record<ForgeTone, string> = { accent: "text-accent", warning: "text-warning", danger: "text-danger" };
 
 const CARD_TONE: Record<ForgeTone, string> = {
-  accent: "border-border bg-surface shadow-xs",
+  accent: "border-accent/40 bg-accent-soft",
   warning: "border-warning/40 bg-warning-soft",
   danger: "border-danger/40 bg-danger-soft",
 };

@@ -15,6 +15,7 @@ export const setup = {
       lead: "Optional. Für private Repositories, Pull Requests und damit FORGE auf deinen anderen PCs dieselben Daten hat.",
     },
     basics: { label: "Grundlagen", hint: "Ordner und Standards", title: "Ordner und Standards", lead: "Gilt für neue Projekte und Sessions. Einzelne Projekte können eigene Werte haben." },
+    design: { label: "Design", hint: "Farben und Deckkraft", title: "FORGE anpassen", lead: "Wähle ein Farbschema. Eigene Schemata legst du später unter Einstellungen, Design an." },
     done: { label: "Los geht's", hint: "Erstes Projekt", title: "FORGE ist eingerichtet", lead: "Lege ein Projekt an, importiere einen Ordner oder klone ein Repository." },
   },
   notFinished: "Einrichtung nicht abgeschlossen",
@@ -106,6 +107,17 @@ export const setup = {
     noThanks: "Nein, danke",
     sync: "Synchronisieren",
     alreadyOn: "Die Synchronisierung ist bereits an.",
+  },
+
+  designPrompt: {
+    title: "Neu: Farbschemata und Deckkraft",
+    description: "FORGE hat jetzt Farbschemata und eine einstellbare Deckkraft der Fenster. Wähle hier, was dir gefällt.",
+    schemeTitle: "Farbschema",
+    opacityTitle: "Deckkraft der Fenster",
+    hint: "Eigene Schemata legst du unter Einstellungen, Design an. Dort lässt sich alles jederzeit ändern.",
+    allSettings: "Design-Einstellungen öffnen",
+    done: "Fertig",
+    notSaved: "Nicht gespeichert",
   },
 
   usageStats: {

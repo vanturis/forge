@@ -12,6 +12,7 @@ import {
   FolderOpen,
   FolderPlus,
   GitBranch,
+  Palette,
   Phone,
   Rocket,
   SlidersHorizontal,
@@ -38,6 +39,8 @@ import { SyncAvailableList } from "@/components/settings/SyncSettings";
 import { effortOptions, fromChoice, modelOptions, toChoice } from "@/components/settings/model-options";
 import { PROFILE_IDS, PROFILE_INFO } from "@/components/projects/ProfileBadge";
 import { LanguageChoice } from "@/components/settings/LanguageSelect";
+import { OpacitySlider, SchemePicker } from "@/components/settings/SchemePicker";
+import { supportsWindowOpacity } from "@/lib/design";
 import { t } from "@/i18n";
 import { SyncOffer, useEnableSync, useNeedsPassphrase } from "./SyncOffer";
 
@@ -49,12 +52,13 @@ const STEPS = [
   { ...ts.steps.claude, Icon: SquareTerminal, lead: "" },
   { ...ts.steps.github, Icon: Cloud },
   { ...ts.steps.basics, Icon: SlidersHorizontal },
+  { ...ts.steps.design, Icon: Palette },
   { ...ts.steps.done, Icon: Rocket },
 ];
 
 /**
- * Setup on the first start: Claude Code, GitHub with the sync, folder for projects, defaults and the
- * git identity. Opens on its own only while nothing was ever done with FORGE (setupDone, which
+ * Setup on the first start: Claude Code, GitHub with the sync, folder for projects, defaults, the
+ * git identity and the design. Opens on its own only while nothing was ever done with FORGE (setupDone, which
  * installations from before it already have); the palette opens it again.
  */
 export function SetupWizard() {
@@ -102,8 +106,8 @@ function Wizard({ s }: { s: Settings }) {
 
   const finish = async (then?: () => void) => {
     try {
-      // The sync was offered here; the question on a later start would ask it again right away.
-      await save({ setupDone: true, syncAsked: true });
+      // The sync and the design were offered here; the questions on a later start would ask again right away.
+      await save({ setupDone: true, syncAsked: true, designAsked: true });
       setSetupWizard(false);
       then?.();
     } catch (e) {
@@ -192,7 +196,9 @@ function Wizard({ s }: { s: Settings }) {
 
             {step === 3 && <BasicsStep s={s} save={save} identity={identity} setIdentity={setIdentity} loadingIdentity={!identity} gitMissing={git.isError} />}
 
-            {step === 4 && <DoneStep s={s} claudeReady={diagnostics.data ? claudeReady : null} onProject={(m) => void finish(() => setNewProject(m))} />}
+            {step === 4 && <DesignStep s={s} save={save} />}
+
+            {step === 5 && <DoneStep s={s} claudeReady={diagnostics.data ? claudeReady : null} onProject={(m) => void finish(() => setNewProject(m))} />}
           </div>
 
           <footer className="flex items-center gap-2 border-t border-border px-7 py-3.5">
@@ -372,6 +378,22 @@ function BasicsStep({
           </>
         )}
       </BasicsGroup>
+    </div>
+  );
+}
+
+/** After the sync step, so a design that came from GitHub is already the one shown as chosen. */
+function DesignStep({ s, save }: { s: Settings; save: (patch: Partial<Settings>) => Promise<void> }) {
+  const saveNow = (patch: Partial<Settings>) => void save(patch).catch((e: unknown) => toast.error(ts.basics.settingNotSaved, errorMessage(e)));
+  return (
+    <div className="flex flex-col gap-5">
+      <SchemePicker s={s} onPick={(id) => saveNow({ colorScheme: id })} compact />
+      {supportsWindowOpacity && (
+        <div className="flex items-center gap-4">
+          <span className="shrink-0 text-body font-medium">{t.setup.designPrompt.opacityTitle}</span>
+          <OpacitySlider value={s.windowOpacity} onSave={(v) => saveNow({ windowOpacity: v })} className="min-w-0 flex-1" />
+        </div>
+      )}
     </div>
   );
 }

@@ -74,6 +74,15 @@ function themeFromTokens() {
   };
 }
 
+/** A new color scheme reaches the terminals that are already open (lib/design.ts sends the event). */
+if (typeof window !== "undefined") {
+  window.addEventListener("forge:design", () => {
+    if (!entries.size) return;
+    const theme = themeFromTokens();
+    for (const entry of entries.values()) entry.term.options.theme = theme;
+  });
+}
+
 function markExited(entry: Entry) {
   if (entry.id !== null) byId.delete(entry.id);
   entry.id = null;

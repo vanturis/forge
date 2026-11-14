@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { Archive, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
+import { Archive, Blend, Palette, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
 import { isTmpChat } from "@forge/protocol";
 import { openTempChat } from "@/lib/temp-chat";
 import type {
@@ -24,7 +24,7 @@ import type {
   Settings,
   TestDbState,
 } from "@forge/protocol";
-import { IDLE_CLOSE_CHOICES, LANGUAGE_NAMES, LANGUAGES, LONG_SESSION_CHOICES, SUPPORT_LINKS, STATS_PAGE_URL, redactRemoteUrl } from "@forge/protocol";
+import { activeColorScheme, colorSchemes, WINDOW_OPACITY_CHOICES, IDLE_CLOSE_CHOICES, LANGUAGE_NAMES, LANGUAGES, LONG_SESSION_CHOICES, SUPPORT_LINKS, STATS_PAGE_URL, redactRemoteUrl } from "@forge/protocol";
 import { t } from "@/i18n";
 import { openExternal } from "@/lib/native";
 import { checkInstall, installFromFile, installFull, installUpdate, supportsFullInstall } from "@/lib/app-install";
@@ -35,6 +35,7 @@ import { EFFORT_LEVELS, modelLabel } from "@/lib/models";
 import { errorMessage, RpcCallError } from "@/lib/rpc";
 import { openChatWindow, pinChatWindow, recallChatWindow, type ChatWindowList } from "@/lib/chat-windows";
 import { setAlwaysOnTop } from "@/lib/window-options";
+import { supportsWindowOpacity } from "@/lib/design";
 import { takeScreenshot } from "@/lib/screenshot";
 import { openChatFindSoon } from "@/lib/chat-find";
 import { COMPOSER_HISTORY_EVENT } from "@/stores/composer-history";
@@ -132,6 +133,7 @@ export const UNLISTED_SETTINGS = {
   setupDone: "merkt sich, dass der Einrichtungsassistent durch ist; den Assistenten öffnet die Aktion „Einrichtungsassistent öffnen“",
   syncAsked: "merkt sich, dass die Frage nach der Synchronisierung beantwortet ist",
   usageStatsAsked: "merkt sich, dass die Frage nach der Nutzungsstatistik beantwortet ist",
+  designAsked: "merkt sich, dass der Hinweis auf die Design-Einstellungen gezeigt wurde",
 } as const satisfies Partial<Record<BooleanSetting, string>>;
 
 const SETTING_TOGGLES: Record<Exclude<BooleanSetting, keyof typeof UNLISTED_SETTINGS>, { label: string; section: SettingsSection; keywords?: string }> = {
@@ -172,6 +174,7 @@ const SETTING_OPTIONS: ReadonlyArray<{ id: string; label: string; section: Setti
   { id: "sync-projects", label: t.layout.actions.options.syncProjects, section: "github", keywords: "projekte holen sync klonen abgleich rechner pc fetch projects clone other computers" },
   { id: "sync-passphrase", label: t.layout.actions.options.syncPassphrase, section: "github", keywords: "sync-passwort verschlüsselung schlüssel passwort vergessen github password passphrase encryption key forgot" },
   { id: "sync-local-only", label: t.layout.actions.options.syncLocalOnly, section: "github", keywords: "nur lokal out of sync nicht synchronisiert gelöscht anderer pc local only deleted removed other computer" },
+  { id: "window-opacity", label: t.layout.actions.options.windowOpacity, section: "design", keywords: "deckkraft transparenz transparent durchsichtig durchscheinend fenster regler opacity transparency see-through window slider" },
   { id: "sync-force", label: t.layout.actions.options.syncForce, section: "github", keywords: "sync zurücksetzen überschreiben neuester stand github reset overwrite latest hard" },
   { id: "sync-versions", label: t.layout.actions.options.syncVersions, section: "github", keywords: "versionen sync verlauf commit wiederherstellen backup versions history restore" },
   { id: "backup-restore", label: t.layout.actions.options.backupRestore, section: "backup", keywords: "backup herunterladen zurücksetzen sichern wiederherstellen export download restore" },
@@ -790,6 +793,29 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
         // both languages: whoever looks for the switch may not read the one on screen
         keywords: "sprache language english englisch deutsch german oberfläche interface",
       });
+    }
+    const schemeNow = activeColorScheme(settings);
+    for (const scheme of colorSchemes(settings.customSchemes)) {
+      if (scheme.id === schemeNow.id) continue;
+      const label = t.layout.actions.colorScheme(scheme.name);
+      setting(`color-scheme-${scheme.id}`, label, icon(Palette), () => void saveSetting(qc, { colorScheme: scheme.id }, label), {
+        hint: t.layout.actions.now(schemeNow.name),
+        keywords: "farbschema farben design theme thema aussehen dunkel akzent color scheme colors look appearance accent",
+      });
+    }
+    setting("color-scheme-new", t.layout.actions.newColorScheme, icon(Palette), () => {
+      ui.setDesignRequest("new");
+      ui.openSettings("design");
+    }, { keywords: "farbschema eigenes schema farben design theme erstellen anlegen bearbeiten color scheme own custom create edit" });
+    if (supportsWindowOpacity) {
+      for (const percent of WINDOW_OPACITY_CHOICES) {
+        if (percent === settings.windowOpacity) continue;
+        const label = t.layout.actions.windowOpacity(percent);
+        setting(`window-opacity-${percent}`, label, icon(Blend), () => void saveSetting(qc, { windowOpacity: percent }, label), {
+          hint: t.layout.actions.now(t.layout.actions.percent(settings.windowOpacity)),
+          keywords: "deckkraft transparenz transparent durchsichtig durchscheinend fenster opacity transparency see-through window",
+        });
+      }
     }
     for (const m of IDLE_CLOSE_CHOICES) {
       if (m === settings.idleCloseMinutes) continue;

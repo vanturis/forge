@@ -18,6 +18,9 @@ const settings = {
   ...Object.fromEntries(settingKeys.map((k) => [k, booleanSettings.includes(k) ? false : null])),
   defaultProfile: "balanced",
   disabledPolicyRules: [],
+  colorScheme: "default",
+  customSchemes: [{ id: "custom-abcd1234", name: "Mitternacht", colors: { bg: "#101018", surface: "#181824", fg: "#e8e8f0", accent: "#00ff88", success: "#3fb97a", warning: "#d9a23b", danger: "#f0605a" } }],
+  windowOpacity: 100,
 } as unknown as Settings;
 
 const project = {
@@ -76,6 +79,17 @@ describe("command palette covers all of FORGE", () => {
 
   it("has an entry for every settings section", () => {
     expect(missing("settings-", SETTINGS_SECTIONS, ids), hint("Einstellungsbereich", "buildActions (palette-actions.tsx)")).toEqual([]);
+  });
+
+  it("can switch to every other color scheme and window opacity", () => {
+    const schemes = entries.filter((e) => e.id.startsWith("color-scheme-")).map((e) => e.label);
+    expect(schemes).toContain("Farbschema: Gruvbox");
+    expect(schemes).toContain("Farbschema: Mitternacht");
+    expect(schemes).toContain("Eigenes Farbschema anlegen");
+    // The scheme and the opacity in use are no entries.
+    expect(schemes).not.toContain("Farbschema: FORGE");
+    expect(ids.has("window-opacity-100")).toBe(false);
+    expect(entries.find((e) => e.id === "window-opacity-85")?.label).toBe("Deckkraft der Fenster: 85 %");
   });
 
   it("has an entry for every workspace tab", () => {

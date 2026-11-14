@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArchiveRestore, CloudAlert, CloudCheck, CloudOff, CloudUpload, Download, FileUp, History, Save } from "lucide-react";
+import { ArchiveRestore, ChevronDown, ChevronUp, CloudAlert, CloudCheck, CloudOff, CloudUpload, Download, FileUp, History, Save } from "lucide-react";
 import { BackupPart, type BackupInfo, type SyncVersion } from "@forge/protocol";
 import { call, keys, useBackups, useSettings, useSyncStatus, useSyncVersions } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
@@ -30,12 +30,31 @@ function fileName(iso: string) {
   return `forge-backup-${iso.slice(0, 10)}.json`;
 }
 
+/** The lists show the newest states; older ones come in steps with "Ältere anzeigen". */
+const FIRST_SHOWN = 3;
+const MORE_STEP = 10;
+
+/** How many rows of a list are shown, and the button below it that shows older ones or folds them away again. */
+function useShown(total: number) {
+  const [wanted, setWanted] = useState(FIRST_SHOWN);
+  const shown = Math.min(wanted, total);
+  const button =
+    total <= FIRST_SHOWN ? null : (
+      <Button size="sm" variant="ghost" className="mt-2" onClick={() => setWanted(shown < total ? shown + MORE_STEP : FIRST_SHOWN)}>
+        {shown < total ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+        {shown < total ? tb.showOlder(total - shown) : tb.showFewer}
+      </Button>
+    );
+  return { shown, button };
+}
+
 /** Backups of FORGE's configuration: automatic ones from each start, by hand, download and restore. */
 export function BackupSettings() {
   const backups = useBackups();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [restore, setRestore] = useState<{ info: BackupInfo; path: string | null } | null>(null);
+  const more = useShown(backups.data?.length ?? 0);
 
   const create = async () => {
     setCreating(true);
@@ -124,7 +143,7 @@ export function BackupSettings() {
         )}
         {list.length > 0 && (
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-            {list.map((b, i) => (
+            {list.slice(0, more.shown).map((b, i) => (
               <div key={b.id} className="flex items-center gap-3 px-3.5 py-2.5 transition-colors duration-120 hover:bg-surface-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-body">
@@ -145,6 +164,7 @@ export function BackupSettings() {
             ))}
           </div>
         )}
+        {more.button}
       </div>
 
       {restore && <RestoreDialog key={restore.info.id ?? restore.path} target={restore} onClose={() => setRestore(null)} />}
@@ -190,8 +210,10 @@ export function GitHubVersions() {
   const on = !!settings?.syncEnabled && !!status?.hasKey;
   const versions = useSyncVersions(on);
   const [restore, setRestore] = useState<SyncVersion | null>(null);
+  // GitHub lists every sync; the last 20 are enough to go back to.
+  const list = (versions.data ?? []).slice(0, 20);
+  const more = useShown(list.length);
   if (!on) return <p className="text-xs text-muted">{tb.versions.hidden}</p>;
-  const list = versions.data ?? [];
   return (
     <div>
       {versions.isLoading && (
@@ -212,7 +234,7 @@ export function GitHubVersions() {
       {versions.data && !list.length && <p className="text-xs text-muted">{tb.versions.empty}</p>}
       {list.length > 0 && (
         <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-          {list.slice(0, 20).map((v, i) => (
+          {list.slice(0, more.shown).map((v, i) => (
             <div key={v.sha} className="flex items-center gap-3 px-3.5 py-2.5 transition-colors duration-120 hover:bg-surface-2">
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-body">
                 <span className="tabular-nums">{formatBackupDate(v.date)}</span>
@@ -227,6 +249,7 @@ export function GitHubVersions() {
           ))}
         </div>
       )}
+      {more.button}
       {restore && <VersionRestoreDialog key={restore.sha} version={restore} onClose={() => setRestore(null)} />}
     </div>
   );

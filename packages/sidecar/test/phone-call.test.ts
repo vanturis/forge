@@ -2097,6 +2097,13 @@ describe("PhoneService end to end with a test PBX", () => {
     expect(await conv.tools.forgeSettings({ idleCloseMinutes: 30 })).toBe("Gespeichert: untätige Claude-Prozesse schließen nach 30 Minuten.");
     expect(await conv.tools.forgeSettings({ idleCloseMinutes: 0 })).toBe("Gespeichert: untätige Claude-Prozesse bleiben offen.");
     expect(db.getSettings().idleCloseMinutes).toBe(0);
+    expect(await conv.tools.forgeSettings({})).toContain("Farbschema FORGE, Fenster deckend");
+    expect(await conv.tools.forgeSettings({ colorScheme: "gruvbox", windowOpacity: 85.4 })).toBe("Gespeichert: Farbschema Gruvbox, Deckkraft der Fenster 85 Prozent.");
+    expect(db.getSettings()).toMatchObject({ colorScheme: "gruvbox", windowOpacity: 85 });
+    expect(await conv.tools.forgeSettings({ colorScheme: "Tokyo" })).toBe("Gespeichert: Farbschema Tokyo Night.");
+    expect(await conv.tools.forgeSettings({ windowOpacity: 10 })).toBe("Gespeichert: Deckkraft der Fenster 50 Prozent.");
+    expect(await conv.tools.forgeSettings({ colorScheme: "neon" })).toMatch(/^Fehler: Ein Farbschema .*neon.* gibt es nicht\. Es gibt: FORGE, Gruvbox, /);
+    expect(db.getSettings().colorScheme).toBe("tokyo-night");
 
     expect(await conv.tools.forgeSystem("update_check")).toBe("FORGE 1.3.0 ist verfügbar, installiert ist 1.2.0.");
     expect(await conv.tools.forgeSystem("update_install")).toMatch(/^FORGE 1\.3\.0 wird jetzt installiert und startet neu, dieses Gespräch endet dabei\. Offene Sessions gehen danach weiter/);

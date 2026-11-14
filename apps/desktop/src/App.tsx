@@ -44,6 +44,8 @@ import { RemoteCheckDialog } from "@/components/git/RemoteCheckDialog";
 import { PushAllDialog } from "@/components/git/PushAllDialog";
 import { RemoteDialog } from "@/components/git/RemoteDialog";
 import { useLanguageSync } from "@/i18n/sync";
+import { useDesignSync } from "@/lib/design";
+import { DesignPrompt } from "@/components/setup/DesignPrompt";
 import { t } from "@/i18n";
 
 // Views that are not needed at start (they bring CodeMirror and more) load on first use, or
@@ -137,6 +139,7 @@ function Screen({ boot, chatWindow }: { boot: Boot; chatWindow: ChatWindowTarget
 
 function Shell() {
   useLanguageSync();
+  useDesignSync();
   useGlobalShortcuts();
   useAlwaysOnTop();
   useScreenshotKey();
@@ -178,6 +181,7 @@ function Shell() {
       <ClaudeLogoutDialog />
       <SyncPrompt />
       <UsageStatsPrompt />
+      <DesignPrompt />
       <SupportDialog />
       <AgentReviewDialog />
       <CrewBubble />

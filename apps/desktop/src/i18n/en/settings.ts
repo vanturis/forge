@@ -6,6 +6,41 @@ export const settings: typeof De = {
   languageHint: "Language of the interface, FORGE's messages and the phone. Switching reloads FORGE's windows, running sessions keep working.",
   languageNotSaved: "Language not saved",
 
+  design: {
+    schemeTitle: "Color scheme",
+    schemeDescription: "Applies to all FORGE windows. Right-click a scheme to copy, edit or delete it.",
+    pickerLabel: "Choose a color scheme",
+    newScheme: "Own scheme",
+    ownBadge: "Own",
+    apply: "Apply",
+    edit: "Edit",
+    duplicate: "Use as template for an own scheme",
+    delete: "Delete",
+    tooMany: (max) => `More than ${max} own schemes are not possible. Delete one first.`,
+    deleteTitle: (name) => `Delete color scheme "${name}"?`,
+    deleteText: "This cannot be undone. If it was selected, the FORGE scheme applies again afterwards.",
+    windowTitle: "Window",
+    opacityLabel: "Opacity",
+    opacityDescription: "Below 100% whatever lies behind FORGE shows through. Applies to the main window and the chat windows.",
+    percent: (p) => `${p}%`,
+    syncOn: "FORGE syncs the color scheme, your own schemes and the opacity with your other PCs over GitHub.",
+    syncOff: "With the sync over GitHub, the color scheme, your own schemes and the opacity also apply on your other PCs.",
+    syncOpen: "Set up sync",
+    editor: {
+      newTitle: "Own color scheme",
+      editTitle: "Edit color scheme",
+      description: "The window shows the colors right away. They are kept only with Save.",
+      name: "Name",
+      namePlaceholder: "e.g. Midnight",
+      basedOn: "Take colors from",
+      basedOnPlaceholder: "Choose a scheme",
+      copyName: (name) => `${name} copy`,
+      pick: (label) => `${label}: choose color`,
+      save: "Save",
+      colors: { bg: "Background", surface: "Surfaces", fg: "Text", accent: "Accent", success: "Success", warning: "Warning", danger: "Error" },
+    },
+  },
+
   idleClose: {
     off: "Off",
     hours: (h: number) => (h === 1 ? "1 hour" : `${h} hours`),
@@ -71,6 +106,8 @@ export const settings: typeof De = {
   },
 
   backup: {
+    showOlder: (n) => `Show older (${n})`,
+    showFewer: "Show fewer",
     reason: {
       start: "On start",
       manual: "Manual",

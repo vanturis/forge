@@ -14,6 +14,7 @@ export const setup: typeof De = {
       lead: "Optional. For private repositories, pull requests, and so FORGE has the same data on your other PCs.",
     },
     basics: { label: "Basics", hint: "Folder and defaults", title: "Folder and defaults", lead: "Applies to new projects and sessions. Individual projects can have their own values." },
+    design: { label: "Design", hint: "Colors and opacity", title: "Make FORGE yours", lead: "Choose a color scheme. You can create your own schemes later under Settings, Design." },
     done: { label: "Let's go", hint: "First project", title: "FORGE is set up", lead: "Create a project, import a folder or clone a repository." },
   },
   notFinished: "Setup not finished",
@@ -105,6 +106,17 @@ export const setup: typeof De = {
     noThanks: "No, thanks",
     sync: "Sync",
     alreadyOn: "Sync is already on.",
+  },
+
+  designPrompt: {
+    title: "New: color schemes and opacity",
+    description: "FORGE now has color schemes and an adjustable window opacity. Choose what you like here.",
+    schemeTitle: "Color scheme",
+    opacityTitle: "Window opacity",
+    hint: "You create your own schemes under Settings, Design. Everything can be changed there at any time.",
+    allSettings: "Open design settings",
+    done: "Done",
+    notSaved: "Not saved",
   },
 
   usageStats: {
