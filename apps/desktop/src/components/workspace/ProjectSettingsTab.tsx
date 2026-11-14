@@ -206,7 +206,7 @@ function RemoteRow({ project }: { project: Project }) {
       {status.isLoading ? (
         <SkeletonRegion label={t.git.remote.loading} className="flex items-center gap-2">
           <Skeleton className="h-4 w-56 rounded-sm" />
-          <Skeleton className="h-5 w-11 rounded" />
+          <Skeleton className="h-5 w-11 rounded-full" />
           <Skeleton className="h-8 w-20" />
         </SkeletonRegion>
       ) : (
@@ -339,7 +339,7 @@ function AutomationSection({ project, update }: SectionProps) {
           {own.length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {own.map((t) => (
-                <span key={t} className="inline-flex items-center gap-1 rounded border border-border bg-surface-3 px-1.5 py-0.5 text-xs">
+                <span key={t} className="inline-flex items-center gap-1 rounded-full border border-border bg-surface-3 px-2 py-0.5 text-xs">
                   {t}
                   <button onClick={() => setTag(t, false)} aria-label={m.removeTag(t)} className="text-subtle hover:text-fg">
                     <X className="h-3 w-3" />

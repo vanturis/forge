@@ -313,7 +313,7 @@ export function PlanCard({ item, sessionId }: { item: ToolItem; sessionId: strin
       <CardHeader icon={<ClipboardList className="h-4 w-4" />} title={pending ? t.chat.cards.planForApproval : t.chat.cards.plan}>
         {resolved && <ResolvedBadge decision={resolved.decision} source={resolved.source} allowText={t.chat.cards.accepted} denyText={t.chat.cards.sentBack} />}
         {!pending && (
-          <button className="rounded p-0.5 text-subtle hover:text-fg" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? t.chat.cards.collapsePlan : t.chat.cards.expandPlan}>
+          <button className="rounded-full p-1 text-subtle hover:text-fg" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? t.chat.cards.collapsePlan : t.chat.cards.expandPlan}>
             <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-90")} />
           </button>
         )}

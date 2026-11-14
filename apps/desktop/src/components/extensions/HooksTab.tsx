@@ -34,7 +34,7 @@ export function HooksTab({ projectId }: { projectId?: string }) {
     }
   }, [draft, externalChange, scope, projectId, expectedVersion, q]);
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-xl border border-border bg-surface shadow-sm p-4">
       <SectionTitle>
         <LabelWithInfo info={m.info}>{m.title}</LabelWithInfo>
       </SectionTitle>

@@ -47,7 +47,7 @@ export function TextSkeleton({ lines = 3, className, label }: { lines?: number; 
 /** One card: icon and title line, a short body, a footer bar. Matches project and agent cards. */
 export function CardSkeleton({ className, body = 1, footer = true }: { className?: string; body?: number; footer?: boolean }) {
   return (
-    <div className={cn("flex flex-col rounded-xl border border-border bg-surface", className)}>
+    <div className={cn("flex flex-col rounded-xl border border-border bg-surface shadow-sm", className)}>
       <div className="flex items-center gap-3 px-4 pb-2.5 pt-4">
         <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -65,7 +65,7 @@ export function CardSkeleton({ className, body = 1, footer = true }: { className
       {footer && (
         <div className="mt-auto flex items-center justify-between border-t border-border px-4 py-2">
           <Skeleton className="h-2.5 w-1/2" />
-          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-5 w-5 rounded-full" />
         </div>
       )}
     </div>
@@ -160,7 +160,7 @@ export function FormSkeleton({ groups = 1, rows = 3, className, label }: { group
   return (
     <SkeletonRegion label={label} className={cn("flex flex-col gap-6", className)}>
       {Array.from({ length: groups }, (_, g) => (
-        <section key={g} className="overflow-hidden rounded-xl border border-border bg-surface">
+        <section key={g} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
           <header className="flex flex-col gap-1.5 border-b border-border px-4 py-3">
             <Skeleton className="h-3.5 w-40" />
             <Skeleton className="h-2.5 w-2/3" />
@@ -232,7 +232,7 @@ export function ChatSkeleton() {
 export function ComposerSkeleton() {
   return (
     <div className="relative w-full shrink-0 px-6 pb-5 pt-2" aria-hidden>
-      <div className="rounded-2xl border border-border bg-surface">
+      <div className="rounded-2xl border border-border bg-surface shadow-sm">
         <div className="h-14.5 px-5 pt-4">
           <Skeleton className="mt-1 h-3 w-56" />
         </div>

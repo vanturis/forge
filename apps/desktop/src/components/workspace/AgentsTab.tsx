@@ -149,7 +149,7 @@ export function AgentsTab({ project }: { project: ProjectWithStatus }) {
                 ];
               };
               return (
-                <div key={w.id} className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4" onContextMenu={contextItems(menu)}>
+                <div key={w.id} className="flex flex-col gap-2 rounded-xl border border-border bg-surface shadow-sm p-4" onContextMenu={contextItems(menu)}>
                   <div className="flex items-center gap-2">
                     <GitBranch className="h-4 w-4 shrink-0 text-accent" />
                     <span className="min-w-0 flex-1 truncate font-mono text-body" title={w.path}>
@@ -258,15 +258,15 @@ function WorktreeGridSkeleton() {
   return (
     <SkeletonRegion label={t.workspace.agents.loadingWorktrees} className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-3">
       {[45, 60].map((w) => (
-        <div key={w} className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+        <div key={w} className="flex flex-col gap-2 rounded-xl border border-border bg-surface shadow-sm p-4">
           <div className="flex h-5 items-center gap-2">
             <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
             <Skeleton className="h-3" style={{ width: `${w}%` }} />
             <div className="flex-1" />
-            <Skeleton className="h-5 w-16 rounded" />
+            <Skeleton className="h-5 w-16 rounded-full" />
           </div>
           <div className="flex h-5 items-center gap-2">
-            <Skeleton className="h-5 w-16 rounded" />
+            <Skeleton className="h-5 w-16 rounded-full" />
             <Skeleton className="h-2.5 flex-1" />
             <Skeleton className="h-2.5 w-12" />
           </div>
@@ -297,7 +297,7 @@ function SubagentGridSkeleton() {
             <Skeleton className="h-4 w-4 shrink-0 rounded-sm" />
             <Skeleton className="h-3" style={{ width: `${w}%` }} />
             <div className="flex-1" />
-            <Skeleton className="h-5 w-12 rounded" />
+            <Skeleton className="h-5 w-12 rounded-full" />
           </div>
           <div className="mt-1 flex flex-col">
             <div className="flex h-4 items-center">

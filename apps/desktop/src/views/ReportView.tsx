@@ -214,7 +214,7 @@ export function ReportView() {
 
 function SummaryCard({ m, onClose }: { m: UseMutationResult<ResultOf<"reports.dailySummary">, Error, void>; onClose: () => void }) {
   return (
-    <section className="mb-6 rounded-xl border border-border bg-surface p-4" aria-label={rp.summary.label}>
+    <section className="mb-6 rounded-xl border border-border bg-surface shadow-sm p-4" aria-label={rp.summary.label}>
       <div className="mb-2 flex items-center gap-2">
         <NotebookText className="h-4 w-4 text-accent" />
         <h2 className="flex-1 text-ui font-medium">{rp.summary.label}</h2>
@@ -257,7 +257,7 @@ function Stats({ r }: { r: DailyReport }) {
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
       {tiles.map((tile) => (
-        <div key={tile.label} className="rounded-xl border border-border bg-surface px-4 py-3">
+        <div key={tile.label} className="rounded-xl border border-border bg-surface shadow-sm px-4 py-3">
           <div className="text-caption text-muted">{tile.label}</div>
           <div className="text-display font-semibold tabular-nums">{tile.value}</div>
           <div className="truncate text-caption text-subtle">{tile.sub}</div>
@@ -292,7 +292,7 @@ function Section({ title, count, emptyText, children }: { title: string; count: 
       <SectionTitle>
         {title} <span className="tabular-nums">({count})</span>
       </SectionTitle>
-      {count ? <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">{children}</div> : <p className="text-body text-muted">{emptyText}</p>}
+      {count ? <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-sm">{children}</div> : <p className="text-body text-muted">{emptyText}</p>}
     </section>
   );
 }
@@ -481,7 +481,7 @@ function ReportSkeleton() {
       <UsageSkeleton />
       <div className="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-3">
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className="flex flex-col gap-2 rounded-xl border border-border bg-surface px-4 py-3">
+          <div key={i} className="flex flex-col gap-2 rounded-xl border border-border bg-surface shadow-sm px-4 py-3">
             <Skeleton className="h-2.5 w-14" />
             <Skeleton className="h-6 w-8" />
             <Skeleton className="h-2.5 w-20" />
@@ -491,7 +491,7 @@ function ReportSkeleton() {
       {[3, 2, 4].map((rows, s) => (
         <div key={s}>
           <Skeleton className="mb-2 h-3 w-24" />
-          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
             {Array.from({ length: rows }, (_, i) => (
               <div key={i} className="flex items-center gap-3 px-3.5 py-2.5">
                 <Skeleton className="h-7 w-7 shrink-0 rounded-md" />
@@ -499,7 +499,7 @@ function ReportSkeleton() {
                   <Skeleton className="h-3 rounded-sm" style={{ width: `${45 + ((i * 17 + s * 11) % 35)}%` }} />
                   <Skeleton className="h-2.5 w-1/4 rounded-sm" />
                 </div>
-                <Skeleton className="h-5 w-16 rounded" />
+                <Skeleton className="h-5 w-16 rounded-full" />
                 <Skeleton className="h-3 w-10" />
               </div>
             ))}

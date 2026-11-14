@@ -245,7 +245,7 @@ function PrStatusSkeleton() {
       <div className="flex min-w-0 flex-1 items-center">
         <Skeleton className="h-3 w-1/2 rounded-sm" />
       </div>
-      <Skeleton className="h-5 w-12 shrink-0 rounded" />
+      <Skeleton className="h-5 w-12 shrink-0 rounded-full" />
       <Skeleton className="h-6 w-6 shrink-0" />
     </>
   );

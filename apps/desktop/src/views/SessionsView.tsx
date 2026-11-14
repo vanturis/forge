@@ -77,10 +77,10 @@ export function SessionsView() {
         <section className="mb-6">
           <SectionTitle action={hits.isFetching && !hits.isLoading ? <Spinner className="h-3.5 w-3.5" /> : undefined}>{sv.hitsInTranscripts}</SectionTitle>
           {hits.isError && <ErrorBanner>{sv.searchFailed}</ErrorBanner>}
-          {hits.isLoading && <SearchHitsSkeleton className="rounded-xl border border-border bg-surface p-1" />}
+          {hits.isLoading && <SearchHitsSkeleton className="rounded-xl border border-border bg-surface shadow-sm p-1" />}
           {hits.data && hits.data.length === 0 && <div className="text-body text-muted">{sv.noHits}</div>}
           {!!hits.data?.length && (
-            <div className="rounded-xl border border-border bg-surface p-1">
+            <div className="rounded-xl border border-border bg-surface shadow-sm p-1">
               {hits.data.map((h) => (
                 <SearchHitRow key={`${h.sessionId}:${h.seq}`} hit={h} onSelect={() => openSearchHit(h)} />
               ))}
@@ -186,10 +186,10 @@ function SessionsTableSkeleton({ rows = 8 }: { rows?: number }) {
               </td>
               <td className="px-4 py-2">{line(["w-20", "w-28", "w-24"], r)}</td>
               <td className="px-4 py-2">
-                <Skeleton className="h-5 w-16 rounded" />
+                <Skeleton className="h-5 w-16 rounded-full" />
               </td>
               <td className="px-4 py-2">
-                <Skeleton className="h-5 w-20 rounded" />
+                <Skeleton className="h-5 w-20 rounded-full" />
               </td>
               <td className="px-4 py-2">{line(["w-16", "w-20"], r)}</td>
               <td className="px-4 py-2">{line(["w-24", "w-20", "w-16"], r)}</td>

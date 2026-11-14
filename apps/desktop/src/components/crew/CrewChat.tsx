@@ -284,7 +284,7 @@ function ChatComposer({ crew, to, onTo, inputId, autoFocus }: { crew: Crew; to: 
           }}
           className="max-h-36 min-h-6 flex-1 resize-none bg-transparent py-0.5 text-body text-fg outline-none placeholder:text-subtle"
         />
-        <Button size="icon-sm" variant="primary" className="shrink-0 rounded-lg" loading={busy} disabled={!text.trim()} onClick={() => void send()} aria-label={m.send} title={m.send}>
+        <Button size="icon-sm" variant="primary" className="shrink-0 " loading={busy} disabled={!text.trim()} onClick={() => void send()} aria-label={m.send} title={m.send}>
           <Send className="h-3.5 w-3.5" />
         </Button>
       </div>

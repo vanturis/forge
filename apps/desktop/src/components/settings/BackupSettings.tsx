@@ -102,7 +102,7 @@ export function BackupSettings() {
                   <div className="flex h-5 items-center gap-2">
                     <Skeleton className="h-3 w-36" />
                     <Skeleton className="h-2.5 w-16" />
-                    <Skeleton className="h-5 w-20 rounded" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
                   </div>
                   <div className="flex h-4 items-center">
                     <Skeleton className="h-2.5 w-3/5" />
@@ -201,7 +201,7 @@ export function GitHubVersions() {
               <div className="flex h-5 min-w-0 flex-1 items-center gap-2">
                 <Skeleton className="h-3 w-36" />
                 <Skeleton className="h-2.5 w-16" />
-                <Skeleton className="h-5 w-20 rounded" />
+                <Skeleton className="h-5 w-20 rounded-full" />
               </div>
               <Skeleton className="h-7 w-28" />
             </div>

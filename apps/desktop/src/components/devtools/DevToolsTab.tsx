@@ -154,7 +154,7 @@ function dbDescription(version: string | undefined, isWorktree: boolean) {
 function DbBadgeSkeleton() {
   return (
     <SkeletonRegion label={m.db.loadingStatus}>
-      <Skeleton className="h-5 w-16 rounded" />
+      <Skeleton className="h-5 w-16 rounded-full" />
     </SkeletonRegion>
   );
 }
@@ -191,7 +191,7 @@ function RowSkeleton({ control }: { control: string }) {
 function TestDbSkeleton({ dbId, isWorktree }: { dbId: string; isWorktree: boolean }) {
   const version = useTestDb(dbId).data?.version;
   return (
-    <Group title={m.db.title} description={dbDescription(version, isWorktree)} action={<Skeleton className="h-5 w-16 rounded" />}>
+    <Group title={m.db.title} description={dbDescription(version, isWorktree)} action={<Skeleton className="h-5 w-16 rounded-full" />}>
       <SkeletonRegion label={m.db.loading} className="divide-y divide-border">
         <div className="flex flex-col gap-3 px-4 py-3.5">
           <div className="flex items-center gap-2">

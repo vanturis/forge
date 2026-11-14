@@ -38,7 +38,7 @@ export function SyncButton() {
   const { tone, title } = syncLook(st);
   return (
     <Tooltip content={<SyncTip st={st} title={title} tone={tone} />} delay={150}>
-      <Button size="icon" variant="ghost" onClick={() => openSettings("github")} aria-label={t.layout.sync.label(title)} className="relative h-9 w-9 rounded-lg">
+      <Button size="icon" variant="ghost" onClick={() => openSettings("github")} aria-label={t.layout.sync.label(title)} className="relative h-9 w-9 ">
         <RefreshCw className={cn("h-4 w-4", ICON[tone], st.phase === "syncing" && "animate-spin [animation-duration:1.6s]")} strokeWidth={2} />
         <span className={cn("absolute bottom-2 right-1.5 h-2 w-2 rounded-full ring-2 ring-bg", DOT[tone])} aria-hidden />
       </Button>

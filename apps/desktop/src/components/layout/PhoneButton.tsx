@@ -46,7 +46,7 @@ export function PhoneButton() {
   if (state.call) {
     const c = state.call;
     return (
-      <div className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-success/40 bg-success-soft pl-3 pr-1 text-body">
+      <div className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-success/40 bg-success-soft pl-3.5 pr-1 text-body">
         <PhoneCall className="h-3.5 w-3.5 animate-soft-pulse text-success" />
         <span className="max-w-36 truncate font-mono">{c.number || t.layout.phone.unknown}</span>
         {c.state === "ringing" ? <span className="text-muted">{c.direction === "out" ? t.layout.phone.ringing : t.layout.phone.connecting}</span> : <Duration since={c.startedAt} />}
@@ -67,7 +67,7 @@ export function PhoneButton() {
   if (!state.enabled) {
     return (
       <Tooltip content={config?.hasPassword ? t.layout.phone.enable : t.layout.phone.setUp}>
-        <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg" aria-label={t.layout.phone.enable} onClick={() => void (config?.hasPassword ? enable() : openSettings())}>
+        <Button size="icon" variant="ghost" className="h-9 w-9 " aria-label={t.layout.phone.enable} onClick={() => void (config?.hasPassword ? enable() : openSettings())}>
           <PhoneOff className="h-4 w-4" />
         </Button>
       </Tooltip>
@@ -86,7 +86,7 @@ export function PhoneButton() {
     <DropdownMenu
       header={label}
       trigger={
-        <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg" aria-label={label} title={label}>
+        <Button size="icon" variant="ghost" className="h-9 w-9 " aria-label={label} title={label}>
           <Phone className={cn("h-4 w-4", tone)} />
         </Button>
       }

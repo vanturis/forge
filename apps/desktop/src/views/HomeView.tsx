@@ -142,7 +142,7 @@ function RunningNow() {
     );
   if (empty)
     return (
-      <div className="rounded-xl border border-border bg-surface">
+      <div className="rounded-xl border border-border bg-surface shadow-sm">
         <EmptyState icon={<CheckCircle2 className="h-8 w-8 text-success" />} title={h.nothingRunning}>
           {h.nothingRunningHint}
         </EmptyState>
@@ -242,7 +242,7 @@ function StatusGroup({ title, children }: { title: string; children: ReactNode }
   return (
     <section>
       <SectionTitle>{title}</SectionTitle>
-      <div className="divide-y divide-border rounded-xl border border-border bg-surface">{children}</div>
+      <div className="divide-y divide-border rounded-xl border border-border bg-surface shadow-sm">{children}</div>
     </section>
   );
 }
@@ -272,10 +272,10 @@ function StatusGroupSkeleton({ title, rows, lead = "icon" }: { title?: string; r
           <Skeleton className="h-2.5 w-28 rounded-sm" />
         </div>
       )}
-      <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+      <div className="divide-y divide-border rounded-xl border border-border bg-surface shadow-sm">
         {Array.from({ length: rows }, (_, i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-            {lead === "icon" ? <Skeleton className="h-4 w-4 shrink-0 rounded-sm" /> : <Skeleton className="h-5 w-16 shrink-0 rounded" />}
+            {lead === "icon" ? <Skeleton className="h-4 w-4 shrink-0 rounded-sm" /> : <Skeleton className="h-5 w-16 shrink-0 rounded-full" />}
             <div className="min-w-0 flex-1">
               <div className="flex h-5 items-center">
                 <Skeleton className="h-3 rounded-sm" style={{ width: `${40 + ((i * 23) % 30)}%` }} />
@@ -309,7 +309,7 @@ function ResumeSection() {
   return (
     <section>
       <SectionTitle>{h.recentlyEdited}</SectionTitle>
-      <div className="divide-y divide-border rounded-xl border border-border bg-surface">
+      <div className="divide-y divide-border rounded-xl border border-border bg-surface shadow-sm">
         {items.map((s) => (
           <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
             <SessionStatusBadge status={s.status} live={s.live} autoContinueAt={s.autoContinueAt} />

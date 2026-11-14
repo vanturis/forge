@@ -86,12 +86,13 @@ describe("TabBar fit", () => {
 describe("TabBar indicator", () => {
   it("follows a tab that grows while the bar keeps its width", () => {
     const { container } = render(<Bar />);
-    const indicator = () => (container.querySelector("[data-tab-indicator]") as HTMLElement).style.transform;
-    expect(indicator()).toBe("translateX(4px) scaleX(0.92)");
+    const indicator = () => (container.querySelector("[data-tab-indicator]") as HTMLElement).style;
+    expect(indicator().transform).toBe("translateX(0px)");
+    expect(indicator().width).toBe("100px");
     expect(observed).toContain(screen.getByRole("tab", { name: "Chat" }));
 
     chatWidth = 120;
     act(() => resize?.());
-    expect(indicator()).toBe("translateX(4px) scaleX(1.12)");
+    expect(indicator().width).toBe("120px");
   });
 });

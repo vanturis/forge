@@ -258,8 +258,8 @@ function SliderView({ sessionId, compare, ratio, className, onOpen, large }: { s
         <img draggable={false} src={src(after.img)} alt={t.chat.compare.imageAlt("after")} className="absolute inset-0 h-full w-full object-contain" />
         <img draggable={false} src={src(before.img)} alt={t.chat.compare.imageAlt("before")} className="absolute inset-0 h-full w-full object-contain" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} />
         <div className="pointer-events-none absolute inset-y-0 w-0.5 bg-accent" style={{ left: `calc(${pos}% - 1px)` }} />
-        <span className="pointer-events-none absolute left-2 top-2 rounded border border-border bg-surface px-1.5 py-0.5 text-caption text-fg">{t.chat.compare.before}</span>
-        <span className="pointer-events-none absolute right-2 top-2 rounded border border-border bg-surface px-1.5 py-0.5 text-caption text-fg">{t.chat.compare.after}</span>
+        <span className="pointer-events-none absolute left-2 top-2 rounded-full border border-border bg-surface px-2 py-0.5 text-caption text-fg">{t.chat.compare.before}</span>
+        <span className="pointer-events-none absolute right-2 top-2 rounded-full border border-border bg-surface px-2 py-0.5 text-caption text-fg">{t.chat.compare.after}</span>
       </div>
       <input type="range" min={0} max={100} value={pos} onChange={(e) => setPos(Number(e.target.value))} aria-label={t.chat.compare.sliderLabel} className="mt-2 w-full accent-accent" />
     </div>

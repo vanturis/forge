@@ -31,7 +31,7 @@ export function OutputPanel({ projectId, embedded = false }: { projectId: string
         <span className="font-medium">{t.workspace.output.title}</span>
         <span className="text-subtle">{t.workspace.output.events(events.length)}</span>
         <div className="flex-1" />
-        <button onClick={() => toggle(false)} className="rounded p-0.5 text-subtle hover:text-fg" aria-label={t.workspace.output.close}>
+        <button onClick={() => toggle(false)} className="rounded-full p-1 text-subtle hover:text-fg" aria-label={t.workspace.output.close}>
           <X className="h-3.5 w-3.5" />
         </button>
       </div>

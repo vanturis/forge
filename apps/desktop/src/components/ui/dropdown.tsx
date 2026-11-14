@@ -13,7 +13,7 @@ export interface MenuItem {
 }
 
 /** Box of every FORGE menu: the dropdowns and the right-click menu. */
-export const MENU_CONTENT_CLASS = cn("z-50 min-w-48 max-w-80 rounded-lg border border-border bg-surface-2 p-1 shadow-xl", POPPER_MOTION);
+export const MENU_CONTENT_CLASS = cn("z-50 min-w-48 max-w-80 rounded-xl border border-border bg-surface-2 p-1.5 shadow-xl", POPPER_MOTION);
 
 export function MenuEntry({ item }: { item: MenuItem }) {
   return (
@@ -21,7 +21,7 @@ export function MenuEntry({ item }: { item: MenuItem }) {
       disabled={item.disabled}
       onSelect={item.onSelect}
       className={cn(
-        "flex cursor-default select-none items-center gap-2 rounded-md px-2 py-1.5 text-body outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-3",
+        "flex min-h-8 cursor-default select-none items-center gap-2.5 rounded-md px-2.5 py-1.5 text-body outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-3",
         item.danger ? "text-danger" : "text-fg",
       )}
     >
@@ -38,7 +38,7 @@ export function DropdownMenu({ trigger, items, align = "end", header }: { trigge
       <M.Trigger asChild>{trigger}</M.Trigger>
       <M.Portal>
         <M.Content align={align} sideOffset={4} className={MENU_CONTENT_CLASS}>
-          {header && <div className="px-2 py-1.5 text-xs text-subtle">{header}</div>}
+          {header && <div className="px-2.5 py-1.5 text-xs text-subtle">{header}</div>}
           {items.map((it, i) => (
             <MenuEntry key={i} item={it} />
           ))}

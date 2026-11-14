@@ -287,8 +287,8 @@ function EntryListSkeleton() {
             <Skeleton className="h-2.5 rounded-sm" style={{ width: `${30 + ((i * 23) % 40)}%` }} />
           </div>
           <div className="mt-1 flex items-center gap-1">
-            <Skeleton className="h-5 w-14 rounded" />
-            <Skeleton className="h-5 w-12 rounded" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+            <Skeleton className="h-5 w-12 rounded-full" />
             <Skeleton className="ml-0.5 h-2.5 w-16 rounded-sm" />
           </div>
         </div>
@@ -316,9 +316,9 @@ function EntrySkeleton() {
           <Skeleton className="h-3 w-3/5 rounded-sm" />
         </div>
         <div className="flex gap-1">
-          <Skeleton className="h-5 w-16 rounded" />
-          <Skeleton className="h-5 w-12 rounded" />
-          <Skeleton className="h-5 w-14 rounded" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-5 w-12 rounded-full" />
+          <Skeleton className="h-5 w-14 rounded-full" />
         </div>
         <div className="flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-4">
           {[85, 92, 70, 0, 88, 76, 40].map((w, i) => (w ? <Skeleton key={i} className="h-3 rounded-sm" style={{ width: `${w}%` }} /> : <div key={i} className="h-1" />))}
@@ -342,7 +342,7 @@ function RefStatus({ refs }: { refs: RefState }) {
   if (refs.missing === null) {
     return (
       <SkeletonRegion label={t.knowledge.tab.checkingRefs} className="flex items-center">
-        <Skeleton className="h-5 w-10 rounded" />
+        <Skeleton className="h-5 w-10 rounded-full" />
       </SkeletonRegion>
     );
   }

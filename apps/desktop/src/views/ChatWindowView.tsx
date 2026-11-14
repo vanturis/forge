@@ -38,8 +38,9 @@ export function ChatWindowShell({ target }: { target: ChatWindowTarget }) {
   else content = <ChatPanel project={project.data} detached />;
 
   return (
-    <div className="flex h-full min-w-0 flex-col">
-      <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="flex h-full min-w-0 flex-col p-2">
+      {/* One floating panel, like the main area of the main window. */}
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-bg shadow-sm">
         <ErrorBoundary>{content}</ErrorBoundary>
       </main>
       <Toaster />

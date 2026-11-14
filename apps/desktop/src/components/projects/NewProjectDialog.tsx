@@ -146,7 +146,7 @@ export function NewProjectDialog() {
         </>
       }
     >
-      <div className="-mt-1 mb-4 border-b border-border">
+      <div className="-mt-1 mb-4">
         <TabBar<NewProjectMode>
           value={mode ?? "import"}
           onChange={(m) => {

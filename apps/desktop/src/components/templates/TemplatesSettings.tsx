@@ -46,7 +46,7 @@ export function TemplatesSettings() {
     return (
       <SkeletonRegion label={t.templates.common.loading} className="flex flex-col gap-6">
         {[3, 2].map((rows, g) => (
-          <div key={g} className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div key={g} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <Skeleton className="h-3.5 w-24" />
               <Skeleton className="h-7 w-28 rounded-md" />

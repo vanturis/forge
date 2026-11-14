@@ -46,7 +46,7 @@ export function SupportButton() {
         }
         aria-label={ts.title}
         // Same box as the search field next to it.
-        className="h-9 w-9 rounded-lg border border-border bg-surface text-danger transition-colors hover:border-border-strong hover:bg-surface hover:text-danger"
+        className="h-10 w-10 rounded-full border border-border bg-surface-2 text-danger shadow-xs transition-colors hover:border-border-strong hover:bg-surface-2 hover:text-danger"
       >
         <Heart className="h-4 w-4 fill-current" />
       </Button>

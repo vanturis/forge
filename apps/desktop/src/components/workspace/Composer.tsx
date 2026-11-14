@@ -664,7 +664,7 @@ export const Composer = memo(function Composer({
               onClick={() => void options.togglePlan()}
               aria-pressed={options.isPlan}
               aria-label={t.chat.composer.plan}
-              className={cn("h-8 shrink-0 rounded-lg px-2.5 @2xl/composer:px-3", options.isPlan && "border-accent/40 text-accent")}
+              className={cn("h-8 shrink-0 px-2.5 @2xl/composer:px-3", options.isPlan && "border-accent/40 text-accent")}
             >
               <ListTodo className="h-3.5 w-3.5" />
               <span className="hidden @2xl/composer:inline">{t.chat.composer.plan}</span>
@@ -741,7 +741,7 @@ export const Composer = memo(function Composer({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 shrink-0 gap-1.5 rounded-lg border-accent/40 bg-accent-soft px-2.5 text-accent hover:border-accent/60 hover:bg-accent/20"
+              className="h-8 shrink-0 gap-1.5 border-accent/40 bg-accent-soft px-2.5 text-accent hover:border-accent/60 hover:bg-accent/20"
               onClick={stop}
               aria-label={t.chat.composer.stop}
               title={t.chat.composer.stop}
@@ -756,7 +756,7 @@ export const Composer = memo(function Composer({
               size="icon"
               variant="primary"
               // Disabled it turns grey instead of a faded orange; the glow echoes the logo's rim.
-              className="h-8 w-8 shrink-0 rounded-lg shadow-[0_0_12px_-2px_var(--color-accent)] disabled:bg-surface-3 disabled:text-subtle disabled:opacity-100 disabled:shadow-none"
+              className="h-8 w-8 shrink-0 shadow-[0_0_12px_-2px_var(--color-accent)] disabled:bg-surface-3 disabled:text-subtle disabled:opacity-100 disabled:shadow-none"
               onClick={submit}
               // The message shows in the chat at once ("wird gesendet"), so no spinner here: the arrow flies off.
               disabled={(!text.trim() && !files.length) || (waiting && !localTyped) || sending || dictating}

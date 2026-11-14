@@ -129,11 +129,12 @@ function Shell() {
   const activeProjectId = useUi((s) => s.activeProjectId);
   return (
     <div className="flex h-full min-w-0 flex-col">
-      <div className="flex min-h-0 min-w-0 flex-1">
+      {/* Sidebar and main area float as two rounded panels on the window backdrop. */}
+      <div className="flex min-h-0 min-w-0 flex-1 gap-2.5 p-2.5">
         <ErrorBoundary>
           <Sidebar />
         </ErrorBoundary>
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-bg shadow-sm">
           <ErrorBoundary>
             <InstallRepairBanner />
           </ErrorBoundary>
@@ -182,16 +183,16 @@ function Shell() {
 function PageSkeleton() {
   return (
     <SkeletonRegion label={t.app.loadingView} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-16 items-center border-b border-border px-6 py-3">
+      <div className="flex min-h-18 items-center px-7 pb-3 pt-5">
         <div className="flex flex-col gap-2">
-          <Skeleton className="h-5 w-44" />
+          <Skeleton className="h-6 w-44" />
           <Skeleton className="h-3 w-80" />
         </div>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-6 py-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden px-7 pb-6 pt-3">
         <Skeleton className="h-9 w-72 rounded-lg" />
         {[0, 1, 2].map((i) => (
-          <div key={i} className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+          <div key={i} className="flex flex-col gap-2 rounded-xl border border-border bg-surface shadow-sm p-4">
             <Skeleton className="h-3.5 w-48" />
             <Skeleton className="h-2.5 w-3/4" />
             <Skeleton className="h-2.5 w-1/2" />

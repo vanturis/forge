@@ -47,7 +47,7 @@ export function Select<T extends string>({ value, onChange, options, placeholder
         ref={trigger}
         aria-label={rest["aria-label"]}
         className={cn(
-          "inline-flex items-center justify-between gap-2 whitespace-nowrap rounded-md border border-border bg-surface-2 px-2.5 text-body text-fg hover:border-border-strong focus:outline-none focus-visible:border-accent disabled:opacity-50",
+          "inline-flex items-center justify-between gap-2 whitespace-nowrap rounded-md border border-border bg-surface-2 px-3 text-body text-fg shadow-xs transition-[border-color] duration-120 hover:border-border-strong focus:outline-none focus-visible:border-accent disabled:opacity-50",
           size === "sm" ? "h-7 text-xs" : "h-8",
           className,
         )}
@@ -58,16 +58,16 @@ export function Select<T extends string>({ value, onChange, options, placeholder
         </S.Icon>
       </S.Trigger>
       <S.Portal>
-        <S.Content position="popper" sideOffset={4} className={cn("z-50 max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-lg border border-border bg-surface-2 shadow-xl", POPPER_MOTION)}>
-          <S.Viewport className="p-1">
+        <S.Content position="popper" sideOffset={4} className={cn("z-50 max-h-80 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-xl border border-border bg-surface-2 shadow-xl", POPPER_MOTION)}>
+          <S.Viewport className="p-1.5">
             {options.map((o) => (
               <S.Item
                 key={o.value}
                 value={o.value}
                 disabled={o.disabled}
-                className="relative flex cursor-default select-none flex-col rounded-md py-1.5 pl-7 pr-3 text-body text-fg outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-3"
+                className="relative flex min-h-8 cursor-default select-none flex-col justify-center rounded-md py-1.5 pl-8 pr-3 text-body text-fg outline-none data-[disabled]:opacity-40 data-[highlighted]:bg-surface-3"
               >
-                <S.ItemIndicator className="absolute left-2 top-2">
+                <S.ItemIndicator className="absolute left-2.5 top-2.5">
                   <Check className="h-3.5 w-3.5 text-accent" />
                 </S.ItemIndicator>
                 <S.ItemText>

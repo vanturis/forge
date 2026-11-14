@@ -60,7 +60,7 @@ export function SearchHitsSkeleton({ rows = 3, className }: { rows?: number; cla
     <SkeletonRegion label={t.search.loadingHits} className={className}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-start gap-2.5 px-2.5 py-2">
-          <Skeleton className="mt-0.5 h-5 w-5 shrink-0 rounded" />
+          <Skeleton className="mt-0.5 h-5 w-5 shrink-0 rounded-full" />
           <div className="min-w-0 flex-1">
             <div className="flex h-5 items-center">
               <Skeleton className="h-3 rounded-sm" style={{ width: `${70 + ((i * 13) % 25)}%` }} />

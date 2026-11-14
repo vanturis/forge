@@ -69,7 +69,7 @@ export function McpTab({ projectId }: { projectId?: string }) {
   ];
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-xl border border-border bg-surface shadow-sm p-4">
       <SectionTitle
         action={
           <div className="flex gap-1">
@@ -94,7 +94,7 @@ export function McpTab({ projectId }: { projectId?: string }) {
                 <Skeleton className="h-3" style={{ width: `${w}%` }} />
                 <Skeleton className="h-2.5" style={{ width: `${w + 30}%` }} />
               </div>
-              <Skeleton className="h-5 w-16 rounded" />
+              <Skeleton className="h-5 w-16 rounded-full" />
               <Skeleton className="h-7 w-7" />
               <Skeleton className="h-7 w-7" />
             </div>

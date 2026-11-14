@@ -14,9 +14,6 @@ export interface TabDef<V extends string> {
   closeLabel?: string;
 }
 
-/** The indicator is 100px wide and scaled to the tab: it moves with transform only. */
-const INDICATOR_BASE = 100;
-
 export function TabBar<V extends string>({
   value,
   onChange,
@@ -43,7 +40,6 @@ export function TabBar<V extends string>({
   const [bar, setBar] = useState<{ x: number; w: number } | null>(null);
   /** the first position is set without sliding in from the left */
   const [settled, setSettled] = useState(false);
-  const inset = size === "lg" ? 4 : 8;
   const [compact, setCompact] = useState(false);
   const compactRef = useRef(false);
   /** Width the tabs need with labels, from the last time the labels were shown. */
@@ -63,7 +59,9 @@ export function TabBar<V extends string>({
         }
       }
       const active = el.querySelector<HTMLElement>('[role="tab"][data-state="active"]');
-      const next = active ? { x: active.offsetLeft + inset, w: Math.max(0, active.offsetWidth - 2 * inset) } : null;
+      // The pill also covers the close button of its tab, a sibling of the trigger.
+      const close = active?.nextElementSibling instanceof HTMLElement && active.nextElementSibling.dataset.tabClose !== undefined ? active.nextElementSibling : null;
+      const next = active ? { x: active.offsetLeft, w: close ? close.offsetLeft + close.offsetWidth + 2 - active.offsetLeft : active.offsetWidth } : null;
       setBar((prev) => (prev && next && prev.x === next.x && prev.w === next.w ? prev : next));
     };
     measure();
@@ -73,7 +71,7 @@ export function TabBar<V extends string>({
     // appears) does not resize it, and the indicator would stay under the old position.
     for (const tab of Array.from(el.querySelectorAll('[role="tab"]'))) ro.observe(tab);
     return () => ro.disconnect();
-  }, [value, tabs, inset, fit, compact]);
+  }, [value, tabs, fit, compact]);
 
   useLayoutEffect(() => {
     if (!bar || settled) return;
@@ -94,7 +92,7 @@ export function TabBar<V extends string>({
               title={compact ? t.label : undefined}
               aria-label={compact ? t.label : undefined}
               className={cn(
-                "group relative inline-flex shrink-0 items-center whitespace-nowrap rounded-md text-muted transition-[color,transform] duration-120 hover:text-fg focus-visible:bg-surface-2 focus-visible:text-fg focus-visible:outline-none active:scale-[0.97] data-[state=active]:text-fg",
+                "group relative z-[1] inline-flex shrink-0 items-center whitespace-nowrap rounded-full text-muted transition-[color,transform] duration-120 hover:text-fg focus-visible:bg-surface-2 focus-visible:text-fg focus-visible:outline-none active:scale-[0.97] data-[state=active]:text-fg data-[state=active]:[&>svg]:text-accent",
                 size === "lg" ? "h-12 gap-2 px-3.5 text-ui" : "h-9 gap-1.5 px-3 text-body",
                 t.onClose && "pr-1",
               )}
@@ -116,10 +114,11 @@ export function TabBar<V extends string>({
             {t.onClose && (
               <button
                 type="button"
+                data-tab-close
                 onClick={t.onClose}
                 aria-label={t.closeLabel ?? m.ui.closeTab(t.label)}
                 title={t.closeLabel ?? m.ui.closeTab(t.label)}
-                className="-ml-1 mr-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-subtle transition-[color,background-color,transform] duration-120 hover:bg-surface-3 hover:text-fg active:scale-90"
+                className="relative z-[1] -ml-1 mr-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-subtle transition-[color,background-color,transform] duration-120 hover:bg-border-strong hover:text-fg active:scale-90"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -131,8 +130,9 @@ export function TabBar<V extends string>({
           <span
             aria-hidden
             data-tab-indicator
-            className={cn("pointer-events-none absolute -bottom-px left-0 origin-left rounded-full bg-accent", size === "lg" ? "h-0.75" : "h-0.5", settled && "transition-transform duration-200 ease-snappy")}
-            style={{ width: INDICATOR_BASE, transform: `translateX(${bar.x}px) scaleX(${bar.w / INDICATOR_BASE})` }}
+            // A pill behind the active tab; it slides and resizes to the next one.
+            className={cn("pointer-events-none absolute left-0 rounded-full bg-surface-3 shadow-xs", size === "lg" ? "inset-y-1.5" : "inset-y-1", settled && "transition-[transform,width] duration-200 ease-snappy")}
+            style={{ width: bar.w, transform: `translateX(${bar.x}px)` }}
           />
         )}
       </T.List>

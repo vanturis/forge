@@ -12,7 +12,7 @@ export function DictationButton({ state, seconds, onToggle, onPrepare }: { state
   if (state === "recording")
     return (
       <Tooltip content={t.chat.dictation.stopTooltip}>
-        <Button size="sm" variant="outline" onClick={onToggle} aria-label={t.chat.dictation.stop} className="h-8 gap-1.5 rounded-lg border-danger/40 px-2.5 text-danger">
+        <Button size="sm" variant="outline" onClick={onToggle} aria-label={t.chat.dictation.stop} className="h-8 gap-1.5 border-danger/40 px-2.5 text-danger">
           <span className="h-2 w-2 animate-soft-pulse rounded-full bg-danger" aria-hidden />
           <span className="tabular-nums">{clock(seconds)}</span>
         </Button>
@@ -20,7 +20,7 @@ export function DictationButton({ state, seconds, onToggle, onPrepare }: { state
     );
   if (state === "transcribing")
     return (
-      <Button size="sm" variant="ghost" disabled aria-label={t.chat.dictation.recognizing} className="h-8 gap-1.5 rounded-lg px-2.5">
+      <Button size="sm" variant="ghost" disabled aria-label={t.chat.dictation.recognizing} className="h-8 gap-1.5 px-2.5">
         <Spinner className="h-3.5 w-3.5" /> {t.chat.dictation.recognizingShort}
       </Button>
     );
@@ -41,7 +41,7 @@ export function DictationToggleBar({ state, seconds, sending, onSend, onStop, on
   const d = t.chat.dictation;
   if (sending || state === "transcribing")
     return (
-      <div role="status" className="mb-2 flex animate-fade-in items-center gap-2 rounded-xl border border-border bg-surface px-3.5 py-2 text-small text-muted">
+      <div role="status" className="mb-2 flex animate-fade-in items-center gap-2 rounded-xl border border-border bg-surface shadow-sm px-3.5 py-2 text-small text-muted">
         <Spinner className="h-3.5 w-3.5" /> {sending ? d.sendingAfter : d.recognizing}
       </div>
     );

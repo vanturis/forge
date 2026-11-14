@@ -19,7 +19,7 @@ const toneClass: Record<Tone, string> = {
 
 export function Badge({ tone = "neutral", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded border px-1.5 text-caption font-medium", toneClass[tone], className)}>
+    <span className={cn("inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border px-2 text-caption font-medium", toneClass[tone], className)}>
       {children}
     </span>
   );
@@ -45,7 +45,7 @@ export function Checkbox({ checked, onChange, label, disabled }: { checked: bool
       onCheckedChange={(v) => onChange(v === true)}
       disabled={disabled}
       aria-label={label}
-      className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border-strong bg-surface-2 data-[state=checked]:border-accent data-[state=checked]:bg-accent disabled:opacity-50"
+      className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border border-border-strong bg-surface-2 transition-colors duration-120 data-[state=checked]:border-accent data-[state=checked]:bg-accent disabled:opacity-50"
     >
       <C.Indicator>
         <Check className="h-3 w-3 text-accent-fg" strokeWidth={3} />
@@ -174,7 +174,7 @@ export function LabelWithDescription({ description, children, className }: { des
 export function EmptyState({ icon, title, children, action }: { icon?: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-      {icon && <div className="text-subtle">{icon}</div>}
+      {icon && <div className="grid h-14 w-14 place-items-center rounded-full bg-surface-2 text-muted">{icon}</div>}
       <div className="text-sm font-medium">{title}</div>
       {children && <div className="max-w-md text-body text-muted">{children}</div>}
       {action}
@@ -184,7 +184,7 @@ export function EmptyState({ icon, title, children, action }: { icon?: ReactNode
 
 export function ErrorBanner({ title = t.ui.error, children, action }: { title?: string; children: ReactNode; action?: ReactNode }) {
   return (
-    <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-soft px-3 py-2.5 text-body">
+    <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-soft px-3.5 py-3 text-body">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-danger" />
       <div className="min-w-0 flex-1">
         <div className="font-medium text-danger">{title}</div>
@@ -198,12 +198,12 @@ export function ErrorBanner({ title = t.ui.error, children, action }: { title?: 
 export function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-subtle">{children}</h2>
+      <h2 className="text-caption font-semibold uppercase tracking-[0.08em] text-subtle">{children}</h2>
       {action}
     </div>
   );
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded border border-border bg-surface-3 px-1 font-mono text-2xs text-muted">{children}</kbd>;
+  return <kbd className="rounded-sm border border-border bg-surface-3 px-1.5 font-mono text-2xs text-muted">{children}</kbd>;
 }

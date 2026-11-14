@@ -37,7 +37,7 @@ function ChartCard({ title, sub, actions, rows, children, className }: { title: 
   return (
     <section
       aria-label={title}
-      className={cn("flex min-w-0 flex-col rounded-xl border border-border bg-surface p-4", className)}
+      className={cn("flex min-w-0 flex-col rounded-xl border border-border bg-surface shadow-sm p-4", className)}
       onContextMenu={contextItems(() => [
         { label: table ? t.report.charts.showAsChart : t.report.charts.showAsTable, icon: table ? <BarChart3 className={ICON} /> : <Table2 className={ICON} />, onSelect: () => setTable(!table) },
         { label: t.report.charts.copyValues, icon: <Copy className={ICON} />, onSelect: copy },
@@ -186,7 +186,7 @@ export function UsageHeadline({ u }: { u: DailyReportUsage }) {
   const h = t.report.charts.headline;
   return (
     <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      <section aria-label={h.workAria} className="rounded-xl border border-border bg-surface p-4">
+      <section aria-label={h.workAria} className="rounded-xl border border-border bg-surface shadow-sm p-4">
         <div className="text-caption text-muted">{h.worked}</div>
         <div className="mt-0.5 text-[48px] font-semibold leading-none tracking-tight text-fg">{formatDuration(u.workMs)}</div>
         <div className="mt-3 grid grid-cols-3 gap-3">
@@ -195,7 +195,7 @@ export function UsageHeadline({ u }: { u: DailyReportUsage }) {
           <Kpi label={h.turns} value={String(u.turns)} sub={u.apiCalls ? h.requests(u.apiCalls) : u.turns ? h.perTurn(formatDuration(u.workMs / u.turns)) : h.none} />
         </div>
       </section>
-      <section aria-label={h.tokensAria} className="flex flex-col rounded-xl border border-border bg-surface p-4">
+      <section aria-label={h.tokensAria} className="flex flex-col rounded-xl border border-border bg-surface shadow-sm p-4">
         <div className="text-caption text-muted">{h.newTokens}</div>
         <div className="mt-0.5 text-[48px] font-semibold leading-none tracking-tight text-fg">{formatTokens(fresh)}</div>
         <div className="mt-3 flex h-2.5 w-full gap-[2px] overflow-hidden rounded-full bg-surface-2" role="img" aria-label={SPLIT.map((x) => `${x.label} ${formatTokens(parts[x.key])}`).join(", ")}>
@@ -368,7 +368,7 @@ export function UsageSkeleton() {
     <div className="flex flex-col gap-6">
       <div className="grid gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         {[0, 1].map((i) => (
-          <div key={i} className="flex flex-col gap-2 rounded-xl border border-border bg-surface p-4">
+          <div key={i} className="flex flex-col gap-2 rounded-xl border border-border bg-surface shadow-sm p-4">
             <Skeleton className="h-2.5 w-24" />
             <Skeleton className="h-12 w-40" />
             <div className="mt-2 grid grid-cols-3 gap-3">
@@ -382,7 +382,7 @@ export function UsageSkeleton() {
           </div>
         ))}
       </div>
-      <div className="rounded-xl border border-border bg-surface p-4">
+      <div className="rounded-xl border border-border bg-surface shadow-sm p-4">
         <Skeleton className="mb-3 h-3 w-28" />
         <div className="flex items-end gap-[2px] pl-14" style={{ height: PLOT_H }}>
           {Array.from({ length: 24 }, (_, i) => (

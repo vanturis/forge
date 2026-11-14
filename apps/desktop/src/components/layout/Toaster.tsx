@@ -15,7 +15,7 @@ export function Toaster() {
           onPointerEnter={() => pause(t.id)}
           onPointerLeave={() => resume(t.id)}
           className={cn(
-            "pointer-events-auto flex items-start gap-2.5 rounded-lg border bg-surface-2 px-3 py-2.5 shadow-xl",
+            "pointer-events-auto flex items-start gap-3 rounded-xl border bg-surface-2 px-4 py-3 shadow-xl",
             t.leaving ? "pointer-events-none animate-toast-out" : "animate-slide-up-in",
             t.tone === "error" ? "border-danger/40" : t.tone === "success" ? "border-success/40" : t.tone === "warning" ? "border-warning/50" : t.tone === "stopped" ? "border-accent/50" : "border-border",
           )}
@@ -40,7 +40,7 @@ export function Toaster() {
               </button>
             )}
           </div>
-          <button className="rounded p-0.5 text-subtle hover:text-fg" onClick={() => dismiss(t.id)} aria-label={closeLabel}>
+          <button className="-mr-1 grid h-6 w-6 shrink-0 place-items-center rounded-full text-subtle transition-colors duration-120 hover:bg-surface-3 hover:text-fg" onClick={() => dismiss(t.id)} aria-label={closeLabel}>
             <X className="h-3.5 w-3.5" />
           </button>
         </div>

@@ -30,7 +30,7 @@ export function DocsTab({ kind, projectId }: { kind: ConfigDocKind; projectId?: 
 
   return (
     <div className="grid grid-cols-[260px_minmax(0,1fr)] gap-4">
-      <section className="rounded-xl border border-border bg-surface p-3">
+      <section className="rounded-xl border border-border bg-surface shadow-sm p-3">
         <SectionTitle
           action={
             <Button size="icon-sm" variant="ghost" aria-label={k.create} onClick={() => setCreating(true)}>
@@ -46,7 +46,7 @@ export function DocsTab({ kind, projectId }: { kind: ConfigDocKind; projectId?: 
               <div key={i} className="flex flex-col gap-1 px-2 py-1.5">
                 <div className="flex h-5 items-center gap-1.5">
                   <Skeleton className="h-3" style={{ width: `${w}%` }} />
-                  <Skeleton className="h-5 w-12 rounded" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
                 </div>
                 <Skeleton className="h-2.5 w-4/5" />
               </div>
@@ -75,7 +75,7 @@ export function DocsTab({ kind, projectId }: { kind: ConfigDocKind; projectId?: 
           ))}
         </ul>
       </section>
-      <section className="min-w-0 rounded-xl border border-border bg-surface p-4">
+      <section className="min-w-0 rounded-xl border border-border bg-surface shadow-sm p-4">
         {selected ? (
           <DocEditor key={`${selected.scope}:${selected.name}`} doc={selected} projectId={projectId} onDelete={() => setDeleting(selected)} />
         ) : (

@@ -34,7 +34,7 @@ export function ExtensionsView() {
       title={t.views.extensions.title}
       subtitle={project.data ? t.views.extensions.subtitleProject(project.data.name) : t.views.extensions.subtitleGlobal}
     >
-      <div className="mb-4 border-b border-border">
+      <div className="mb-4">
         <TabBar<ExtensionsTab> value={tab} onChange={setTab} tabs={EXTENSION_TAB_DEFS.map((def) => ({ value: def.value, label: def.label, icon: <def.Icon className="h-3.5 w-3.5" /> }))} />
       </div>
       <div className="max-w-5xl">

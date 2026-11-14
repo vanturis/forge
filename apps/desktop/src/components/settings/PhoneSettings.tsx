@@ -494,7 +494,7 @@ function FieldSkeleton({ className }: { className?: string }) {
 /** A settings card while loading: header with its title, then the body. */
 function CardSkeleton({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
       <div className="flex h-12 items-center border-b border-border px-4">
         <Skeleton className="h-3 rounded-sm" style={{ width: `${title.length * 0.45}rem` }} />
       </div>
@@ -509,7 +509,7 @@ function PhoneSettingsSkeleton() {
     <SkeletonRegion label={tp.loading} className="flex flex-col gap-6">
       <CardSkeleton title={tp.title}>
         <div className="flex items-center gap-3">
-          <Skeleton className="h-5 w-20 rounded" />
+          <Skeleton className="h-5 w-20 rounded-full" />
           <Skeleton className="h-3 flex-1" />
           <Skeleton className="h-7 w-28" />
         </div>

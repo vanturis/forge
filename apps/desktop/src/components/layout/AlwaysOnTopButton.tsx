@@ -23,7 +23,7 @@ export function AlwaysOnTopButton() {
         onClick={() => void setAlwaysOnTop(qc, !on)}
         aria-pressed={on}
         aria-label={t.layout.onTop.mainLabel}
-        className={cn("h-9 w-9 rounded-lg", on && "text-accent hover:text-accent")}
+        className={cn("h-9 w-9 ", on && "text-accent hover:text-accent")}
       >
         <Pin className={cn("h-4 w-4", on && "fill-current")} />
       </Button>

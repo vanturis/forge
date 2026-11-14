@@ -52,7 +52,7 @@ export function BottomPanel({ project }: { project: Project }) {
 
   return (
     // Hidden, not unmounted (terminals keep running); the animation plays again each time it is shown.
-    <div className={cn("flex h-64 shrink-0 animate-panel-up flex-col border-t border-border bg-bg", !open && "hidden")}>
+    <div className={cn("mx-2.5 mb-2.5 flex h-64 shrink-0 animate-panel-up flex-col overflow-hidden rounded-xl border border-border bg-bg shadow-sm", !open && "hidden")}>
       <div className="flex shrink-0 items-center gap-1 border-b border-border px-2">
         <TabBar<string>
           value={activeTerminal || active === "dev" ? active : "output"}

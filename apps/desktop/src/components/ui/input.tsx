@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { isShortInfo, LabelWithInfo } from "./misc";
 
 const base =
-  "w-full rounded-md border border-border bg-surface-2 px-2.5 text-body text-fg transition-[border-color] duration-120 placeholder:text-subtle focus:border-accent focus:outline-none disabled:opacity-50";
+  "w-full rounded-md border border-border bg-surface-2 px-3 text-body text-fg shadow-xs transition-[border-color,background-color] duration-120 placeholder:text-subtle hover:border-border-strong focus:border-accent focus:outline-none disabled:opacity-50";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
   <input ref={ref} className={cn(base, "h-8", className)} {...props} />

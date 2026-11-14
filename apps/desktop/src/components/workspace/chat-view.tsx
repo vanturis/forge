@@ -76,7 +76,7 @@ export function ChatViewToggle({ sessionId, compact }: { sessionId: string; comp
             aria-label={v.label}
             onClick={() => setView(v.id)}
             className={cn(
-              "flex h-6 items-center gap-1 rounded px-1.5 text-caption-lg transition-colors",
+              "flex h-6 items-center gap-1 rounded-full px-2 text-caption-lg transition-colors",
               view === v.id ? "bg-surface-3 text-fg" : "text-muted hover:text-fg",
             )}
           >

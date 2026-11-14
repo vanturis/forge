@@ -26,7 +26,7 @@ export function DevChannelBadge() {
         { label: b.openSettings, icon: <Settings2 className="h-3.5 w-3.5" />, onSelect: () => openSettings("about") },
         { label: b.toStable, icon: <Undo2 className="h-3.5 w-3.5" />, onSelect: () => void toStable() },
       ])}
-      className="mx-3 -mt-1 mb-3 flex h-9 items-center gap-2.5 rounded-xl border border-dev-border/70 bg-dev/50 px-3.5 text-left text-body text-dev-fg transition-colors hover:border-dev-border hover:bg-dev/70"
+      className="mx-3 -mt-1 mb-3 flex h-9 items-center gap-2.5 rounded-full border border-dev-border/70 bg-dev/50 px-4 text-left text-body text-dev-fg transition-colors hover:border-dev-border hover:bg-dev/70"
     >
       <FlaskConical className="h-4 w-4 shrink-0" />
       <span className="min-w-0 flex-1 truncate">{b.label}</span>

@@ -45,9 +45,9 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex w-64 shrink-0 select-none flex-col border-r border-border bg-sidebar">
+    <aside className="flex w-64 shrink-0 select-none flex-col overflow-hidden rounded-2xl border border-border bg-sidebar shadow-sm">
       <div className="flex items-center px-5 pb-4 pt-5">
-        <Logo height={36} />
+        <Logo height={34} />
       </div>
 
       <div className="flex items-center gap-1.5 px-3">
@@ -57,7 +57,7 @@ export function Sidebar() {
         <SupportButton />
       </div>
 
-      <nav className="flex flex-col gap-1 px-3 pt-2" aria-label={t.layout.sidebar.mainNav}>
+      <nav className="flex flex-col gap-0.5 px-3 pt-3" aria-label={t.layout.sidebar.mainNav}>
         {NAV.map((n) => {
           const active = view === n.view || (n.view === "projects" && view === "workspace");
           const count = counts[n.view];
@@ -70,27 +70,23 @@ export function Sidebar() {
               title={badge?.label}
               className={cn(
                 // Same weight active or not: a bolder label would make the text jump.
-                "flex h-10 items-center gap-3 rounded-lg px-3 text-ui transition-[color,background-color,transform] duration-120 active:scale-[0.98]",
-                active ? "bg-accent-soft text-fg" : "text-muted hover:bg-surface-2 hover:text-fg",
+                "flex h-10 items-center gap-3 rounded-full px-3.5 text-ui font-medium transition-[color,background-color,box-shadow,transform] duration-120 active:scale-[0.98]",
+                active ? "bg-accent text-accent-fg shadow-md" : "text-muted hover:bg-surface-2 hover:text-fg",
               )}
             >
-              <span className={active ? "text-accent" : ""}>
-                <n.Icon className="h-4.5 w-4.5" />
-              </span>
+              <n.Icon className="h-4.5 w-4.5 shrink-0" />
               <span className="flex-1 text-left">{n.label}</span>
               {badge && (
-                <span className={cn("rounded-md px-2 py-0.5 text-caption tabular-nums", active ? "bg-accent/25 text-fg" : "bg-surface-3 text-muted")}>{badge.n}</span>
+                <span className={cn("inline-grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-caption tabular-nums", active ? "bg-accent-fg/20 text-accent-fg" : "bg-surface-3 text-muted")}>{badge.n}</span>
               )}
             </button>
           );
         })}
       </nav>
 
-      <div className="mx-4 mt-3 border-t border-border" />
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-3">
-        <div className="flex items-center justify-between px-3 pb-2">
-          <span className="text-body text-muted">{t.layout.sidebar.opened}</span>
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pt-5">
+        <div className="flex items-center justify-between pb-1.5 pl-3.5 pr-1">
+          <span className="text-caption font-semibold uppercase tracking-[0.08em] text-subtle">{t.layout.sidebar.opened}</span>
           <div className="flex items-center gap-0.5">
             <Button size="icon-sm" variant="ghost" onClick={() => void openTempChat()} className="h-6 w-6 text-subtle hover:bg-surface-2" aria-label={t.layout.sidebar.tempChat} title={t.layout.sidebar.tempChatTitle}>
               <MessageSquareDashed className="h-4 w-4" />
@@ -107,11 +103,11 @@ export function Sidebar() {
         {/* While these load, OpenSessions shows its skeleton in place of the hint. */}
         {!hasOpen && !live.isPending && !projects.isPending && (
           <>
-            <p className="px-3 pb-2 text-small text-subtle">{t.layout.sidebar.noneOpen}</p>
+            <p className="px-3.5 pb-3 text-small text-subtle">{t.layout.sidebar.noneOpen}</p>
             <Button
               variant="outline"
               onClick={() => setNewProject("import")}
-              className="h-11 w-full justify-start gap-2.5 rounded-lg border-dashed px-3 text-body-lg font-normal text-muted hover:border-border-strong hover:bg-transparent hover:text-fg"
+              className="h-10 w-full justify-start gap-3 border-dashed px-3.5 text-body-lg font-normal text-muted shadow-none hover:border-border-strong hover:bg-transparent hover:text-fg"
             >
               <Plus className="h-4 w-4" /> {t.layout.sidebar.addProject}
             </Button>
@@ -119,7 +115,7 @@ export function Sidebar() {
               variant="outline"
               onClick={() => void openTempChat()}
               title={t.layout.sidebar.tempChatTitle}
-              className="mt-2 h-11 w-full justify-start gap-2.5 rounded-lg border-dashed px-3 text-body-lg font-normal text-muted hover:border-border-strong hover:bg-transparent hover:text-fg"
+              className="mt-1.5 h-10 w-full justify-start gap-3 border-dashed px-3.5 text-body-lg font-normal text-muted shadow-none hover:border-border-strong hover:bg-transparent hover:text-fg"
             >
               <MessageSquareDashed className="h-4 w-4" /> {t.layout.sidebar.tempChat}
             </Button>
@@ -205,7 +201,7 @@ function ClaudeStatusCard() {
   return (
     <>
       <AppUpdateCard />
-      <div className="m-3 flex flex-col gap-2.5 rounded-xl border border-border bg-surface px-3.5 py-3 hover:border-border-strong" onContextMenu={contextItems(items)}>
+      <div className="m-3 flex flex-col gap-2.5 rounded-xl border border-border bg-bg/60 px-4 py-3.5 shadow-xs transition-colors duration-120 hover:border-border-strong" onContextMenu={contextItems(items)}>
         <DropdownMenu align="start" header={d?.auth.loggedIn ? `Claude Code · ${line}` : "Claude Code"} items={items()} trigger={summary} />
         <ClaudeUpdateButton />
       </div>

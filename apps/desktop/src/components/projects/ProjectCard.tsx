@@ -93,7 +93,7 @@ export function ProjectCard({
   return (
     <div
       className={cn(
-        "group flex flex-col rounded-xl border border-border bg-surface transition-[border-color,opacity] hover:border-border-strong",
+        "group flex flex-col rounded-xl border border-border bg-surface shadow-sm transition-[border-color,opacity] hover:border-border-strong",
         !p.exists && "opacity-70",
         dragged && "border-dashed border-accent opacity-50",
       )}
@@ -198,7 +198,7 @@ function ProfileIcon({ profile }: { profile: ProjectWithStatus["profile"] }) {
 
 /** Several facts bundled into one chip; the full list in its tooltip. */
 function Summary({ icon, title, children, onClick }: { icon: ReactNode; title: string; children: ReactNode; onClick?: () => void }) {
-  const cls = "inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded border border-border bg-surface-2 px-1.5 text-caption font-medium text-muted";
+  const cls = "inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-surface-2 px-2 text-caption font-medium text-muted";
   return onClick ? (
     <button type="button" className={cn(cls, "transition-colors duration-120 hover:border-border-strong hover:text-fg")} title={title} onClick={onClick}>
       {icon}

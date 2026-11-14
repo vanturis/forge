@@ -5,6 +5,8 @@
 /* Design tokens. Components use these via Tailwind classes (bg-surface, text-muted …), never raw colors. */
 @theme {
   /* FORGE brand (Branding Kit): Forge Orange #F97316, Light #E5E7EB; dark surfaces a neutral anthracite (kit: #111827) with only a hint of blue. */
+  /* the window behind the floating panels of the shell: a step below bg, so sidebar and main area stand out */
+  --color-backdrop: #0d1014;
   --color-bg: #14171d;
   --color-sidebar: #1a1e25;
   --color-surface: #1a1e25;
@@ -72,11 +74,27 @@
   --text-title-lg: 18px;
   --text-display: 19px;
 
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
-  --radius-2xl: 16px;
+  /*
+   * Round shapes: controls and rows 10px, fields and list rows 14px, cards and menus 18px, the
+   * floating panels of the shell and dialogs 24px. Buttons, badges and the navigation are pills.
+   */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-2xl: 24px;
+
+  /*
+   * Depth on dark surfaces: a hairline of light on the top edge plus a soft drop. xs for controls,
+   * sm for cards and the panels of the shell, md for filled buttons, lg and up for everything that floats.
+   */
+  --shadow-xs: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  --shadow-sm: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-md: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px rgb(0 0 0 / 0.4), 0 12px 28px -10px rgb(0 0 0 / 0.6);
+  --shadow-xl: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.45), 0 20px 44px -14px rgb(0 0 0 / 0.65);
+  --shadow-2xl: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 0 0 1px rgb(0 0 0 / 0.5), 0 28px 56px -16px rgb(0 0 0 / 0.7);
 
   /* the Claude mark while a turn runs, like the spinner in the Claude Code shell */
   --animate-spin-slow: forge-spin 2.4s linear infinite;
@@ -258,7 +276,7 @@ body,
 
 body {
   margin: 0;
-  background: var(--color-bg);
+  background: var(--color-backdrop);
   color: var(--color-fg);
   font-family: var(--font-sans);
   font-size: 13px;

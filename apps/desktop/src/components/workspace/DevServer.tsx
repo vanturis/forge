@@ -61,7 +61,7 @@ export function DevServerControls({ project }: { project: Project }) {
   if (query.isLoading)
     return (
       <SkeletonRegion label={t.workspace.devServer.loading} className="flex shrink-0 items-center gap-2">
-        <Skeleton className="h-5 w-14 rounded" />
+        <Skeleton className="h-5 w-14 rounded-full" />
         <Skeleton className="h-7 w-22" />
       </SkeletonRegion>
     );
@@ -129,7 +129,7 @@ export function DevServerPanel({ project, controls = true }: { project: Project;
     return (
       <div className="flex h-full flex-col">
         <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-3" aria-hidden>
-          {controls && <Skeleton className="h-5 w-14 rounded" />}
+          {controls && <Skeleton className="h-5 w-14 rounded-full" />}
           <Skeleton className="h-2.5 w-32" />
           <div className="flex-1" />
           <Skeleton className="h-6 w-20" />

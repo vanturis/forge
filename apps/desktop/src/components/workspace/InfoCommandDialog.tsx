@@ -266,7 +266,7 @@ function McpBody({ project }: InfoProps) {
         {[40, 28, 52].map((w) => (
           <div key={w} className="flex h-9 items-center justify-between gap-3">
             <Skeleton className="h-3" style={{ width: `${w}%` }} />
-            <Skeleton className="h-5 w-20 rounded" />
+            <Skeleton className="h-5 w-20 rounded-full" />
           </div>
         ))}
       </SkeletonRegion>

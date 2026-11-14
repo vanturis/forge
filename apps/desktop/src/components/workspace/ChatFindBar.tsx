@@ -207,7 +207,7 @@ export function ChatFindBar({
                 inputRef.current?.focus();
               }}
               className={cn(
-                "h-6 rounded px-2 text-small transition-colors disabled:opacity-40",
+                "h-6 rounded-full px-2.5 text-small transition-colors disabled:opacity-40",
                 effective === s.value ? "bg-surface-3 text-fg" : "text-muted hover:text-fg",
               )}
             >
@@ -224,7 +224,7 @@ export function ChatFindBar({
             setPhrase((p) => !p);
             inputRef.current?.focus();
           }}
-          className={cn("flex h-6 items-center gap-1 rounded px-2 text-small transition-colors", phrase ? "bg-accent-soft text-fg" : "text-muted hover:bg-surface-3 hover:text-fg")}
+          className={cn("flex h-6 items-center gap-1 rounded-full px-2.5 text-small transition-colors", phrase ? "bg-accent-soft text-fg" : "text-muted hover:bg-surface-3 hover:text-fg")}
         >
           <Quote className="h-3 w-3" /> {t.chat.find.phrase}
         </button>

@@ -92,7 +92,7 @@ export function SkillMarketplace() {
   };
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-xl border border-border bg-surface shadow-sm p-4">
       <div className="mb-3 flex items-center justify-between gap-4">
         <LabelWithInfo info={m.info}>
           <span className="text-xs text-muted">{m.intro}</span>
@@ -138,7 +138,7 @@ export function SkillMarketplace() {
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                 <div className="flex h-5 items-center gap-1.5">
                   <Skeleton className="h-3" style={{ width: `${w}%` }} />
-                  <Skeleton className="h-5 w-24 rounded" />
+                  <Skeleton className="h-5 w-24 rounded-full" />
                   <Skeleton className="h-2.5 w-24" />
                 </div>
                 <Skeleton className="h-2.5" style={{ width: `${w + 45}%` }} />

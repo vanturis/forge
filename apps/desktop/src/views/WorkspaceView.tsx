@@ -149,8 +149,8 @@ function WorkspaceSkeleton() {
   const narrow = useNarrow();
   const split = useSplitActive();
   const showRight = rightPanelOpen && !narrow && workspaceTab === "chat";
-  const tab = (w: number) => (
-    <div key={w} className="flex h-12 items-center gap-2 px-3.5">
+  const tab = (w: number, i: number) => (
+    <div key={i} className="flex h-12 items-center gap-2 px-3.5">
       <Skeleton className="h-4 w-4 rounded-sm" />
       <Skeleton className="h-3" style={{ width: w }} />
     </div>
@@ -185,7 +185,7 @@ function WorkspaceSkeleton() {
           <div className="min-h-0 flex-1">{workspaceTab === "chat" ? <ChatPanelSkeleton /> : <ListSkeleton rows={8} className="p-5" />}</div>
         </div>
         {showRight && (
-          <div className="flex w-100 shrink-0 flex-col border-l border-border bg-sidebar xl:w-110">
+          <div className="my-2.5 mr-2.5 flex w-100 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-sidebar shadow-sm xl:w-110">
             <div className="flex h-12 shrink-0 items-center border-b border-border px-3">{[52, 76, 60].map(tab)}</div>
             <ListSkeleton rows={8} className="px-4" />
           </div>
@@ -202,7 +202,7 @@ function RightPanel({ projectId }: { projectId: string }) {
   const [chosen, setTab] = useState<RightTab>("files");
   const tab = chosen === "git" && !project.gitEnabled ? "files" : chosen;
   return (
-    <aside className="flex w-100 shrink-0 animate-panel-in flex-col border-l border-border bg-sidebar xl:w-110">
+    <aside className="my-2.5 mr-2.5 flex w-100 shrink-0 animate-panel-in flex-col overflow-hidden rounded-xl border border-border bg-sidebar shadow-sm xl:w-110">
       <div className="flex h-12 shrink-0 items-center border-b border-border px-3">
         <TabBar<RightTab>
           size="lg"

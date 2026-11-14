@@ -53,7 +53,7 @@ export function DiffView({
         )}
         {staged && <span className="text-subtle">{t.git.common.staged}</span>}
         {onClose && (
-          <button onClick={onClose} className="rounded p-0.5 text-subtle hover:text-fg" aria-label={t.git.diff.close}>
+          <button onClick={onClose} className="rounded-full p-1 text-subtle hover:text-fg" aria-label={t.git.diff.close}>
             <X className="h-3.5 w-3.5" />
           </button>
         )}

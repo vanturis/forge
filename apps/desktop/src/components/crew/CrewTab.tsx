@@ -152,7 +152,7 @@ function CrewWelcome({ project, rootId }: { project: Project; rootId: string }) 
 
 function Card({ icon, title, text, children }: { icon: ReactNode; title: string; text: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
+    <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface shadow-sm p-5">
       <div className="flex items-center gap-2">
         <span className="text-accent">{icon}</span>
         <h3 className="text-body font-semibold">{title}</h3>
@@ -313,7 +313,7 @@ function CrewWaiting({ crew }: { crew: Crew }) {
     );
   }
   return (
-    <section className="mx-auto mt-6 flex w-full max-w-lg flex-col items-center gap-4 rounded-xl border border-border bg-surface p-6 text-center">
+    <section className="mx-auto mt-6 flex w-full max-w-lg flex-col items-center gap-4 rounded-xl border border-border bg-surface shadow-sm p-6 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/15 text-accent">
         <Hourglass className="h-6 w-6 animate-soft-pulse" />
       </span>
@@ -707,10 +707,10 @@ function AgentRow({ crew, member, agent: a }: { crew: Crew; member: CrewMember; 
         </span>
         {canShare ? (
           <span className="flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover/agent:opacity-100">
-            <button type="button" className="rounded p-0.5 text-muted hover:bg-surface-3 hover:text-fg" onClick={() => ask("view")} title={`${m.viewSession}: ${m.viewSessionHint}`} aria-label={m.viewSession}>
+            <button type="button" className="rounded-full p-1 text-muted hover:bg-surface-3 hover:text-fg" onClick={() => ask("view")} title={`${m.viewSession}: ${m.viewSessionHint}`} aria-label={m.viewSession}>
               <Eye className="h-3.5 w-3.5" />
             </button>
-            <button type="button" className="rounded p-0.5 text-muted hover:bg-surface-3 hover:text-fg" onClick={() => ask("takeover")} title={`${m.takeoverSession}: ${m.takeoverSessionHint}`} aria-label={m.takeoverSession}>
+            <button type="button" className="rounded-full p-1 text-muted hover:bg-surface-3 hover:text-fg" onClick={() => ask("takeover")} title={`${m.takeoverSession}: ${m.takeoverSessionHint}`} aria-label={m.takeoverSession}>
               <Download className="h-3.5 w-3.5" />
             </button>
           </span>
@@ -897,7 +897,7 @@ function TaskCard({ crew, task, onEdit }: { crew: Crew; task: CrewTask; onEdit: 
         </span>
         <DropdownMenu
           trigger={
-            <button type="button" className="-m-0.5 rounded p-0.5 text-subtle opacity-0 hover:bg-surface-3 hover:text-fg focus:opacity-100 group-hover:opacity-100" aria-label={m.menu}>
+            <button type="button" className="-m-0.5 rounded-full p-1 text-subtle opacity-0 hover:bg-surface-3 hover:text-fg focus:opacity-100 group-hover:opacity-100" aria-label={m.menu}>
               <MoreHorizontal className={ic} />
             </button>
           }
@@ -941,7 +941,7 @@ function MemberChip({ crew, id, prefix = "" }: { crew: Crew; id: string; prefix?
 export function CrewSkeleton() {
   return (
     <SkeletonRegion label={m.loading} className="mx-auto flex w-full max-w-7xl flex-col gap-5 p-5">
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface px-4 py-3">
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-surface shadow-sm px-4 py-3">
         <Skeleton className="h-9 w-9 rounded-xl" />
         <div className="flex flex-col gap-1.5">
           <Skeleton className="h-4 w-40" />
