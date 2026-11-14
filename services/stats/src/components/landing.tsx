@@ -1,25 +1,15 @@
 import { BarChart3, Bot, ChevronDown, Download, Folder, GitBranch, MessageCircle, Monitor, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import de800 from "@/assets/app-de-800.webp";
-import de1200 from "@/assets/app-de-1200.webp";
-import de1600 from "@/assets/app-de-1600.webp";
-import de2400 from "@/assets/app-de-2400.webp";
-import en800 from "@/assets/app-en-800.webp";
-import en1200 from "@/assets/app-en-1200.webp";
-import en1600 from "@/assets/app-en-1600.webp";
-import en2400 from "@/assets/app-en-2400.webp";
+import smithy960 from "@/assets/smithy-960.webp";
+import smithy1536 from "@/assets/smithy-1536.webp";
 import { DOWNLOAD_PAGE } from "@/lib/constants";
 import { localePath, type Locale, type LocaleBase } from "@/lib/i18n";
 import { i18n, type Messages } from "@/lib/messages";
 import { Feature } from "./blocks";
 import { Pixels, STEPS } from "./pixels";
-import { Tilt } from "./tilt";
 
-/**
- * The app screenshot (taken at 2400 x 1680) in four widths: the browser picks the one closest to the
- * window's size on screen instead of scaling a far larger file down.
- */
-const SHOTS = { de: [de800, de1200, de1600, de2400], en: [en800, en1200, en1600, en2400] } as const;
+/** The owner's pixel-art smithy (1536 x 1024) behind the right half of the hero, in two widths. */
+const SMITHY = [smithy960, smithy1536] as const;
 
 type FeatureKey = keyof Messages["landing"]["features"];
 
@@ -35,17 +25,15 @@ const COMMIT_TONES = ["blue", "green", "accent"] as const;
 const AGENT_BRANCHES = ["agent/testimonials", "agent/faq", "agent/trusted-by"] as const;
 const AGENT_TONES = ["accent", "green", "muted"] as const;
 
-/** The start page: title, lead and buttons next to the tilted app window, four cards, the questions and the download once more. */
+/** The start page: title, lead and buttons in front of the smithy picture, four cards, the questions and the download once more. */
 export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) {
   const { t } = i18n(locale);
   const l = t.landing;
   const stats = localePath("/stats", base);
-  const shots = SHOTS[locale];
-  const shot = shots[shots.length - 1]!;
   return (
     <main className="landing">
       <section className="hero">
-        <div className="container hero-inner">
+        <div className="container">
           <div className="hero-text">
             <h1 className="hero-title">
               <span>{l.title}</span>
@@ -71,22 +59,18 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
               <li>{l.facts.earlyAccess}</li>
             </ul>
           </div>
-
-          {/* Turned toward the text; follows the pointer a little (tilt.tsx). */}
-          <Tilt className="hero-shot">
-            <div className="window">
-              <img
-                src={shots[2].src}
-                srcSet={shots.map((s) => `${s.src} ${s.width}w`).join(", ")}
-                sizes="(max-width: 1080px) 92vw, 660px"
-                width={shot.width}
-                height={shot.height}
-                alt={l.screenshotAlt}
-                className="window-img"
-                fetchPriority="high"
-              />
-            </div>
-          </Tilt>
+        </div>
+        {/* Decoration: fades into the page toward the text and the bottom (pages.css). */}
+        <div className="hero-art" aria-hidden>
+          <img
+            src={smithy1536.src}
+            srcSet={SMITHY.map((s) => `${s.src} ${s.width}w`).join(", ")}
+            sizes="(max-width: 1080px) 100vw, 62vw"
+            width={smithy1536.width}
+            height={smithy1536.height}
+            alt=""
+            fetchPriority="high"
+          />
         </div>
         <Pixels rows={STEPS} size={14} flip className="hero-pixels hero-pixels-left" />
         <Pixels rows={STEPS} size={14} className="hero-pixels hero-pixels-right" />

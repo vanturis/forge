@@ -658,13 +658,6 @@ a {
   }
 }
 
-/* movement without fading: for the large picture of the first screen (LCP) */
-@keyframes forge-lift {
-  from {
-    transform: translateY(20px);
-  }
-}
-
 .reveal {
   opacity: 0;
   transform: translateY(14px);

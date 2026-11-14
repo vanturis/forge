@@ -178,7 +178,7 @@
   color: var(--color-fg);
 }
 
-/* ---- start page: text and buttons next to the tilted app window, feature cards, questions and a
+/* ---- start page: text and buttons in front of the smithy picture, feature cards, questions and a
    closing block */
 
 .landing {
@@ -187,6 +187,9 @@
 
 .hero {
   position: relative;
+  display: flex;
+  align-items: center;
+  min-height: clamp(460px, 37vw, 640px);
   padding: 52px 0 64px;
   border-bottom: 1px solid var(--color-border);
 }
@@ -206,16 +209,10 @@
   right: 0;
 }
 
-.hero-inner {
-  display: grid;
-  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
-  align-items: center;
-  gap: 36px;
-}
-
 .hero-text {
   position: relative;
   z-index: 1;
+  max-width: 34rem;
 }
 
 .hero-title {
@@ -279,43 +276,29 @@
 }
 
 /*
- * ---- the app window: the screenshot in a fine frame, turned toward the text. It follows the pointer
- * a little (--tilt-x/-y from components/tilt.tsx, -1 to 1). A quiet neutral light lies behind it.
+ * ---- the smithy: the owner's pixel art behind the right half of the hero. It reaches the window's
+ * right edge and runs up under the floating top bar (72px: its 12px gap and 60px height). Toward the
+ * text and toward the bottom it fades into the page, so it has no edge and no frame.
  */
 
-.hero-shot {
-  position: relative;
-  margin-right: -3%;
-  padding: 20px 0;
-  animation: forge-lift var(--duration-slow) var(--ease-out) backwards;
-}
-
-.hero-shot::before {
+.hero-art {
   position: absolute;
-  inset: -6% -10%;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0));
-  content: "";
+  top: -72px;
+  right: 0;
+  bottom: 0;
+  /* capped: on very wide windows it would otherwise lose its top and bottom to the crop */
+  width: min(62vw, 1240px);
   pointer-events: none;
+  mask-image: linear-gradient(to right, transparent, black 34%), linear-gradient(to bottom, black 78%, transparent);
+  mask-composite: intersect;
 }
 
-.window {
-  position: relative;
-  overflow: hidden;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-input);
-  background: var(--color-bg);
-  box-shadow:
-    0 0 0 1px rgb(0 0 0 / 0.5),
-    0 44px 80px -28px rgb(0 0 0 / 0.85);
-  transform: perspective(2000px) rotateY(calc(-10deg + var(--tilt-x, 0) * 5deg)) rotateX(calc(2deg + var(--tilt-y, 0) * -4deg));
-  transform-origin: center;
-  transition: transform 500ms var(--ease-out);
-}
-
-.window-img {
+.hero-art img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: 60% 60%;
 }
 
 /* ---- four feature cards */
@@ -1630,14 +1613,15 @@
 }
 
 @media (max-width: 1080px) {
+  /* the picture below the text, across the whole width: beside it the text has no room left */
   .hero {
-    padding-top: 56px;
+    display: block;
+    min-height: 0;
+    padding: 56px 0 0;
   }
 
-  .hero-inner {
-    grid-template-columns: minmax(0, 1fr);
-    align-items: start;
-    gap: 24px;
+  .hero-text {
+    max-width: none;
   }
 
   .hero-title {
@@ -1648,8 +1632,14 @@
     max-width: 36rem;
   }
 
-  .hero {
-    padding-bottom: 48px;
+  .hero-art {
+    position: relative;
+    top: auto;
+    width: auto;
+    /* the picture's 3:2; from 900px on its top and bottom are cut instead of growing further */
+    height: min(66.667vw, 600px);
+    margin-top: 20px;
+    mask-image: linear-gradient(to bottom, transparent, black 34%, black 82%, transparent);
   }
 
   .hero-pixels {
@@ -1673,16 +1663,6 @@
 
   .showcase-pixels {
     display: none;
-  }
-
-  /* below the text and flat: the turn needs the room beside it */
-  .hero-shot {
-    margin-right: 0;
-    padding: 24px 0 0;
-  }
-
-  .window {
-    transform: none;
   }
 
   .stats-grid {
@@ -1801,14 +1781,6 @@
 
   .hero-actions .btn {
     width: 100%;
-  }
-
-  .hero-shot {
-    padding-top: 12px;
-  }
-
-  .window {
-    border-radius: var(--radius-md);
   }
 
   .landing-features {

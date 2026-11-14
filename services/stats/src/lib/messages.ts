@@ -45,7 +45,6 @@ const de = {
     download: "Jetzt herunterladen",
     liveStats: "Live Stats ansehen",
     facts: { platforms: "Windows, macOS, Linux", openSource: "Open Source", earlyAccess: "Early Access" },
-    screenshotAlt: "FORGE mit einer neuen Session im Projekt forge: Seitenleiste, Reiter und Eingabefeld mit einem Auftrag an Claude",
     features: {
       projects: { title: "Projekte verwalten", text: "Alle Sessions, Dateien und Einstellungen an einem Ort." },
       ui: { title: "Intuitive Oberfläche", text: "Chat, Agenten und Tools übersichtlich vereint." },
@@ -294,7 +293,6 @@ const en: Messages = {
     download: "Download now",
     liveStats: "View live stats",
     facts: { platforms: "Windows, macOS, Linux", openSource: "Open Source", earlyAccess: "Early Access" },
-    screenshotAlt: "FORGE with a new session in the project forge: sidebar, tabs and the message box with a task for Claude",
     features: {
       projects: { title: "Manage projects", text: "All sessions, files and settings in one place." },
       ui: { title: "Intuitive interface", text: "Chat, agents and tools clearly combined." },
