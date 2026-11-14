@@ -55,7 +55,20 @@ describe("quick chats", () => {
     expect(pm.get(p.id).name).not.toBe("Schnelle Chats");
   });
 
-  it("asks for the folder for new projects when none is set", async () => {
+  it("uses the data folder when no folder for new projects is set", async () => {
+    const dataDir = path.join(t.dir, "data");
+    mkdirSync(dataDir);
+    pm = new ProjectManager(db, new GitEngine(), () => "balanced", () => dir, dataDir);
+    dir = null;
+    const p = await pm.tmpChat();
+    expect(p.path).toBe(path.join(dataDir, "tmp"));
+    expect(p).toMatchObject({ gitEnabled: false, agentsEnabled: false, tags: [TMP_CHAT_TAG] });
+    // Once a folder is set, new temporary chats go there.
+    dir = t.dir;
+    expect((await pm.tmpChat()).path).toBe(path.join(t.dir, "tmp"));
+  });
+
+  it("asks for the folder for new projects when there is neither one nor a data folder", async () => {
     dir = null;
     await expect(pm.tmpChat()).rejects.toMatchObject({ code: "VALIDATION" });
   });

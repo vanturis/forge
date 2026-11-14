@@ -27,7 +27,7 @@ export const phoneTools = {
     },
   },
   temp_chat: {
-    description: "Startet einen temporären Chat ohne Projekt, für Fragen, die zu keinem Projekt gehören. Er läuft im Unterordner tmp des Ordners für neue Projekte, ohne Git, und wird 30 Tage nach der letzten Änderung gelöscht.",
+    description: "Startet einen temporären Chat ohne Projekt, für Fragen, die zu keinem Projekt gehören. Er läuft im Unterordner tmp des Ordners für neue Projekte oder, wenn keiner festgelegt ist, im Datenordner von FORGE, ohne Git, und wird 30 Tage nach der letzten Änderung gelöscht.",
     params: {
       prompt: "Frage oder Auftrag, vollständig ausformuliert",
       model: "nur wenn der Anrufer ein Modell nennt: opus, sonnet oder haiku",

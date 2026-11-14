@@ -357,7 +357,7 @@ export interface PhoneToolset {
   details(session: string, o?: { summary?: boolean }): Promise<string>;
   sendMessage(session: string, text: string): Promise<string>;
   startSession(project: string, prompt: string, o?: StartSessionOptions): Promise<string>;
-  /** a session without a project of its own, in the subfolder tmp of the folder for new projects */
+  /** a session without a project of its own, in the subfolder tmp of the folder for new projects or of FORGE's data folder */
   tempChat(prompt: string, o?: { model?: string; effort?: EffortLevel }): Promise<string>;
   respond(session: string, decision: "allow" | "deny", answers?: Record<string, string>, feedback?: string, scope?: "once" | "session"): Promise<string>;
   stop(session: string): Promise<string>;

@@ -5,7 +5,7 @@ import { toast } from "@/stores/toast";
 import { useUi } from "@/stores/ui";
 import { t } from "@/i18n";
 
-/** Opens a new temporary chat in the hidden project under `<folder for new projects>/tmp`, ready to type. */
+/** Opens a new temporary chat in the hidden project under `<folder for new projects>/tmp` (FORGE's data folder when none is set), ready to type. */
 export async function openTempChat() {
   try {
     const project = await call("projects.tmpChat", {});

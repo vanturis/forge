@@ -20,7 +20,7 @@ export interface CreateProjectInput {
   gitEnabled?: boolean;
 }
 
-/** Subfolder of the folder for new projects that holds the quick chats. */
+/** Subfolder that holds the temporary chats: in the folder for new projects, or in FORGE's data folder when none is set. */
 export const TMP_CHAT_DIR = "tmp";
 const MAX_FILE_BYTES = 512 * 1024;
 /** Bytes per readFileChunk call: a few MB keep each protocol line small. */
@@ -60,6 +60,8 @@ export class ProjectManager {
     private readonly git: GitEngine,
     private readonly defaultProfile: () => Project["profile"],
     private readonly projectsDir: () => string | null = () => null,
+    /** FORGE's data folder: holds the temporary chats as long as no folder for new projects is set. */
+    private readonly dataDir: string | null = null,
   ) {}
 
   /** The repository's .forge/project.json wins over the commands stored on this computer. */
@@ -147,7 +149,7 @@ export class ProjectManager {
   }
 
   private async ensureTmpChat(): Promise<Project> {
-    const parent = this.projectsDir();
+    const parent = this.projectsDir() || this.dataDir;
     if (!parent) throw new ForgeError("VALIDATION", tr().system.sync.projectsDirFirst);
     const target = path.join(parent, TMP_CHAT_DIR);
     try {

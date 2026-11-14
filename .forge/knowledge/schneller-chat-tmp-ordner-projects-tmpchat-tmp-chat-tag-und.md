@@ -2,13 +2,15 @@
 title: "Temporärer Chat (tmp-Ordner, isTmpChat, Löschen nach 30 Tagen) und Chat-Ansicht \"Datei\" (LatestFileView)"
 summary: "Wie temporäre Chats ohne Projekt aufgebaut, gekennzeichnet und nach 30 Tagen gelöscht werden, und wie die Chat-Ansicht mit der zuletzt bearbeiteten Datei funktioniert; wichtig bei Änderungen an Projektlisten, Kopfzeile, Sync, Löschen oder Chat-Ansichten."
 tags: ["sessions","projekte","ui","sync","telefon","chat"]
-updated: "2026-11-09T09:14:03.761Z"
+updated: "2026-11-14T15:01:51.660Z"
 ---
 
 ## Temporärer Chat
-Name in der UI: **„Temporärer Chat“** (EN „Temporary chat“). Bis 2026-11-09 hieß er „Schneller Chat“; der Besitzer wollte die Umbenennung. Ein temporärer Chat ist eine normale Session in einem versteckten Projekt `<defaultProjectDir>/tmp`, ohne Git und ohne Agenten. So gelten Chat, Rechtsklick, Suche und Telefon ohne Sonderwege.
+Name in der UI: **„Temporärer Chat“** (EN „Temporary chat“). Bis 2026-11-09 hieß er „Schneller Chat“; der Besitzer wollte die Umbenennung. Ein temporärer Chat ist eine normale Session in einem versteckten Projekt im Unterordner `tmp`, ohne Git und ohne Agenten. So gelten Chat, Rechtsklick, Suche und Telefon ohne Sonderwege.
 
-- Sidecar: `ProjectManager.tmpChat()` legt Ordner und Projekt beim ersten Aufruf an, RPC `projects.tmpChat`, Telefon-Werkzeug `temp_chat`. Ohne `defaultProjectDir` kommt VALIDATION mit `projectsDirFirst`.
+- Ort: `<defaultProjectDir>/tmp`. Ist kein Ordner für neue Projekte festgelegt, `<dataDir>/tmp` im Datenordner von FORGE (Wunsch des Besitzers, 2026-11-14: Start auch ohne festgelegten Ordner). `ProjectManager` bekommt den Datenordner als fünften Konstruktor-Parameter; nur ohne beides kommt VALIDATION mit `projectsDirFirst` (betrifft nur Tests).
+- Wird der Ordner später festgelegt oder geändert, entsteht dort ein zweites tmp-Projekt. Das alte bleibt mit seinen Chats bestehen und wird vom Aufräumen geleert. Mehrere tmp-Projekte sind also normal: Alles prüft den Tag, nicht eine feste Projekt-ID.
+- Sidecar: `ProjectManager.tmpChat()` legt Ordner und Projekt beim ersten Aufruf an, RPC `projects.tmpChat`, Telefon-Werkzeug `temp_chat`.
 - Markierung über den Tag `TMP_CHAT_TAG` (`tmp-chat`), Prüfung immer mit `isTmpChat(p)` aus `@forge/protocol` (verträgt fehlendes `tags`, viele Test-Fixtures haben keins). Bewusst keine DB-Spalte.
 - Projektname setzt FORGE: `nameTmpChats()` beim Start benennt das Projekt in der aktuellen Sprache um (alte Builds: „Schnelle Chats“).
 - Liegt in dem Ordner schon ein eigenes Projekt des Nutzers, wird es benutzt und nicht umgetaggt.
@@ -25,7 +27,7 @@ Name in der UI: **„Temporärer Chat“** (EN „Temporary chat“). Bis 2026-1
 `projects/tmp-chat-cleanup.ts`, gestartet in `app.ts`: erster Lauf 60 s nach dem Start, dann alle 6 Stunden.
 - Löscht Sessions (mit Transkript), deren `updatedAt` älter als 30 Tage ist und die keinen laufenden Prozess haben.
 - Löscht Einträge der obersten Ebene im tmp-Ordner, wenn die neueste Änderung darin (mtime, ctime, birthtime, rekursiv) älter als 30 Tage ist. Punkt-Ordner (`.claude`, `.forge`) bleiben. Läuft eine Session im Projekt, wird der Ordner in diesem Lauf nicht angefasst.
-- Nur Projekte mit Tag UND Ordnername `tmp`: Den Tag kann man von Hand tippen, ohne die Namensprüfung würde das ein echtes Projekt leeren.
+- Nur Projekte mit Tag UND Ordnername `tmp`: Den Tag kann man von Hand tippen, ohne die Namensprüfung würde das ein echtes Projekt leeren. Deshalb heißt auch der Ordner im Datenordner `tmp`.
 
 ## Chat-Ansicht "Datei"
 Vierte Ansicht neben Alles, Prompts, Antworten (`CHAT_VIEWS` in `chat-view.tsx`). Der Besitzer wollte ausdrücklich keinen eigenen Seitenbereich, sondern einen Filter, der nur die zuletzt bearbeitete Datei zeigt. Eine erste Fassung als geteilter Bereich neben dem Chat wurde deshalb wieder entfernt.

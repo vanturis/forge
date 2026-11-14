@@ -29,7 +29,7 @@ export const phoneTools: typeof De = {
     },
   },
   temp_chat: {
-    description: "Starts a temporary chat without a project, for questions that belong to no project. It runs in the subfolder tmp of the folder for new projects, without git, and is deleted 30 days after the last change.",
+    description: "Starts a temporary chat without a project, for questions that belong to no project. It runs in the subfolder tmp of the folder for new projects, or of FORGE's data folder when none is set, without git, and is deleted 30 days after the last change.",
     params: {
       prompt: "Question or task, fully written out",
       model: "only if the caller names a model: opus, sonnet or haiku",
