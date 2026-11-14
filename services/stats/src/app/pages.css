@@ -174,28 +174,31 @@
   color: var(--color-fg);
 }
 
-/* ---- start page: title and lead side by side, the app window on a round stage, feature cards,
-   questions and a closing block */
+/* ---- start page: text and buttons next to the tilted app window, feature cards, questions and a
+   closing block */
 
 .landing {
-  /* how far the background picture of the stage and the closing block is dimmed */
-  --stage-dim: color-mix(in srgb, var(--color-bg) 62%, transparent);
   overflow-x: clip;
 }
 
 .hero {
-  padding-top: 72px;
+  padding-top: 52px;
 }
 
 .hero-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr);
-  align-items: end;
-  gap: 48px;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  align-items: center;
+  gap: 36px;
+}
+
+.hero-text {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-title {
-  font-size: clamp(40px, 4.4vw, 58px);
+  font-size: clamp(36px, 3.6vw, 50px);
   font-weight: 600;
   line-height: 1.08;
   letter-spacing: -0.03em;
@@ -210,11 +213,9 @@
   color: var(--color-accent);
 }
 
-.hero-side {
-  padding-bottom: 6px;
-}
-
 .hero-lead {
+  max-width: 29rem;
+  margin-top: 22px;
   color: var(--color-fg-soft);
   font-size: var(--text-lead);
   line-height: 1.6;
@@ -224,7 +225,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 26px;
+  margin-top: 30px;
 }
 
 /* three facts as quiet badges: a fine border, no fill */
@@ -232,7 +233,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -257,29 +258,37 @@
 }
 
 /*
- * ---- the stage: the app window on the owner's background picture. The picture is the gray version
- * (background-neutral.webp, blue cast taken out, orange edges kept) and dimmed to a quiet texture.
+ * ---- the app window: the screenshot in a fine frame, turned toward the text. It follows the pointer
+ * a little (--tilt-x/-y from components/tilt.tsx, -1 to 1). A quiet neutral light lies behind it.
  */
 
-.hero-stage {
-  margin-top: 64px;
-  padding: 56px 64px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background:
-    linear-gradient(var(--stage-dim), var(--stage-dim)),
-    var(--color-surface) url("../assets/background-neutral.webp") center / cover no-repeat;
-  box-shadow: var(--shadow-raised);
+.hero-shot {
+  position: relative;
+  margin-right: -3%;
+  padding: 20px 0;
   animation: forge-lift var(--duration-slow) var(--ease-out) backwards;
 }
 
-/* the screenshot alone, in a fine frame: no title bar, no window buttons */
+.hero-shot::before {
+  position: absolute;
+  inset: -6% -10%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0));
+  content: "";
+  pointer-events: none;
+}
+
 .window {
+  position: relative;
   overflow: hidden;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-input);
   background: var(--color-bg);
-  box-shadow: 0 28px 56px -16px rgb(0 0 0 / 0.7);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.5),
+    0 44px 80px -28px rgb(0 0 0 / 0.85);
+  transform: perspective(2000px) rotateY(calc(-10deg + var(--tilt-x, 0) * 5deg)) rotateX(calc(2deg + var(--tilt-y, 0) * -4deg));
+  transform-origin: center;
+  transition: transform 500ms var(--ease-out);
 }
 
 .window-img {
@@ -291,7 +300,7 @@
 /* ---- four feature cards */
 
 .landing-features {
-  padding-top: 96px;
+  padding-top: 56px;
 }
 
 .landing-features .eyebrow {
@@ -1355,7 +1364,7 @@
 
 /* ---- narrower screens */
 
-/* below the full page width: both hero buttons stay in one row, the stage gets less padding */
+/* below the full page width: both hero buttons stay in one row */
 @media (max-width: 1320px) {
   .hero-actions .btn {
     gap: 8px;
@@ -1364,9 +1373,6 @@
     font-size: var(--text-ui);
   }
 
-  .hero-stage {
-    padding: 48px;
-  }
 }
 
 @media (max-width: 1080px) {
@@ -1384,14 +1390,18 @@
     font-size: clamp(38px, 6.6vw, 58px);
   }
 
-  .hero-side {
+  .hero-lead {
     max-width: 36rem;
-    padding-bottom: 0;
   }
 
-  .hero-stage {
-    margin-top: 48px;
-    padding: 32px;
+  /* below the text and flat: the turn needs the room beside it */
+  .hero-shot {
+    margin-right: 0;
+    padding: 24px 0 0;
+  }
+
+  .window {
+    transform: none;
   }
 
   .stats-grid {
@@ -1499,10 +1509,8 @@
     width: 100%;
   }
 
-  .hero-stage {
-    margin-top: 36px;
-    padding: 12px;
-    border-radius: var(--radius-panel);
+  .hero-shot {
+    padding-top: 12px;
   }
 
   .window {

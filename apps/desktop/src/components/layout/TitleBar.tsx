@@ -3,23 +3,21 @@ import { createPortal } from "react-dom";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Copy, Minus, Square, X } from "lucide-react";
 import { hasTitleBar, useTitleBarSlot } from "@/lib/title-bar";
-import { SupportButton } from "@/components/settings/SupportSettings";
 import { AlwaysOnTopButton } from "./AlwaysOnTopButton";
 import { Logo } from "./Logo";
 import { PhoneButton } from "./PhoneButton";
-import { SearchField } from "./SearchField";
 import { SyncButton } from "./SyncButton";
 import { t } from "@/i18n";
 
 /**
- * FORGE's own title bar on Windows, in place of the native one: logo, the search in the middle, the
- * layout switches of the open project and the app-wide buttons, then minimize, maximize and close.
+ * FORGE's own title bar on Windows, in place of the native one: logo, the layout switches of the open
+ * project and the app-wide buttons, then minimize, maximize and close. Search and support stay in the sidebar.
  * Everything without `data-tauri-drag-region` is a control; the rest moves the window.
  * `bare` while the app starts (no sidecar yet) and in chat windows, which carry their own header.
  */
 export function TitleBar({ mode }: { mode: "bare" | "main" }) {
   return (
-    <header data-tauri-drag-region className="flex h-10 shrink-0 select-none items-center">
+    <header data-tauri-drag-region className="flex h-11 shrink-0 select-none items-center">
       <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center pl-4.5">
         <span className="pointer-events-none flex">
           <Logo height={18} />
@@ -39,20 +37,14 @@ const setSlot = (el: HTMLElement | null) => useTitleBarSlot.setState({ el });
 
 function MainItems() {
   return (
-    <>
-      <div className="w-[min(26rem,34vw)] shrink-0">
-        <SearchField compact />
-      </div>
-      {/* One size for every icon button here, whatever it has in a page header. */}
-      <div data-tauri-drag-region className="flex min-w-0 flex-1 items-center justify-end gap-0.5 pl-3 pr-2 [&_button[aria-label]]:h-7 [&_button[aria-label]]:w-7">
-        <div ref={setSlot} className="flex items-center gap-0.5 empty:hidden" />
-        <span aria-hidden className="mx-1.5 h-4 w-px shrink-0 bg-border [div:empty+&]:hidden" />
-        <SupportButton compact />
-        <SyncButton />
-        <PhoneButton />
-        <AlwaysOnTopButton />
-      </div>
-    </>
+    // One size for every icon button here, whatever it has in a page header.
+    <div className="flex shrink-0 items-center gap-0.5 pl-3 pr-2 [&_button[aria-label]]:h-7 [&_button[aria-label]]:w-7">
+      <div ref={setSlot} className="flex items-center gap-0.5 empty:hidden" />
+      <span aria-hidden className="mx-1.5 h-4 w-px shrink-0 bg-border [div:empty+&]:hidden" />
+      <SyncButton />
+      <PhoneButton />
+      <AlwaysOnTopButton />
+    </div>
   );
 }
 
@@ -92,7 +84,7 @@ function WindowControls() {
   }, []);
   const win = () => getCurrentWindow();
   const tb = t.layout.titleBar;
-  const button = "grid h-10 w-11.5 place-items-center text-muted transition-colors duration-120 hover:bg-surface-2 hover:text-fg focus-visible:outline-offset-[-2px]";
+  const button = "grid h-11 w-11.5 place-items-center text-muted transition-colors duration-120 hover:bg-surface-2 hover:text-fg focus-visible:outline-offset-[-2px]";
   return (
     <div className="flex shrink-0">
       <button type="button" className={button} aria-label={tb.minimize} title={tb.minimize} onClick={() => void win().minimize().catch(() => {})}>

@@ -11,7 +11,6 @@ vi.mock("@/lib/title-bar", async (original) => ({
 vi.mock("./SyncButton", () => ({ SyncButton: () => <button>sync</button> }));
 vi.mock("./AlwaysOnTopButton", () => ({ AlwaysOnTopButton: () => <button>pin</button> }));
 vi.mock("./PhoneButton", () => ({ PhoneButton: () => <button>phone</button> }));
-vi.mock("@/components/settings/SupportSettings", () => ({ SupportButton: () => <button>support</button> }));
 
 import { useTitleBarSlot } from "@/lib/title-bar";
 import { AppButtons } from "./Page";

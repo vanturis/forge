@@ -12,6 +12,7 @@ import { DOWNLOAD_PAGE } from "@/lib/constants";
 import { localePath, type Locale, type LocaleBase } from "@/lib/i18n";
 import { i18n, type Messages } from "@/lib/messages";
 import { Feature } from "./blocks";
+import { Tilt } from "./tilt";
 
 /**
  * The app screenshot (taken at 2400 x 1680) in four widths: the browser picks the one closest to the
@@ -28,7 +29,7 @@ const FEATURES: { key: FeatureKey; icon: LucideIcon }[] = [
   { key: "workflow", icon: Settings },
 ];
 
-/** The start page: title and lead, the app window on its stage, four cards, the questions and the download once more. */
+/** The start page: title, lead and buttons next to the tilted app window, four cards, the questions and the download once more. */
 export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) {
   const { t } = i18n(locale);
   const l = t.landing;
@@ -38,41 +39,40 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
   return (
     <main className="landing">
       <section className="hero">
-        <div className="container">
-          <div className="hero-inner">
+        <div className="container hero-inner">
+          <div className="hero-text">
             <h1 className="hero-title">
               <span>{l.title}</span>
               <span className="hero-title-accent">{l.titleAccent}</span>
             </h1>
-            <div className="hero-side">
-              <p className="hero-lead">{l.lead}</p>
-              <div className="hero-actions">
-                <a className="btn btn-primary btn-lg" href={DOWNLOAD_PAGE}>
-                  <Download aria-hidden />
-                  {l.download}
-                </a>
-                <a className="btn btn-outline btn-lg" href={stats}>
-                  <BarChart3 aria-hidden />
-                  {l.liveStats}
-                </a>
-              </div>
-              <ul className="hero-facts">
-                <li>
-                  <Monitor aria-hidden />
-                  {l.facts.platforms}
-                </li>
-                <li>{l.facts.openSource}</li>
-                <li>{l.facts.earlyAccess}</li>
-              </ul>
+            <p className="hero-lead">{l.lead}</p>
+            <div className="hero-actions">
+              <a className="btn btn-primary btn-lg" href={DOWNLOAD_PAGE}>
+                <Download aria-hidden />
+                {l.download}
+              </a>
+              <a className="btn btn-outline btn-lg" href={stats}>
+                <BarChart3 aria-hidden />
+                {l.liveStats}
+              </a>
             </div>
+            <ul className="hero-facts">
+              <li>
+                <Monitor aria-hidden />
+                {l.facts.platforms}
+              </li>
+              <li>{l.facts.openSource}</li>
+              <li>{l.facts.earlyAccess}</li>
+            </ul>
           </div>
 
-          <div className="hero-stage">
+          {/* Turned toward the text; follows the pointer a little (tilt.tsx). */}
+          <Tilt className="hero-shot">
             <div className="window">
               <img
                 src={shots[2].src}
                 srcSet={shots.map((s) => `${s.src} ${s.width}w`).join(", ")}
-                sizes="(max-width: 1264px) 90vw, 1072px"
+                sizes="(max-width: 1080px) 92vw, 660px"
                 width={shot.width}
                 height={shot.height}
                 alt={l.screenshotAlt}
@@ -80,7 +80,7 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
                 fetchPriority="high"
               />
             </div>
-          </div>
+          </Tilt>
         </div>
       </section>
 

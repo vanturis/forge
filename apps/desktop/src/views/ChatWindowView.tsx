@@ -40,7 +40,7 @@ export function ChatWindowShell({ target }: { target: ChatWindowTarget }) {
   else content = <ChatPanel project={project.data} detached />;
 
   return (
-    <div className={cn("flex h-full min-w-0 flex-col px-2 pb-2", !hasTitleBar && "pt-2")}>
+    <div className={cn("flex h-full min-w-0 flex-col px-2 pb-2", hasTitleBar ? "pt-1.5" : "pt-2")}>
       {/* One floating panel, like the main area of the main window. */}
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-bg shadow-sm">
         <ErrorBoundary>{content}</ErrorBoundary>

@@ -2,7 +2,7 @@
 title: "UI-Design: Formensprache im Cento-Stil, neutrale Grautöne, eigene Titelleiste (TitleBar, hasTitleBar, InTitleBar)"
 summary: "Gestaltungsregeln seit dem Redesign vom 2026-11-14 für App, Setup und Website: neutrale Grautöne ohne Blaustich, Orange sparsam, Formen wie im Projekt Cento, eigene Titelleiste unter Windows. Vor jeder neuen Oberfläche lesen."
 tags: ["ui","konvention","tauri","windows","preview"]
-updated: "2026-11-14T17:17:53.358Z"
+updated: "2026-11-14T19:47:47.070Z"
 ---
 
 # UI-Design: Formensprache im Cento-Stil, neutrale Grautöne, eigene Titelleiste
@@ -26,8 +26,9 @@ Am 2026-11-14 hat der Besitzer ein komplettes Redesign verlangt: Formen wie im P
 ## Eigene Titelleiste (nur Windows)
 - `lib/title-bar.ts`: `hasTitleBar` = Windows und Tauri. macOS und Linux behalten die native Titelleiste und das Menü; dort bleibt alles in den Seitenköpfen (Wunsch des Besitzers: macOS im Zweifel lassen, auf einem Mac nicht testbar).
 - Rust: Hauptfenster in `lib.rs` (setup) per `set_decorations(false)` unter `#[cfg(windows)]`, Chat-Fenster in `chat_windows.rs` mit `config.decorations = false`. Größenänderung an den Kanten und runde Ecken bleiben (tauri-runtime-wry hängt den Resize-Handler auch bei `set_decorations` zur Laufzeit an). Rechte in `capabilities/default.json`: `core:window:allow-start-dragging`, `allow-minimize`, `allow-toggle-maximize`, `allow-close`.
-- `components/layout/TitleBar.tsx`: 40px, in `App.tsx` über allen Zuständen (auch „startet“ und „Hintergrunddienst läuft nicht“, sonst hätte das Fenster keine Knöpfe). Modus `main`: Logo, Suche in der Mitte (`SearchField compact`), Platz für die Layout-Schalter, Unterstützen, Sync, Telefon, Pin, Fensterknöpfe. Modus `bare` (Start, Chat-Fenster): Logo und Fensterknöpfe. Ziehen nur an Elementen mit `data-tauri-drag-region` (gilt nicht für Kinder).
-- `InTitleBar` schiebt Kinder per Portal in die Leiste (Layout-Schalter aus `WorkspaceHeader`, behalten so ihren Kontext wie `useSplitLayout`); ohne Titelleiste bleiben sie an Ort und Stelle. `AppButtons` (`Page.tsx`) rendert Sync, Pin und Telefon nur ohne Titelleiste. Mit Titelleiste entfallen in der Seitenleiste Logo, Suchfeld und Herz.
+- `components/layout/TitleBar.tsx`: 44px (`h-11`), darunter 6px Luft bis zu den Flächen (`pt-1.5` in `App.tsx` und `ChatWindowView`; ohne die Luft wirkte der Abstand laut Besitzer „falsch“). Steht in `App.tsx` über allen Zuständen (auch „startet“ und „Hintergrunddienst läuft nicht“, sonst hätte das Fenster keine Knöpfe). Modus `main`: links das Logo, rechts die Layout-Schalter des Projekts, Sync, Telefon, Pin, Fensterknöpfe. Modus `bare` (Start, Chat-Fenster): Logo und Fensterknöpfe. Ziehen nur an Elementen mit `data-tauri-drag-region` (gilt nicht für Kinder).
+- **Suchfeld und Herz bleiben in der Seitenleiste** (oben, über der Navigation). Der erste Stand hatte beide in der Titelleiste; der Besitzer wollte sie zurück. Mit Titelleiste entfällt in der Seitenleiste nur das Logo.
+- `InTitleBar` schiebt Kinder per Portal in die Leiste (Layout-Schalter aus `WorkspaceHeader`, behalten so ihren Kontext wie `useSplitLayout`); ohne Titelleiste bleiben sie an Ort und Stelle. `AppButtons` (`Page.tsx`) rendert Sync, Pin und Telefon nur ohne Titelleiste.
 - Geprüft im echten Fenster über `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9334` und CDP (`plugin:window|is_decorated`, `toggle_maximize`, Schließen des Chat-Fensters). Nicht prüfbar per CDP: Ziehen und Einrasten (Snap) mit der Maus.
 
 ## Werkzeugleiste
@@ -35,12 +36,12 @@ Die Reiterzeile des Projekts ist standardmäßig offen (`toolbarOpen: true` in `
 
 ## Desktop-UI ohne Tauri ansehen (eine Datei, nichts im Git)
 Eine `vite.config.mjs` unter `apps/desktop/node_modules/.cache/forge-preview/` (ignoriert): `root` ist `apps/desktop`; ein Plugin startet `packages/sidecar/dist/sidecar.mjs` mit `FORGE_DATA_DIR` auf eine Kopie von `.forge-demo/data/forge.db` und liefert `/preview.html` (setzt `__TAURI_INTERNALS__`, dann `import("/src/main.tsx")`), `/bridge/send`, `/bridge/events` (SSE), `/bridge/rpc`. Stubs: `sidecar_status` true, `chat_windows` `{sessions: [], pinned: []}`, `install_check` `{release: false, missing: []}`, `plugin:window|is_*` false. Start: `pnpm exec vite --config node_modules/.cache/forge-preview/vite.config.mjs` in `apps/desktop` (Port 1430), vorher `pnpm --filter @forge/sidecar build`. Der Browser meldet Windows, also erscheint dort auch die Titelleiste.
-- Nach jedem Neustart von Vite bleibt der erste Seitenaufruf leer (Abhängigkeiten werden neu optimiert): einmal neu laden.
+- Nach jedem Neustart von Vite bleibt der erste Seitenaufruf leer (Abhängigkeiten werden neu optimiert): einmal neu laden. Das gilt auch für das echte Dev-Fenster nach einem Wechsel zwischen Brücke und `pnpm dev`.
 - Eine Session öffnet man über die Zeile in „Sessions“ oder „Fortsetzen“ auf der Startseite (öffnet nur, Claude startet erst mit einer Nachricht).
 - Radix-Reiter reagieren nur auf echte Mausereignisse (CDP `Input.dispatchMouseEvent`), nicht auf `el.click()`.
 - Tauri-Dev und Brücke nicht gleichzeitig auf derselben Datenkopie laufen lassen. TaskStop beendet nur die Shell: Vite (Port 1420 bzw. 1430), `target\debug\forge-desktop.exe` und den Sidecar danach gezielt beenden, nie die installierte FORGE unter `%LOCALAPPDATA%\FORGE`.
 
 ## Stolperfallen
-- Bash-Heredocs mit Apostrophen und Backslashes scheitern in dieser Shell: Edit-Skripte mit dem Write-Werkzeug als Datei anlegen.
+- Bash-Heredocs mit Backslashes scheitern in dieser Shell: Edit-Skripte mit dem Write-Werkzeug als Datei anlegen.
 - Massen-Ersatz per sed auf Klassenmuster kann Klassen doppeln (z. B. `shadow-sm shadow-2xl`): danach greppen.
 - Ein Ordner lässt sich unter Windows nicht löschen, solange die eigene Shell darin steht (EBUSY).

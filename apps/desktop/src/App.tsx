@@ -146,7 +146,7 @@ function Shell() {
   return (
     <div className="flex h-full min-w-0 flex-col">
       {/* Sidebar and main area float as two rounded panels on the window backdrop. */}
-      <div className={cn("flex min-h-0 min-w-0 flex-1 gap-2.5 px-2.5 pb-2.5", !hasTitleBar && "pt-2.5")}>
+      <div className={cn("flex min-h-0 min-w-0 flex-1 gap-2.5 px-2.5 pb-2.5", hasTitleBar ? "pt-1.5" : "pt-2.5")}>
         <ErrorBoundary>
           <Sidebar />
         </ErrorBoundary>
