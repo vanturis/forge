@@ -186,7 +186,24 @@
 }
 
 .hero {
-  padding-top: 52px;
+  position: relative;
+  padding: 52px 0 64px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* pixel art in the two bottom corners of the hero, standing on its line */
+.hero-pixels {
+  position: absolute;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.hero-pixels-left {
+  left: 0;
+}
+
+.hero-pixels-right {
+  right: 0;
 }
 
 .hero-inner {
@@ -304,11 +321,245 @@
 /* ---- four feature cards */
 
 .landing-features {
-  padding-top: 56px;
+  padding-top: 64px;
 }
 
-.landing-features .eyebrow {
-  margin-bottom: 20px;
+.landing-h2 {
+  font-size: clamp(26px, 2.6vw, 34px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.landing-features .features {
+  margin-top: 28px;
+}
+
+/* on the start page the icons stand free: larger, without the round tile */
+.features-plain .icon-tile {
+  width: auto;
+  height: auto;
+  border: 0;
+  background: none;
+}
+
+.features-plain .icon-tile svg {
+  width: 30px;
+  height: 30px;
+  stroke-width: 1.6;
+}
+
+.features-plain .feature h3 {
+  margin-top: 22px;
+}
+
+/* ---- showcase blocks: a small graphic of the app next to a few words, pixel art in a corner */
+
+.landing-showcases {
+  display: grid;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.showcase {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 56px;
+  overflow: hidden;
+  padding: 0 56px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+}
+
+/* a fine warm line along the bottom edge */
+.showcase::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 55%, transparent) 50%, transparent);
+  content: "";
+}
+
+.showcase-flip .mock {
+  order: 2;
+}
+
+.showcase-text {
+  padding: 56px 0;
+}
+
+.showcase-text > p:last-child {
+  max-width: 30rem;
+  margin-top: 14px;
+  color: var(--color-muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.showcase-pixels {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.showcase-flip .showcase-pixels {
+  right: auto;
+  left: 0;
+}
+
+/* the graphic: a cut-out panel of the app that runs out of the card at the bottom */
+.mock {
+  align-self: end;
+  margin-top: 40px;
+  border: 1px solid var(--color-border);
+  border-bottom: 0;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
+  background: var(--color-bg);
+  box-shadow: 0 -12px 40px -24px rgb(0 0 0 / 0.8);
+}
+
+.mock-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mock-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.mock-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-size: var(--text-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.mock-commits,
+.mock-agents {
+  margin: 0;
+  padding: 10px 22px 18px;
+  list-style: none;
+}
+
+/* commits on one lane: a dot each, joined by a line */
+.mock-commits li {
+  position: relative;
+  padding: 11px 0 11px 30px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.mock-commits li::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 2px;
+  background: var(--color-border-strong);
+  content: "";
+}
+
+.mock-commits li:first-child::before {
+  top: 50%;
+}
+
+.mock-commits li::after {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: -6px;
+  border-radius: var(--radius-full);
+  background: var(--color-subtle);
+  box-shadow: 0 0 0 3px var(--color-bg);
+  content: "";
+}
+
+.mock-commits li[data-tone="blue"]::after {
+  background: var(--color-graph-blue);
+}
+
+.mock-commits li[data-tone="green"]::after {
+  background: var(--color-success);
+}
+
+.mock-commits li[data-tone="accent"]::after {
+  background: var(--color-accent);
+}
+
+.mock-agents li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.mock-agents li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.mock-agents svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+
+.mock-branch {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* state with a dot and text */
+.mock-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: var(--text-small);
+  white-space: nowrap;
+}
+
+.mock-state::before {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  content: "";
+}
+
+.mock-state[data-tone="accent"] {
+  color: var(--color-accent);
+}
+
+.mock-state[data-tone="green"] {
+  color: var(--color-success);
 }
 
 /* ---- frequently asked questions: one column of round rows */
@@ -452,7 +703,6 @@
 }
 
 .stats-head h1 {
-  margin-top: 14px;
   font-size: clamp(36px, 4.2vw, 52px);
   font-weight: 600;
   line-height: 1.1;
@@ -1396,6 +1646,33 @@
 
   .hero-lead {
     max-width: 36rem;
+  }
+
+  .hero {
+    padding-bottom: 48px;
+  }
+
+  .hero-pixels {
+    display: none;
+  }
+
+  .showcase,
+  .showcase-flip {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 0 28px;
+  }
+
+  .showcase .mock {
+    order: 2;
+  }
+
+  .showcase-text {
+    padding: 36px 0 8px;
+  }
+
+  .showcase-pixels {
+    display: none;
   }
 
   /* below the text and flat: the turn needs the room beside it */

@@ -39,7 +39,6 @@ const de = {
     download: "Download",
   },
   landing: {
-    eyebrow: "AI Development Studio",
     title: "Deine AI",
     titleAccent: "Entwicklungszentrale",
     lead: "Forge ist ein modernes Desktop-Tool für Claude Code. Verwalte Projekte, Sessions und Git, mit einer intuitiven Oberfläche statt Terminal.",
@@ -52,6 +51,20 @@ const de = {
       ui: { title: "Intuitive Oberfläche", text: "Chat, Agenten und Tools übersichtlich vereint." },
       git: { title: "Git Integration", text: "Automatische Commits, Branches und PRs." },
       workflow: { title: "Dein Workflow", text: "Anpassbar, erweiterbar\nund auf dich zugeschnitten." },
+    },
+    featuresTitle: "Alles für deinen AI-Workflow.",
+    showcase: {
+      git: {
+        title: "Git direkt in FORGE.",
+        text: "Commits, Branches und Pull Requests verwaltest du im selben Fenster wie deine Sessions.",
+        commits: ["feat: neues Layout", "fix: Button-Verhalten", "refactor: Komponenten"],
+      },
+      agents: {
+        title: "Mehrere Agenten gleichzeitig.",
+        text: "Jeder Agent arbeitet in einem eigenen Git-Worktree auf eigenem Branch. Fertige Arbeit führt FORGE auf Wunsch automatisch zusammen.",
+        panel: "Agenten",
+        states: ["arbeitet", "fertig", "zusammengeführt"],
+      },
     },
     faq: {
       title: "Häufige Fragen",
@@ -93,7 +106,6 @@ const de = {
     },
   },
   stats: {
-    eyebrow: "Live Stats",
     title: "FORGE in",
     titleAccent: "Zahlen",
     lead: "Aktuelle Statistiken zur anonymen Nutzung von Forge.\nGezählt wird seit dem 17. Oktober 2026.",
@@ -276,7 +288,6 @@ const en: Messages = {
     download: "Download",
   },
   landing: {
-    eyebrow: "AI Development Studio",
     title: "Your AI",
     titleAccent: "Development Hub",
     lead: "Forge is a modern desktop tool for Claude Code. Manage projects, sessions and Git, with an intuitive interface instead of the terminal.",
@@ -289,6 +300,20 @@ const en: Messages = {
       ui: { title: "Intuitive interface", text: "Chat, agents and tools clearly combined." },
       git: { title: "Git integration", text: "Automatic commits, branches and PRs." },
       workflow: { title: "Your workflow", text: "Adaptable, extensible and tailored to you." },
+    },
+    featuresTitle: "Everything for your AI workflow.",
+    showcase: {
+      git: {
+        title: "Git right inside FORGE.",
+        text: "Manage commits, branches and pull requests in the same window as your sessions.",
+        commits: ["feat: new layout", "fix: button behavior", "refactor: components"],
+      },
+      agents: {
+        title: "Several agents at once.",
+        text: "Each agent works in its own Git worktree on its own branch. FORGE merges finished work automatically if you want.",
+        panel: "Agents",
+        states: ["working", "done", "merged"],
+      },
     },
     faq: {
       title: "Frequently asked questions",
@@ -330,7 +355,6 @@ const en: Messages = {
     },
   },
   stats: {
-    eyebrow: "Live Stats",
     title: "FORGE in",
     titleAccent: "numbers",
     lead: "Current statistics on the anonymous use of Forge.\nCounting since October 17, 2026.",

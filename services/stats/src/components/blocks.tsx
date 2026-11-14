@@ -3,11 +3,6 @@ import type { LucideIcon } from "lucide-react";
 
 // Small building blocks shared by the start page and the statistics.
 
-/** Eyebrow line above a title: small, upper case, letter-spaced, muted. */
-export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={className ? `eyebrow ${className}` : "eyebrow"}>{children}</span>;
-}
-
 /** A round card with an icon tile, a title and a few words: the four cards of the start page and the privacy notes. */
 export function Feature({ icon: Icon, title, text, index = 0 }: { icon: LucideIcon; title: string; text: string; index?: number }) {
   return (

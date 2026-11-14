@@ -2,7 +2,7 @@ import { EyeOff, Fingerprint, ToggleLeft, Trash2, TriangleAlert } from "lucide-r
 import type { Totals } from "@/lib/db";
 import type { Locale } from "@/lib/i18n";
 import { i18n } from "@/lib/messages";
-import { Eyebrow, Feature, Skeleton, SparkSkeleton, Stat } from "./blocks";
+import { Feature, Skeleton, SparkSkeleton, Stat } from "./blocks";
 import { ChartsSkeleton } from "./charts";
 import { LiveStats } from "./live-stats";
 import { tileShapes } from "./tiles";
@@ -24,7 +24,6 @@ export function StatsPage({ state, locale }: { state: PageState; locale: Locale 
     <main className="stats">
       <section className="container stats-body" aria-busy={state.kind === "loading" || undefined}>
         <header className="stats-head">
-          <Eyebrow>{s.eyebrow}</Eyebrow>
           <h1>
             {s.title} <span className="stats-title-accent">{s.titleAccent}</span>
           </h1>

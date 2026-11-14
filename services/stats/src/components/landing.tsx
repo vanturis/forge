@@ -1,4 +1,4 @@
-import { BarChart3, ChevronDown, Download, Folder, GitBranch, MessageCircle, Monitor, Settings } from "lucide-react";
+import { BarChart3, Bot, ChevronDown, Download, Folder, GitBranch, MessageCircle, Monitor, Settings } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import de800 from "@/assets/app-de-800.webp";
 import de1200 from "@/assets/app-de-1200.webp";
@@ -12,6 +12,7 @@ import { DOWNLOAD_PAGE } from "@/lib/constants";
 import { localePath, type Locale, type LocaleBase } from "@/lib/i18n";
 import { i18n, type Messages } from "@/lib/messages";
 import { Feature } from "./blocks";
+import { Pixels, STEPS } from "./pixels";
 import { Tilt } from "./tilt";
 
 /**
@@ -28,6 +29,11 @@ const FEATURES: { key: FeatureKey; icon: LucideIcon }[] = [
   { key: "git", icon: GitBranch },
   { key: "workflow", icon: Settings },
 ];
+
+/** Dots of the commit list and states of the agents in the two showcase graphics. */
+const COMMIT_TONES = ["blue", "green", "accent"] as const;
+const AGENT_BRANCHES = ["agent/testimonials", "agent/faq", "agent/trusted-by"] as const;
+const AGENT_TONES = ["accent", "green", "muted"] as const;
 
 /** The start page: title, lead and buttons next to the tilted app window, four cards, the questions and the download once more. */
 export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) {
@@ -82,17 +88,71 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
             </div>
           </Tilt>
         </div>
+        <Pixels rows={STEPS} size={14} flip className="hero-pixels hero-pixels-left" />
+        <Pixels rows={STEPS} size={14} className="hero-pixels hero-pixels-right" />
       </section>
 
       <section className="container landing-features" aria-labelledby="features-title">
-        <h2 id="features-title" className="eyebrow">
-          {l.eyebrow}
+        <h2 id="features-title" className="landing-h2">
+          {l.featuresTitle}
         </h2>
-        <div className="features">
+        <div className="features features-plain">
           {FEATURES.map(({ key, icon }, i) => (
             <Feature key={key} icon={icon} title={l.features[key].title} text={l.features[key].text} index={i} />
           ))}
         </div>
+      </section>
+
+      <section className="container landing-showcases">
+        <article className="showcase" aria-labelledby="showcase-git">
+          <div className="mock" aria-hidden>
+            <div className="mock-head">
+              <span className="mock-title">Git</span>
+              <span className="mock-count">22</span>
+            </div>
+            <ul className="mock-commits">
+              {l.showcase.git.commits.map((commit, i) => (
+                <li key={commit} data-tone={COMMIT_TONES[i % COMMIT_TONES.length]}>
+                  {commit}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="showcase-text">
+            <h2 id="showcase-git" className="landing-h2">
+              {l.showcase.git.title}
+            </h2>
+            <p>{l.showcase.git.text}</p>
+          </div>
+          <Pixels rows={STEPS} className="showcase-pixels" />
+        </article>
+
+        <article className="showcase showcase-flip" aria-labelledby="showcase-agents">
+          <div className="mock" aria-hidden>
+            <div className="mock-head">
+              <span className="mock-title">{l.showcase.agents.panel}</span>
+              <span className="mock-count">{AGENT_BRANCHES.length}</span>
+            </div>
+            <ul className="mock-agents">
+              {AGENT_BRANCHES.map((branch, i) => (
+                <li key={branch}>
+                  <Bot />
+                  <span className="mock-branch">{branch}</span>
+                  <span className="mock-state" data-tone={AGENT_TONES[i]}>
+                    {l.showcase.agents.states[i]}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="showcase-text">
+            <h2 id="showcase-agents" className="landing-h2">
+              {l.showcase.agents.title}
+            </h2>
+            <p>{l.showcase.agents.text}</p>
+          </div>
+          <Pixels rows={STEPS} flip className="showcase-pixels" />
+        </article>
       </section>
 
       <section className="container landing-faq" id="faq" aria-labelledby="faq-title">
