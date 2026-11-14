@@ -2,6 +2,7 @@ import { Component, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { hasTitleBar, useTitleBarSlot } from "@/lib/title-bar";
+import { cn } from "@/lib/utils";
 import { AlwaysOnTopButton } from "./AlwaysOnTopButton";
 import { Logo } from "./Logo";
 import { PhoneButton } from "./PhoneButton";
@@ -32,19 +33,22 @@ export function TitleBar({ mode }: { mode: "bare" | "main" }) {
   );
 }
 
+/** The line between the groups of the bar: the project's switches, the app-wide buttons, the window buttons. One look for all of them. */
+const DIVIDER = "mx-2 h-4 w-px shrink-0 bg-border-strong";
+
 const setSlot = (el: HTMLElement | null) => useTitleBarSlot.setState({ el });
 
 function MainItems() {
   return (
     // One size for every icon button here, whatever it has in a page header.
-    <div className="flex shrink-0 items-center gap-0.5 pl-3 pr-1.5 [&_button[aria-label]]:h-7 [&_button[aria-label]]:w-7">
+    <div className="flex shrink-0 items-center gap-0.5 pl-3 [&_button[aria-label]]:h-7 [&_button[aria-label]]:w-7">
       <div ref={setSlot} className="flex items-center gap-0.5 empty:hidden" />
-      <span aria-hidden className="mx-1.5 h-4 w-px shrink-0 bg-border [div:empty+&]:hidden" />
+      <span aria-hidden className={cn(DIVIDER, "[div:empty+&]:hidden")} />
       <SyncButton />
       <PhoneButton />
       <AlwaysOnTopButton />
       {/* What comes after it acts on the window itself (minimize, maximize, close), not inside FORGE. */}
-      <span aria-hidden className="ml-2 h-4 w-px shrink-0 bg-border-strong" />
+      <span aria-hidden className={DIVIDER} />
     </div>
   );
 }
