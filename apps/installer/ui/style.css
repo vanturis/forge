@@ -17,6 +17,7 @@
 }
 
 :root {
+  --backdrop: #0d1014;
   --bg: #14171d;
   --surface: #1a1e25;
   --surface-2: #21262e;
@@ -38,13 +39,23 @@
   --text-caption: 11px;
   --text-small: 12px;
   --text-body: 13px;
-  --text-title: 17px;
+  --text-title: 20px;
 
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* shapes shared with the app: controls, rows and notes, cards, floating panels, pills */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-row: 14px;
+  --radius-card: 18px;
+  --radius-panel: 24px;
+  --radius-full: 9999px;
 
-  --ease-snappy: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-solid: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 1px 2px rgb(0 0 0 / 0.4);
+
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --font-sans: "Geist Variable", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono: "Cascadia Code", "Consolas", ui-monospace, monospace;
   color-scheme: dark;
@@ -59,7 +70,7 @@ body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--backdrop);
   color: var(--fg);
   font-family: var(--font-sans);
   font-size: var(--text-body);
@@ -100,28 +111,48 @@ svg:not(.art) {
   stroke-linejoin: round;
 }
 
+/* the window: a dark backdrop with two floating panels, 10px to the edge */
 .app {
   display: flex;
+  gap: 10px;
   width: 100vw;
   height: 100vh;
-  border: 1px solid var(--border);
+  padding: 10px;
+  background: var(--backdrop);
 }
 
-/* ------------------------------------------------------------ rail (aside of the wizard) */
+.panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-raised);
+}
+
+/* small section headings */
+.section-label {
+  font-size: var(--text-caption);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--subtle);
+}
+
+/* ------------------------------------------------------------ rail (steps of the setup) */
 
 .rail {
   display: flex;
   flex-direction: column;
-  width: 232px;
+  width: 218px;
   flex-shrink: 0;
-  border-right: 1px solid var(--border);
-  background: rgb(20 23 29 / 0.5);
-  padding: 0 20px 18px;
+  padding: 0 10px 14px;
+  background: var(--surface);
 }
 .rail-top {
-  height: 66px;
   display: flex;
-  align-items: flex-end;
+  height: 58px;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 4px 12px 0;
 }
 .logo {
   display: block;
@@ -129,51 +160,59 @@ svg:not(.art) {
   width: auto;
   pointer-events: none;
 }
+.rail .section-label {
+  margin-top: 10px;
+  padding: 0 12px 8px;
+}
 
 .steps {
   list-style: none;
-  margin-top: 30px;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 .steps li {
   position: relative;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 6px 14px 6px 8px;
+  border-radius: var(--radius-full);
 }
-.steps li:not(:last-child) {
-  padding-bottom: 18px;
-}
-/* line to the next step */
-.steps li:not(:last-child)::after {
+/* fill of the active step: only its opacity moves */
+.steps li::before {
   content: "";
   position: absolute;
-  left: 12px;
-  top: 30px;
-  bottom: 2px;
-  width: 1px;
-  transform: translateX(-50%);
-  background: var(--border);
-  transition: background-color 160ms var(--ease-snappy);
+  inset: 0;
+  border-radius: inherit;
+  background: var(--accent);
+  box-shadow: var(--shadow-solid);
+  opacity: 0;
+  transition: opacity var(--duration-base) var(--ease-out);
 }
-.steps li[data-state="done"]:not(:last-child)::after {
-  background: rgb(249 115 22 / 0.6);
+.steps li[data-state="current"]::before {
+  opacity: 1;
+}
+.steps li[data-state="failed"]::before {
+  background: var(--danger-soft);
+  box-shadow: none;
+  opacity: 1;
 }
 .dot {
+  position: relative;
   display: flex;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  border: 1px solid var(--border-strong);
-  color: var(--subtle);
+  border-radius: var(--radius-full);
+  background: var(--surface-3);
+  color: var(--muted);
   font-size: var(--text-caption);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  transition: background-color 120ms, border-color 120ms, color 120ms;
 }
 .dot svg {
   width: 14px;
@@ -181,43 +220,55 @@ svg:not(.art) {
   stroke-width: 3;
 }
 .steps li[data-state="done"] .dot {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-fg);
-}
-.steps li[data-state="current"] .dot {
-  border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
 }
+.steps li[data-state="current"] .dot {
+  background: rgb(255 255 255 / 0.22);
+  color: var(--accent-fg);
+}
 .steps li[data-state="failed"] .dot {
-  border-color: var(--danger);
-  background: var(--danger-soft);
-  color: var(--danger);
+  background: var(--danger);
+  color: var(--accent-fg);
 }
 .step-text {
+  position: relative;
   min-width: 0;
-  padding-top: 2px;
 }
 .step-label {
   display: block;
+  overflow: hidden;
   font-size: var(--text-body);
   font-weight: 500;
-  color: var(--subtle);
-  line-height: 1.45;
-}
-.steps li[data-state="current"] .step-label,
-.steps li[data-state="failed"] .step-label {
-  color: var(--fg);
-}
-.steps li[data-state="done"] .step-label {
   color: var(--muted);
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .step-hint {
   display: block;
+  overflow: hidden;
   font-size: var(--text-caption);
   color: var(--subtle);
-  line-height: 1.4;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.steps li[data-state="done"] .step-label,
+.steps li[data-state="failed"] .step-label {
+  color: var(--fg);
+}
+.steps li[data-state="failed"] .step-hint {
+  color: var(--muted);
+}
+.steps li[data-state="current"] .step-label {
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+.steps li[data-state="current"] .step-hint {
+  color: var(--accent-fg);
+  opacity: 0.85;
 }
 
 .rail-foot {
@@ -226,13 +277,14 @@ svg:not(.art) {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
+  padding: 0 12px;
   font-size: var(--text-caption);
   color: var(--subtle);
 }
 .link {
   color: var(--subtle);
-  border-radius: 3px;
-  transition: color 120ms;
+  border-radius: var(--radius-xs);
+  transition: color var(--duration-fast) var(--ease-out);
 }
 .link:hover {
   color: var(--fg);
@@ -244,59 +296,67 @@ svg:not(.art) {
   font-weight: 500;
 }
 
-/* ------------------------------------------------------------ main column */
+/* ------------------------------------------------------------ main panel */
 
 .main {
+  position: relative;
   display: flex;
   min-width: 0;
   flex: 1;
   flex-direction: column;
+  background: var(--bg);
 }
 
+/* language and window buttons sit in the upper right corner, next to the first line of the header */
 .titlebar {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
   display: flex;
-  height: 36px;
-  flex-shrink: 0;
+  height: 52px;
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  padding: 0 6px 0 28px;
+  padding: 0 12px;
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
 }
 
-/* like the chat view toggle of the app */
 .segment {
   display: flex;
+  gap: 2px;
   margin-right: 6px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  padding: 3px;
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
 }
 .segment button {
-  height: 20px;
-  padding: 0 7px;
-  border-radius: 4px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--radius-full);
   font-size: var(--text-caption);
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--subtle);
-  transition: color 120ms, background-color 120ms;
+  transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
 }
 .segment button:hover {
   color: var(--fg);
 }
 .segment button[aria-checked="true"] {
   background: var(--surface-3);
+  box-shadow: var(--shadow-raised);
   color: var(--fg);
 }
 
 .win-btn {
   display: flex;
-  width: 30px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   color: var(--muted);
-  transition: color 120ms, background-color 120ms;
+  transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
 }
 .win-btn svg {
   width: 14px;
@@ -308,32 +368,32 @@ svg:not(.art) {
 }
 .win-close:hover {
   background: var(--danger);
-  color: #fff;
+  color: var(--accent-fg);
 }
 .win-btn:disabled {
   opacity: 0.4;
   pointer-events: none;
 }
 
-/* header of the wizard: icon tile, step, title, lead */
+/* header: icon tile, step, title, lead */
 .head {
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  padding: 4px 28px 18px;
-  min-height: 92px;
+  /* room for a lead of two lines, so the content below does not jump between the steps */
+  min-height: 130px;
+  padding: 26px 26px 16px;
 }
 .tile {
   display: flex;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-row);
   background: var(--accent-soft);
   color: var(--accent);
-  transition: background-color 160ms, color 160ms;
 }
 .tile svg {
   width: 20px;
@@ -349,25 +409,24 @@ svg:not(.art) {
 }
 .head-text {
   min-width: 0;
-}
-.caption {
-  font-size: var(--text-caption);
-  color: var(--subtle);
+  flex: 1;
 }
 h1 {
+  margin-top: 2px;
   font-size: var(--text-title);
   font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.005em;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 .lead {
   margin-top: 4px;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 .head-skeleton {
   display: none;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding-top: 3px;
 }
 .app[data-screen="loading"] .head-text {
@@ -382,41 +441,42 @@ h1 {
   min-height: 0;
   flex: 1;
   flex-direction: column;
-  gap: 16px;
-  padding: 0 28px 20px;
+  gap: 14px;
+  padding: 0 26px;
 }
 
 .card {
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: rgb(33 38 46 / 0.4);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
 }
 
-/* what gets installed, rows like the settings of the app */
+/* what gets installed */
 .summary {
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
   margin: 0;
-  padding: 4px 16px;
+  padding: 11px 18px;
 }
 .summary .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 34px;
-}
-.summary .row + .row {
-  border-top: 1px solid var(--border);
+  min-height: 27px;
 }
 .summary dt {
+  flex-shrink: 0;
   font-size: var(--text-body);
   color: var(--muted);
 }
 .summary dd {
+  min-width: 0;
   margin: 0;
   font-size: var(--text-body);
+  font-weight: 500;
   color: var(--fg);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -439,7 +499,7 @@ h1 {
 .pane {
   display: none;
   flex-direction: column;
-  animation: view-in 160ms var(--ease-snappy) both;
+  animation: view-in var(--duration-base) var(--ease-out) both;
 }
 .app[data-screen="start"] .pane[data-for~="start"],
 .app[data-screen="loading"] .pane[data-for~="loading"],
@@ -455,9 +515,7 @@ h1 {
 .field-label {
   display: block;
   margin-bottom: 6px;
-  font-size: var(--text-small);
-  font-weight: 500;
-  color: var(--muted);
+  padding-left: 2px;
 }
 .field-row {
   display: flex;
@@ -467,18 +525,22 @@ h1 {
   display: flex;
   min-width: 0;
   flex: 1;
-  height: 32px;
+  height: 36px;
   align-items: center;
-  gap: 8px;
-  padding: 0 10px;
+  gap: 9px;
+  padding: 0 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-2);
   color: var(--fg);
 }
+.input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
 .input svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   flex-shrink: 0;
   color: var(--subtle);
 }
@@ -512,7 +574,7 @@ h1 {
 .note[data-state="ready"] .note-ready,
 .note[data-state="other"] .note-other {
   display: block;
-  padding-top: 4px;
+  padding: 4px 2px 0;
 }
 .note-other {
   color: var(--muted);
@@ -526,15 +588,15 @@ h1 {
 }
 .app[data-screen="loading"] .note .note-resolving {
   display: block;
-  padding-top: 4px;
+  padding: 4px 2px 0;
 }
 
 .alert {
   align-items: center;
   gap: 10px;
-  padding: 8px 8px 8px 12px;
+  padding: 7px 7px 7px 14px;
   border: 1px solid rgb(240 96 90 / 0.3);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-row);
   background: var(--danger-soft);
   color: var(--fg);
   font-size: var(--text-small);
@@ -552,23 +614,49 @@ h1 {
 .alert-block {
   display: flex;
   align-items: flex-start;
-  padding: 12px 14px;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 14px 16px;
   font-size: var(--text-body);
   line-height: 1.5;
+  overflow-wrap: anywhere;
   user-select: text;
 }
 .alert-block svg {
   margin-top: 2px;
 }
+.app[data-screen="error"] .pane[data-for~="error"] {
+  min-height: 0;
+}
 
+.progress-card {
+  padding: 14px 18px 18px;
+}
 .progress-row {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 11px;
   font-size: var(--text-small);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+/* status: dot and text */
+.status {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+.status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+  animation: shimmer 1.4s ease-in-out infinite;
 }
 #progress-detail {
   overflow: hidden;
@@ -576,59 +664,70 @@ h1 {
   text-overflow: ellipsis;
 }
 .percent {
+  flex-shrink: 0;
   color: var(--fg);
-  font-weight: 500;
+  font-size: var(--text-body);
+  font-weight: 600;
 }
 .progress {
   height: 6px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-3);
 }
+/* always as wide as the track and pushed in from the left, so only transform moves */
 .progress-fill {
   height: 100%;
-  width: 0;
+  width: 100%;
   border-radius: inherit;
   background: var(--accent);
-  transition: width 260ms var(--ease-snappy);
+  transform: translateX(-100%);
+  transition: transform var(--duration-base) var(--ease-out);
 }
 
 .result {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: rgb(33 38 46 / 0.4);
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px 14px 14px;
 }
 .result .ok {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--success-soft);
+  color: var(--success);
+}
+.result .ok svg {
   width: 16px;
   height: 16px;
-  margin-top: 1px;
-  flex-shrink: 0;
-  color: var(--success);
   stroke-width: 2.5;
 }
-.result .field-label {
-  margin-bottom: 2px;
+.result-text {
+  min-width: 0;
+}
+.result .section-label {
+  margin-bottom: 1px;
 }
 .path {
   font-size: var(--text-body);
   color: var(--fg);
-  word-break: break-all;
+  overflow-wrap: anywhere;
   user-select: text;
 }
 
-/* ------------------------------------------------------------ footer and buttons (button.tsx) */
+/* ------------------------------------------------------------ footer and buttons */
 
 .foot {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   gap: 8px;
-  padding: 14px 28px;
-  border-top: 1px solid var(--border);
+  padding: 14px 26px 24px;
 }
 .foot #btn-cancel {
   margin-right: auto;
@@ -636,55 +735,58 @@ h1 {
 
 .btn {
   display: inline-flex;
-  height: 32px;
+  height: 36px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 12px;
-  border-radius: var(--radius-md);
+  padding: 0 18px;
+  border-radius: var(--radius-full);
   font-size: var(--text-body);
   font-weight: 500;
+  letter-spacing: -0.005em;
   white-space: nowrap;
-  transition: color 120ms var(--ease-snappy), background-color 120ms var(--ease-snappy), border-color 120ms var(--ease-snappy), opacity 120ms, transform 120ms var(--ease-snappy);
+  transition: color var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 .btn:active:not(:disabled) {
-  transform: scale(0.97);
-  transition-duration: 75ms;
+  transform: scale(0.98);
 }
 .btn:disabled {
   opacity: 0.5;
 }
 .btn svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
 .btn-sm {
-  height: 28px;
-  padding: 0 10px;
+  height: 30px;
+  padding: 0 14px;
   font-size: var(--text-small);
 }
 .btn-primary {
+  min-width: 132px;
   background: var(--accent);
+  box-shadow: var(--shadow-solid);
   color: var(--accent-fg);
+  font-weight: 600;
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--accent-strong);
 }
 .btn-secondary {
-  border: 1px solid var(--border);
   background: var(--surface-3);
   color: var(--fg);
 }
 .btn-secondary:hover:not(:disabled) {
   background: var(--border-strong);
 }
-.btn-ghost {
-  color: var(--muted);
-}
-.btn-ghost:hover:not(:disabled) {
-  background: var(--surface-3);
+.btn-outline {
+  border: 1px solid var(--border);
   color: var(--fg);
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
 }
 #btn-primary .spin {
   display: none;
@@ -702,7 +804,7 @@ h1 {
 
 .sk {
   display: block;
-  border-radius: 4px;
+  border-radius: var(--radius-full);
   background: var(--surface-3);
   animation: shimmer 1.4s ease-in-out infinite;
 }
@@ -719,7 +821,7 @@ h1 {
 @keyframes view-in {
   from {
     opacity: 0;
-    transform: translateY(2px);
+    transform: translateY(4px);
   }
 }
 @keyframes spin {

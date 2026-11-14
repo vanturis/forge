@@ -7,12 +7,13 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- Layout of the setup assistant in the app (apps/desktop/src/components/setup/SetupWizard.tsx). -->
-<div class="app" id="app" data-screen="loading">
-  <aside class="rail">
+<!-- Shapes of the app: a dark backdrop, the steps and the content as two floating panels. -->
+<div class="app" id="app" data-screen="loading" data-tauri-drag-region>
+  <aside class="rail panel">
     <div class="rail-top" data-tauri-drag-region>
       <img class="logo" src="assets/forge-logo.png" height="21" width="108" alt="FORGE" draggable="false" data-tauri-drag-region>
     </div>
+    <p class="section-label" data-i18n="steps_label" aria-hidden="true"></p>
     <ol class="steps" id="steps" aria-label="">
       <li data-index="0"></li>
       <li data-index="1"></li>
@@ -26,7 +27,7 @@
     </div>
   </aside>
 
-  <section class="main">
+  <section class="main panel">
     <header class="titlebar" data-tauri-drag-region>
       <div class="segment" role="radiogroup" id="lang">
         <button type="button" role="radio" data-lang="de">DE</button>
@@ -43,14 +44,14 @@
     <div class="head" id="head">
       <span class="tile" id="tile"><svg viewBox="0 0 24 24" aria-hidden="true" id="tile-icon"></svg></span>
       <div class="head-text">
-        <p class="caption" id="head-caption"></p>
+        <p class="section-label" id="head-caption"></p>
         <h1 id="head-title"></h1>
         <p class="lead" id="head-lead"></p>
       </div>
       <div class="head-skeleton" aria-hidden="true">
-        <span class="sk" style="width: 72px; height: 10px"></span>
-        <span class="sk" style="width: 210px; height: 16px"></span>
-        <span class="sk" style="width: 300px; height: 12px"></span>
+        <span class="sk" style="width: 84px; height: 10px"></span>
+        <span class="sk" style="width: 220px; height: 18px"></span>
+        <span class="sk" style="width: 320px; height: 12px"></span>
       </div>
     </div>
 
@@ -65,7 +66,7 @@
 
       <!-- start -->
       <div class="pane" data-for="start loading">
-        <label class="field-label" data-i18n="folder" for="folder-path"></label>
+        <label class="field-label section-label" data-i18n="folder" for="folder-path"></label>
         <div class="field-row">
           <div class="input" id="folder-path" tabindex="-1">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
@@ -88,21 +89,23 @@
 
       <!-- installing -->
       <div class="pane" data-for="installing">
-        <div class="progress-row">
-          <span id="progress-detail"></span>
-          <span class="percent" id="percent">0 %</span>
-        </div>
-        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress">
-          <div class="progress-fill" id="progress-fill"></div>
+        <div class="card progress-card">
+          <div class="progress-row">
+            <span class="status"><span id="progress-detail"></span></span>
+            <span class="percent" id="percent">0 %</span>
+          </div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="progress">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
         </div>
       </div>
 
       <!-- done -->
       <div class="pane" data-for="done">
-        <div class="result">
-          <svg class="ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
-          <div>
-            <p class="field-label" data-i18n="installedIn"></p>
+        <div class="card result">
+          <span class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="result-text">
+            <p class="section-label" data-i18n="installedIn"></p>
             <p class="path" id="done-path"></p>
           </div>
         </div>
@@ -118,7 +121,7 @@
     </div>
 
     <footer class="foot">
-      <button type="button" class="btn btn-ghost" id="btn-cancel" data-i18n="close"></button>
+      <button type="button" class="btn btn-outline" id="btn-cancel" data-i18n="close"></button>
       <button type="button" class="btn btn-primary" id="btn-primary">
         <svg class="spin" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
         <span id="btn-primary-text"></span>

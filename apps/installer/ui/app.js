@@ -381,7 +381,7 @@ function renderProgress() {
   const tx = t();
   const p = state.progress;
   const pct = Math.max(0, Math.min(100, p.percent || 0));
-  $("progress-fill").style.width = `${pct}%`;
+  $("progress-fill").style.transform = `translateX(${pct - 100}%)`;
   $("progress").setAttribute("aria-valuenow", String(Math.round(pct)));
   $("percent").textContent = `${Math.floor(pct)} %`;
   const i = ORDER.indexOf(p.step);
