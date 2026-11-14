@@ -69,13 +69,6 @@ export function Landing({ locale, base }: { locale: Locale; base: LocaleBase }) 
 
           <div className="hero-stage">
             <div className="window">
-              <div className="window-bar" aria-hidden>
-                <span className="window-lights">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              </div>
               <img
                 src={shots[2].src}
                 srcSet={shots.map((s) => `${s.src} ${s.width}w`).join(", ")}

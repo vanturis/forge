@@ -1,5 +1,5 @@
 // Renders the link previews (Open Graph, 1200 x 630) to src/assets/og-<lang>.png:
-// blurred page background, wordmark, title of the landing page and the app screenshot.
+// the gray background picture, dimmed to a quiet texture, wordmark, title of the landing page and the app screenshot.
 // Run in services/stats: node scripts/og-images.mjs (text uses the system fonts, Segoe UI on Windows).
 import { readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -23,9 +23,9 @@ const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
 async function render(lang) {
   const t = TEXT[lang];
-  const background = await sharp(readFileSync(`${assets}background.webp`)).resize(W + 80, H + 80, { fit: "cover" }).blur(14).extract({ left: 40, top: 40, width: W, height: H }).toBuffer();
+  const background = await sharp(readFileSync(`${assets}background-neutral.webp`)).resize(W, H, { fit: "cover" }).toBuffer();
   const shade = Buffer.from(
-    `<svg width="${W}" height="${H}"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#111418" stop-opacity="0.92"/><stop offset="0.55" stop-color="#111418" stop-opacity="0.7"/><stop offset="1" stop-color="#111418" stop-opacity="0.35"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#g)"/></svg>`,
+    `<svg width="${W}" height="${H}"><defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#111112" stop-opacity="0.94"/><stop offset="0.55" stop-color="#111112" stop-opacity="0.8"/><stop offset="1" stop-color="#111112" stop-opacity="0.62"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#g)"/></svg>`,
   );
 
   // The screenshot leaves the card at the right and bottom edge.
@@ -36,10 +36,10 @@ async function render(lang) {
   const mask = Buffer.from(`<svg width="${shotW}" height="${shotH}"><rect width="${shotW}" height="${shotH}" rx="${radius}" ry="${radius}"/></svg>`);
   const rounded = await sharp(shot).composite([{ input: mask, blend: "dest-in" }]).png().toBuffer();
   const frame = Buffer.from(
-    `<svg width="${shotW + 2}" height="${shotH + 2}"><rect x="0.5" y="0.5" width="${shotW + 1}" height="${shotH + 1}" rx="${radius + 1}" fill="none" stroke="#3c444f" stroke-width="1"/></svg>`,
+    `<svg width="${shotW + 2}" height="${shotH + 2}"><rect x="0.5" y="0.5" width="${shotW + 1}" height="${shotH + 1}" rx="${radius + 1}" fill="none" stroke="#3f3f43" stroke-width="1"/></svg>`,
   );
   const shadow = Buffer.from(
-    `<svg width="${shotW + 120}" height="${shotH + 120}"><defs><filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="24"/></filter></defs><rect x="60" y="70" width="${shotW}" height="${shotH}" rx="${radius}" fill="#000" fill-opacity="0.55" filter="url(#b)"/><rect x="40" y="40" width="${shotW + 40}" height="${shotH + 40}" rx="40" fill="#ff7a1a" fill-opacity="0.10" filter="url(#b)"/></svg>`,
+    `<svg width="${shotW + 120}" height="${shotH + 120}"><defs><filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="24"/></filter></defs><rect x="60" y="70" width="${shotW}" height="${shotH}" rx="${radius}" fill="#000" fill-opacity="0.55" filter="url(#b)"/></svg>`,
   );
   const shotX = 640;
   const shotY = 140;
@@ -50,11 +50,11 @@ async function render(lang) {
   const font = "Segoe UI, Inter, Arial, sans-serif";
   const text = Buffer.from(
     `<svg width="${W}" height="${H}">
-      <text x="64" y="210" font-family="${font}" font-size="52" font-weight="700" fill="#e5e7eb">${esc(t.title[0])}</text>
+      <text x="64" y="210" font-family="${font}" font-size="52" font-weight="700" fill="#ececee">${esc(t.title[0])}</text>
       <text x="64" y="270" font-family="${font}" font-size="52" font-weight="700" fill="#ff7a1a">${esc(t.title[1])}</text>
-      ${t.lead.map((line, i) => `<text x="64" y="${336 + i * 34}" font-family="${font}" font-size="24" fill="#a9aeb6">${esc(line)}</text>`).join("")}
-      <text x="64" y="540" font-family="${font}" font-size="20" font-weight="600" fill="#e5e7eb">${esc(t.facts)}</text>
-      <text x="64" y="574" font-family="${font}" font-size="18" fill="#ff7a1a">forge.vanturis.de</text>
+      ${t.lead.map((line, i) => `<text x="64" y="${336 + i * 34}" font-family="${font}" font-size="24" fill="#adadb2">${esc(line)}</text>`).join("")}
+      <text x="64" y="540" font-family="${font}" font-size="20" font-weight="600" fill="#ececee">${esc(t.facts)}</text>
+      <text x="64" y="574" font-family="${font}" font-size="18" fill="#a3a3a8">forge.vanturis.de</text>
     </svg>`,
   );
 

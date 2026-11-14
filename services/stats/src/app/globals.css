@@ -1,21 +1,22 @@
 /*
- * Design tokens and primitives of the website. Colours as in the FORGE app (apps/desktop/src/styles.css);
- * radii, shadows and motion are the shape language shared with the app: round surfaces, pill buttons,
- * soft shadows, no glows. Dark only. Page layout lives in pages.css.
+ * Design tokens and primitives of the website. Colours as in the FORGE app (apps/desktop/src/styles.css):
+ * neutral grays without a blue cast, orange only for the primary action, the open page, the accent word
+ * of a title, small icons and data. Radii, shadows and motion are the shape language shared with the app:
+ * round surfaces, pill buttons, soft shadows, no glows. Dark only. Page layout lives in pages.css.
  */
 :root {
-  --color-bg: #111418;
+  --color-bg: #111112;
   /* window background of the crew app view (/crew), one step below --color-bg, as in the app */
-  --color-backdrop: #0d1014;
-  --color-surface: #1a1e25;
-  --color-surface-2: #21262e;
-  --color-surface-3: #292f38;
-  --color-border: #2b313a;
-  --color-border-strong: #3c444f;
-  --color-fg: #e5e7eb;
-  --color-fg-soft: #a9aeb6;
-  --color-muted: #9ca3ae;
-  --color-subtle: #6b7280;
+  --color-backdrop: #0b0b0c;
+  --color-surface: #19191a;
+  --color-surface-2: #202022;
+  --color-surface-3: #29292b;
+  --color-border: #2c2c2f;
+  --color-border-strong: #3f3f43;
+  --color-fg: #ececee;
+  --color-fg-soft: #adadb2;
+  --color-muted: #a3a3a8;
+  --color-subtle: #73737a;
   --color-accent: #ff7a1a;
   --color-accent-strong: #ef6c0e;
   --color-accent-soft: #ff7a1a1f;
@@ -91,23 +92,6 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-kerning: normal;
-}
-
-/*
- * The background picture of every page (owner's file) in its full 2752 x 1536 at WebP quality 95, washed
- * out by the browser: a blur baked into a smaller file showed blocks and bands on the dark gradients.
- * Drawn larger than the screen so the blurred edges stay outside. Held back, so the surfaces carry the page;
- * the stage of the start page shows it sharp.
- */
-body::before {
-  position: fixed;
-  inset: -60px;
-  z-index: -1;
-  background: url("../assets/background.webp") center / cover no-repeat;
-  content: "";
-  filter: blur(12px);
-  opacity: 0.4;
-  pointer-events: none;
 }
 
 h1,
@@ -192,6 +176,14 @@ a {
   background: var(--color-accent-strong);
 }
 
+/* not available: a neutral surface instead of a dimmed orange, which turns brown on the dark page */
+.btn-primary:disabled {
+  background: var(--color-surface-3);
+  color: var(--color-subtle);
+  box-shadow: none;
+  opacity: 1;
+}
+
 .btn-secondary {
   background: var(--color-surface-2);
 }
@@ -232,7 +224,7 @@ a {
   height: 18px;
 }
 
-/* ---- an icon on a round accent tile: cards, dialog, simple pages */
+/* ---- an orange icon on a round neutral tile: cards, dialog, simple pages */
 
 .icon-tile {
   display: inline-grid;
@@ -240,8 +232,9 @@ a {
   place-items: center;
   width: 40px;
   height: 40px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: var(--color-accent-soft);
+  background: var(--color-surface-2);
   color: var(--color-accent);
 }
 
@@ -616,7 +609,6 @@ a {
 
 .donated-value {
   margin-top: 2px;
-  color: var(--color-accent);
   font-size: 30px;
   font-weight: 600;
   line-height: 36px;

@@ -188,7 +188,7 @@ function DayPlot({ points, kind, label }: { points: Point[]; kind: "columns" | "
               <svg className="area" viewBox={`0 0 100 ${PLOT_H}`} preserveAspectRatio="none" role="img" aria-label={label}>
                 <defs>
                   <linearGradient id="area-fill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" className="area-stop" stopOpacity="0.42" />
+                    <stop offset="0" className="area-stop" stopOpacity="0.22" />
                     <stop offset="1" className="area-stop" stopOpacity="0.02" />
                   </linearGradient>
                 </defs>

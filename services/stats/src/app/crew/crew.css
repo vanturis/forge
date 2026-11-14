@@ -5,12 +5,11 @@
  * tasks stand side by side.
  */
 
-/* the app view fills the window: no top bar, footer or background picture of the website */
+/* the app view fills the window: no top bar or footer of the website */
 body:has(.crew-page) {
   background: var(--color-backdrop);
 }
 
-body:has(.crew-page)::before,
 body:has(.crew-page) > .topbar,
 body:has(.crew-page) > .footer {
   display: none;
@@ -519,8 +518,9 @@ body:has(.crew-page) > .footer {
   align-items: center;
   gap: 10px 12px;
   padding: 12px 14px 12px 16px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-panel);
-  background: var(--color-accent-soft);
+  background: var(--color-surface-2);
 }
 
 .crew-request > svg {
@@ -549,7 +549,7 @@ body:has(.crew-page) > .footer {
   gap: 8px;
 }
 
-/* tabs: pills in a pill, the chosen one filled */
+/* tabs: pills in a pill, the chosen one on a neutral surface */
 .crew-tabs {
   display: grid;
   flex-shrink: 0;
@@ -584,14 +584,14 @@ body:has(.crew-page) > .footer {
 }
 
 .crew-tabs button[aria-selected="true"] {
-  background: var(--color-accent);
-  color: var(--color-accent-fg);
-  box-shadow: var(--shadow-solid);
+  background: var(--color-surface-3);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-raised);
 }
 
 .crew-tabs button[aria-selected="true"] .crew-count {
-  background: rgb(255 255 255 / 0.22);
-  color: var(--color-accent-fg);
+  background: var(--color-border-strong);
+  color: var(--color-fg);
 }
 
 .crew-columns {

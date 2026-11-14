@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 // The app has only its dark theme; the page follows it.
 export const viewport: Viewport = {
   colorScheme: "dark",
-  themeColor: "#111418",
+  themeColor: "#111112",
 };
 
 /** What the support dialog shows as given so far; left out without a Stripe key or when Stripe fails. */
