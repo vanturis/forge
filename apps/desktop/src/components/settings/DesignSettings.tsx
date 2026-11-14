@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { activeColorScheme, colorSchemes, CUSTOM_SCHEME_PREFIX, DEFAULT_SCHEME_ID, MAX_CUSTOM_SCHEMES, type ColorScheme, type CustomScheme, type SchemeColors, type Settings } from "@forge/protocol";
-import { previewScheme, supportsWindowOpacity } from "@/lib/design";
+import { previewScheme, useTransparencySupported } from "@/lib/design";
 import { useUi } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -9,7 +9,8 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Group, Row } from "@/components/settings/layout";
-import { OpacitySlider, SchemePicker, SchemePreview } from "./SchemePicker";
+import { SchemePicker, SchemePreview, TransparencyChoice } from "./SchemePicker";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { t } from "@/i18n";
 
 const td = t.settings.design;
@@ -28,13 +29,14 @@ function newId(): string {
   return `${CUSTOM_SCHEME_PREFIX}${Math.random().toString(36).slice(2, 10).padEnd(8, "0")}`;
 }
 
-/** Settings, Design: the color scheme (presets and the user's own) and the opacity of the windows. */
+/** Settings, Design: the color scheme (presets and the user's own) and the transparency of the windows. */
 export function DesignSettings({ s, save }: { s: Settings; save: Save }) {
   const openSettings = useUi((u) => u.openSettings);
   const request = useUi((u) => u.designRequest);
   const setRequest = useUi((u) => u.setDesignRequest);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [deleting, setDeleting] = useState<ColorScheme | null>(null);
+  const transparent = useTransparencySupported();
   const full = s.customSchemes.length >= MAX_CUSTOM_SCHEMES;
 
   const copyOf = (scheme: ColorScheme): Draft => ({ id: null, name: scheme.custom || scheme.id !== DEFAULT_SCHEME_ID ? td.editor.copyName(scheme.name) : "", colors: { ...scheme.colors } });
@@ -79,10 +81,10 @@ export function DesignSettings({ s, save }: { s: Settings; save: Save }) {
         </div>
       </Group>
 
-      {supportsWindowOpacity && (
+      {transparent && (
         <Group title={td.windowTitle}>
-          <Row label={td.opacityLabel} description={td.opacityDescription}>
-            <OpacitySlider value={s.windowOpacity} onSave={(v) => void save({ windowOpacity: v })} className="w-72" />
+          <Row label={td.transparencyLabel} description={td.transparencyDescription}>
+            <TransparencyChoice value={s.transparency} onSave={(v) => void save({ transparency: v })} />
           </Row>
         </Group>
       )}
@@ -193,7 +195,7 @@ function SchemeEditor({ draft, schemes, onClose, onSave }: { draft: Draft; schem
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
-/** A color as swatch (opens the system's color picker) and as hex value to type or paste. */
+/** A color as swatch (opens the color picker) and as hex value to type or paste. */
 function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const [text, setText] = useState(value);
   useEffect(() => setText(value), [value]);
@@ -208,9 +210,7 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
     <div>
       <span className="mb-1.5 flex h-4 text-xs font-medium text-muted">{label}</span>
       <div className="flex gap-2">
-        <span className="relative h-8 w-10 shrink-0 overflow-hidden rounded-md border border-border-strong shadow-xs" style={{ background: value }}>
-          <input type="color" value={value} onChange={(e) => onChange(e.target.value.toLowerCase())} aria-label={td.editor.pick(label)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-        </span>
+        <ColorPicker value={value} onChange={onChange} label={td.editor.pick(label)} />
         <Input
           value={text}
           onChange={(e) => {

@@ -24,7 +24,7 @@ import type {
   Settings,
   TestDbState,
 } from "@forge/protocol";
-import { activeColorScheme, colorSchemes, WINDOW_OPACITY_CHOICES, IDLE_CLOSE_CHOICES, LANGUAGE_NAMES, LANGUAGES, LONG_SESSION_CHOICES, SUPPORT_LINKS, STATS_PAGE_URL, redactRemoteUrl } from "@forge/protocol";
+import { activeColorScheme, colorSchemes, TRANSPARENCY_LEVELS, IDLE_CLOSE_CHOICES, LANGUAGE_NAMES, LANGUAGES, LONG_SESSION_CHOICES, SUPPORT_LINKS, STATS_PAGE_URL, redactRemoteUrl } from "@forge/protocol";
 import { t } from "@/i18n";
 import { openExternal } from "@/lib/native";
 import { checkInstall, installFromFile, installFull, installUpdate, supportsFullInstall } from "@/lib/app-install";
@@ -35,7 +35,7 @@ import { EFFORT_LEVELS, modelLabel } from "@/lib/models";
 import { errorMessage, RpcCallError } from "@/lib/rpc";
 import { openChatWindow, pinChatWindow, recallChatWindow, type ChatWindowList } from "@/lib/chat-windows";
 import { setAlwaysOnTop } from "@/lib/window-options";
-import { supportsWindowOpacity } from "@/lib/design";
+import { useDesign } from "@/lib/design";
 import { takeScreenshot } from "@/lib/screenshot";
 import { openChatFindSoon } from "@/lib/chat-find";
 import { COMPOSER_HISTORY_EVENT } from "@/stores/composer-history";
@@ -174,7 +174,7 @@ const SETTING_OPTIONS: ReadonlyArray<{ id: string; label: string; section: Setti
   { id: "sync-projects", label: t.layout.actions.options.syncProjects, section: "github", keywords: "projekte holen sync klonen abgleich rechner pc fetch projects clone other computers" },
   { id: "sync-passphrase", label: t.layout.actions.options.syncPassphrase, section: "github", keywords: "sync-passwort verschlüsselung schlüssel passwort vergessen github password passphrase encryption key forgot" },
   { id: "sync-local-only", label: t.layout.actions.options.syncLocalOnly, section: "github", keywords: "nur lokal out of sync nicht synchronisiert gelöscht anderer pc local only deleted removed other computer" },
-  { id: "window-opacity", label: t.layout.actions.options.windowOpacity, section: "design", keywords: "deckkraft transparenz transparent durchsichtig durchscheinend fenster regler opacity transparency see-through window slider" },
+  { id: "transparency", label: t.layout.actions.options.transparency, section: "design", keywords: "deckkraft transparenz transparent durchsichtig durchscheinend fenster regler opacity transparency see-through window slider" },
   { id: "sync-force", label: t.layout.actions.options.syncForce, section: "github", keywords: "sync zurücksetzen überschreiben neuester stand github reset overwrite latest hard" },
   { id: "sync-versions", label: t.layout.actions.options.syncVersions, section: "github", keywords: "versionen sync verlauf commit wiederherstellen backup versions history restore" },
   { id: "backup-restore", label: t.layout.actions.options.backupRestore, section: "backup", keywords: "backup herunterladen zurücksetzen sichern wiederherstellen export download restore" },
@@ -807,12 +807,13 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
       ui.setDesignRequest("new");
       ui.openSettings("design");
     }, { keywords: "farbschema eigenes schema farben design theme erstellen anlegen bearbeiten color scheme own custom create edit" });
-    if (supportsWindowOpacity) {
-      for (const percent of WINDOW_OPACITY_CHOICES) {
-        if (percent === settings.windowOpacity) continue;
-        const label = t.layout.actions.windowOpacity(percent);
-        setting(`window-opacity-${percent}`, label, icon(Blend), () => void saveSetting(qc, { windowOpacity: percent }, label), {
-          hint: t.layout.actions.now(t.layout.actions.percent(settings.windowOpacity)),
+    // Only where the system can blur behind a window; elsewhere the setting does nothing.
+    if (useDesign.getState().transparencySupported) {
+      for (const level of TRANSPARENCY_LEVELS) {
+        if (level === settings.transparency) continue;
+        const label = t.layout.actions.transparency(t.settings.design.levels[level]);
+        setting(`transparency-${level}`, label, icon(Blend), () => void saveSetting(qc, { transparency: level }, label), {
+          hint: t.layout.actions.now(t.settings.design.levels[settings.transparency]),
           keywords: "deckkraft transparenz transparent durchsichtig durchscheinend fenster opacity transparency see-through window",
         });
       }

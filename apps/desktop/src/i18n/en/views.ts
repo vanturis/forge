@@ -152,7 +152,7 @@ export const views: typeof De = {
   settings: {
     sections: {
       general: { label: "General", hint: "Model, profile, controls" },
-      design: { label: "Design", hint: "Color scheme, opacity" },
+      design: { label: "Design", hint: "Color scheme, own colors, transparency" },
       templates: { label: "Templates", hint: "Recurring tasks" },
       claude: { label: "Claude Code", hint: "Sign-in, usage, forecast" },
       policy: { label: "Blocklist", hint: "What FORGE always blocks" },

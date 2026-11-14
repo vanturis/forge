@@ -20,6 +20,7 @@ import { PROFILE_IDS, PROFILE_INFO, ProfileBadge, ProfileIcon } from "@/componen
 import { tagLabel } from "@/components/workspace/ProjectSettingsTab";
 import { RemoteControlButton } from "@/components/workspace/RemoteControl";
 import { InTitleBar } from "@/components/layout/TitleBar";
+import { hasTitleBar } from "@/lib/title-bar";
 import { AppButtons, HeaderDivider } from "@/components/layout/Page";
 import { useSplitLayout } from "./chat-slot";
 import { CrewPresence } from "@/components/crew/CrewPresence";
@@ -169,8 +170,10 @@ export function SplitControlBar({ projectId }: { projectId: string }) {
       <div className="flex-1" />
       {project ? (
         <>
-          <InTitleBar>{isTmpChat(project) ? <SplitButton /> : <LayoutToggles project={project} />}</InTitleBar>
-          <RemoteControlButton project={project} />
+          <InTitleBar>
+            {isTmpChat(project) ? <SplitButton /> : <LayoutToggles project={project} />}
+            <RemoteControlButton project={project} compact={hasTitleBar} />
+          </InTitleBar>
         </>
       ) : (
         <div className="flex items-center gap-0.5" aria-hidden>
@@ -245,9 +248,9 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
         {controls && (
           <InTitleBar>
             <SplitButton />
+            <RemoteControlButton project={project} compact={hasTitleBar} />
           </InTitleBar>
         )}
-        {controls && <RemoteControlButton project={project} />}
         {pane ? (
           <>
             <HeaderDivider />
@@ -312,9 +315,9 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
       {controls && (
         <InTitleBar>
           <LayoutToggles project={project} />
+          <RemoteControlButton project={project} compact={hasTitleBar} />
         </InTitleBar>
       )}
-      {controls && <RemoteControlButton project={project} />}
 
       <DropdownMenu
         header={m.profileHeader}

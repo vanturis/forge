@@ -1,7 +1,6 @@
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Copy, Minus, Square, X } from "lucide-react";
 import { hasTitleBar, useTitleBarSlot } from "@/lib/title-bar";
 import { AlwaysOnTopButton } from "./AlwaysOnTopButton";
 import { Logo } from "./Logo";
@@ -38,12 +37,14 @@ const setSlot = (el: HTMLElement | null) => useTitleBarSlot.setState({ el });
 function MainItems() {
   return (
     // One size for every icon button here, whatever it has in a page header.
-    <div className="flex shrink-0 items-center gap-0.5 pl-3 pr-2 [&_button[aria-label]]:h-7 [&_button[aria-label]]:w-7">
+    <div className="flex shrink-0 items-center gap-0.5 pl-3 pr-1.5 [&_button[aria-label]]:h-7 [&_button[aria-label]]:w-7">
       <div ref={setSlot} className="flex items-center gap-0.5 empty:hidden" />
       <span aria-hidden className="mx-1.5 h-4 w-px shrink-0 bg-border [div:empty+&]:hidden" />
       <SyncButton />
       <PhoneButton />
       <AlwaysOnTopButton />
+      {/* What comes after it acts on the window itself (minimize, maximize, close), not inside FORGE. */}
+      <span aria-hidden className="ml-2 h-4 w-px shrink-0 bg-border-strong" />
     </div>
   );
 }
@@ -88,16 +89,29 @@ function WindowControls() {
   return (
     <div className="flex shrink-0">
       <button type="button" className={button} aria-label={tb.minimize} title={tb.minimize} onClick={() => void win().minimize().catch(() => {})}>
-        <Minus className="h-4 w-4" strokeWidth={1.5} />
+        <Glyph d="M0 5.5h10" />
       </button>
       <button type="button" className={button} aria-label={maximized ? tb.restore : tb.maximize} title={maximized ? tb.restore : tb.maximize} onClick={() => void win().toggleMaximize().catch(() => {})}>
-        {maximized ? <Copy className="h-3.5 w-3.5 -scale-x-100" strokeWidth={1.5} /> : <Square className="h-3.5 w-3.5" strokeWidth={1.5} />}
+        <Glyph d={maximized ? "M0.5 2.5h7v7h-7zM2.5 2.5v-2h7v7h-2" : "M0.5 0.5h9v9h-9z"} />
       </button>
       {/* close() asks first: the main window may offer to push, a chat window hands its draft back. */}
       <button type="button" className={`${button} hover:bg-danger hover:text-accent-fg`} aria-label={tb.close} title={tb.close} onClick={() => void win().close().catch(() => {})}>
-        <X className="h-4 w-4" strokeWidth={1.5} />
+        <Glyph d="M0.5 0.5l9 9M9.5 0.5l-9 9" />
       </button>
     </div>
+  );
+}
+
+/**
+ * The marks of the window buttons, 10px like the ones of Windows. Lines of 1px on pixel centers: icons
+ * from the icon set scaled their straight lines across two pixel rows, which made minimize and
+ * maximize look dimmer than the diagonal cross of close.
+ */
+function Glyph({ d }: { d: string }) {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden>
+      <path d={d} />
+    </svg>
   );
 }
 

@@ -20,11 +20,11 @@ export const settings = {
     deleteTitle: (name: string) => `Farbschema „${name}“ löschen?`,
     deleteText: "Das lässt sich nicht rückgängig machen. War es gewählt, gilt danach wieder das Schema FORGE.",
     windowTitle: "Fenster",
-    opacityLabel: "Deckkraft",
-    opacityDescription: "Unter 100 % scheint durch, was hinter FORGE liegt. Gilt für das Hauptfenster und die Chat-Fenster.",
-    percent: (p: number) => `${p} %`,
-    syncOn: "Farbschema, eigene Schemata und Deckkraft gleicht FORGE über GitHub mit deinen anderen PCs ab.",
-    syncOff: "Mit der Synchronisierung über GitHub gelten Farbschema, eigene Schemata und Deckkraft auch auf deinen anderen PCs.",
+    transparencyLabel: "Transparenz",
+    transparencyDescription: "Der Desktop scheint weichgezeichnet durch den Hintergrund der Fenster. Text, Flächen und Bedienelemente bleiben deckend.",
+    levels: { off: "Aus", light: "Leicht", medium: "Mittel", strong: "Stark" },
+    syncOn: "Farbschema, eigene Schemata und Transparenz gleicht FORGE über GitHub mit deinen anderen PCs ab.",
+    syncOff: "Mit der Synchronisierung über GitHub gelten Farbschema, eigene Schemata und Transparenz auch auf deinen anderen PCs.",
     syncOpen: "Synchronisierung einrichten",
     editor: {
       newTitle: "Eigenes Farbschema",
@@ -107,7 +107,6 @@ export const settings = {
 
   backup: {
     showOlder: (n: number) => `Ältere anzeigen (${n})`,
-    showFewer: "Weniger anzeigen",
     reason: {
       start: "Beim Start",
       manual: "Von Hand",

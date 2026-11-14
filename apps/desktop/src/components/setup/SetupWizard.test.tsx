@@ -79,7 +79,7 @@ beforeEach(() => {
     language: "de",
     colorScheme: "default",
     customSchemes: [],
-    windowOpacity: 100,
+    transparency: "light",
     designAsked: false,
   };
   account = { login: "me", id: 1, name: "Me", avatarUrl: null, profileUrl: "https://github.com/me" };

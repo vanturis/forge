@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArchiveRestore, ChevronDown, ChevronUp, CloudAlert, CloudCheck, CloudOff, CloudUpload, Download, FileUp, History, Save } from "lucide-react";
+import { ArchiveRestore, CloudAlert, CloudCheck, CloudOff, CloudUpload, Download, FileUp, History, Save } from "lucide-react";
 import { BackupPart, type BackupInfo, type SyncVersion } from "@forge/protocol";
 import { call, keys, useBackups, useSettings, useSyncStatus, useSyncVersions } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge, EmptyState, ErrorBanner, InfoTip, LabelWithInfo, ToggleRow } from "@/components/ui/misc";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { locale, t } from "@/i18n";
+import { useShown } from "./show-more";
 
 const tb = t.settings.backup;
 
@@ -30,31 +31,13 @@ function fileName(iso: string) {
   return `forge-backup-${iso.slice(0, 10)}.json`;
 }
 
-/** The lists show the newest states; older ones come in steps with "Ältere anzeigen". */
-const FIRST_SHOWN = 3;
-const MORE_STEP = 10;
-
-/** How many rows of a list are shown, and the button below it that shows older ones or folds them away again. */
-function useShown(total: number) {
-  const [wanted, setWanted] = useState(FIRST_SHOWN);
-  const shown = Math.min(wanted, total);
-  const button =
-    total <= FIRST_SHOWN ? null : (
-      <Button size="sm" variant="ghost" className="mt-2" onClick={() => setWanted(shown < total ? shown + MORE_STEP : FIRST_SHOWN)}>
-        {shown < total ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-        {shown < total ? tb.showOlder(total - shown) : tb.showFewer}
-      </Button>
-    );
-  return { shown, button };
-}
-
 /** Backups of FORGE's configuration: automatic ones from each start, by hand, download and restore. */
 export function BackupSettings() {
   const backups = useBackups();
   const qc = useQueryClient();
   const [creating, setCreating] = useState(false);
   const [restore, setRestore] = useState<{ info: BackupInfo; path: string | null } | null>(null);
-  const more = useShown(backups.data?.length ?? 0);
+  const more = useShown(backups.data?.length ?? 0, tb.showOlder);
 
   const create = async () => {
     setCreating(true);
@@ -212,7 +195,7 @@ export function GitHubVersions() {
   const [restore, setRestore] = useState<SyncVersion | null>(null);
   // GitHub lists every sync; the last 20 are enough to go back to.
   const list = (versions.data ?? []).slice(0, 20);
-  const more = useShown(list.length);
+  const more = useShown(list.length, tb.showOlder);
   if (!on) return <p className="text-xs text-muted">{tb.versions.hidden}</p>;
   return (
     <div>

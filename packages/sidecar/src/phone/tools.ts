@@ -1,4 +1,4 @@
-import { WINDOW_OPACITY_MAX, WINDOW_OPACITY_MIN, BackupPart, CHAT_WINDOW_ACTIONS, EffortLevel, Language, MemoryScope, PermissionMode, PolicyRuleId, ProfileId, SessionStatus, UpdateChannel, type ChatWindowAction } from "@forge/protocol";
+import { Transparency, BackupPart, CHAT_WINDOW_ACTIONS, EffortLevel, Language, MemoryScope, PermissionMode, PolicyRuleId, ProfileId, SessionStatus, UpdateChannel, type ChatWindowAction } from "@forge/protocol";
 import { z } from "zod";
 import { tr, type SidecarMessages } from "../i18n/index.js";
 
@@ -295,8 +295,8 @@ export interface ForgeSettingsPatch {
   language?: Language;
   /** name or id of a color scheme (presets and the user's own) */
   colorScheme?: string;
-  /** opacity of the windows in percent, 50 to 100 */
-  windowOpacity?: number;
+  /** how see-through the windows are */
+  transparency?: Transparency;
 }
 
 /** A rule of the blocklist as it is said on the phone. */
@@ -1004,7 +1004,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
       usage_stats: { type: "boolean", optional: true },
       language: { type: "string", optional: true, enum: Language.options },
       color_scheme: { type: "string", optional: true },
-      window_opacity: { type: "number", optional: true, min: WINDOW_OPACITY_MIN, max: WINDOW_OPACITY_MAX },
+      window_transparency: { type: "string", optional: true, enum: Transparency.options },
       policy_rule: { type: "string", optional: true, enum: PolicyRuleId.options },
       policy_rule_on: { type: "boolean", optional: true },
     },
@@ -1034,7 +1034,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
         usageStats: optBool(a.usage_stats),
         language: Language.options.find((x) => x === a.language),
         colorScheme: opt(a.color_scheme),
-        windowOpacity: optNum(a.window_opacity),
+        transparency: Transparency.options.find((x) => x === a.window_transparency),
         policyRule: PolicyRuleId.options.find((x) => x === a.policy_rule),
         policyRuleOn: optBool(a.policy_rule_on),
       }),

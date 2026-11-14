@@ -486,7 +486,7 @@ export const DEFAULT_SETTINGS: Settings = {
   language: "en",
   colorScheme: DEFAULT_SCHEME_ID,
   customSchemes: [],
-  windowOpacity: 100,
+  transparency: "light",
   designAsked: false,
 };
 

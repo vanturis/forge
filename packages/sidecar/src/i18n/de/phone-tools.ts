@@ -298,7 +298,7 @@ export const phoneTools = {
       usage_stats: "anonyme Nutzungsstatistik: alle 5 Minuten Summen wie Tokens, Projekte und Agenten ohne Inhalte an den Statistik-Dienst von FORGE; aus löscht die gesendeten Daten dort",
       language: "Sprache von FORGE für Oberfläche, Meldungen und Telefon: en Englisch, de Deutsch. Danach sprichst du in der neuen Sprache",
       color_scheme: `Farbschema der Oberfläche, nach Name: ${SCHEME_PRESETS.map((x) => x.name).join(", ")} oder ein eigenes Schema des Nutzers. FORGE ist der Standard`,
-      window_opacity: "Deckkraft der FORGE-Fenster in Prozent, 50 bis 100. 100 ist deckend, darunter scheint durch, was hinter FORGE liegt",
+      window_transparency: "Transparenz des Fensterhintergrunds von FORGE: off aus, light leicht (Standard, kaum sichtbar), medium mittel, strong stark. Der Desktop scheint weichgezeichnet durch den Hintergrund, Text und Bedienelemente bleiben deckend. Wirkt nur unter Windows 11",
       policy_rule: "Regel der Sperrliste",
       policy_rule_on: "true schaltet die Regel ein, false aus",
     },

@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { Check, Copy, Pencil, Trash2 } from "lucide-react";
-import { colorSchemes, WINDOW_OPACITY_MAX, WINDOW_OPACITY_MIN, type ColorScheme, type Settings } from "@forge/protocol";
-import { applyWindowOpacity, schemeTokens } from "@/lib/design";
+import { colorSchemes, TRANSPARENCY_LEVELS, type ColorScheme, type Settings, type Transparency } from "@forge/protocol";
+import { schemeTokens } from "@/lib/design";
 import { contextItems } from "@/lib/context-menu";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/misc";
-import { Slider } from "@/components/ui/slider";
+import { RadioGroup } from "@/components/ui/radio-group";
 import type { MenuItem } from "@/components/ui/dropdown";
 import { t } from "@/i18n";
 
@@ -122,30 +122,9 @@ export function SchemePreview({ scheme, className }: { scheme: ColorScheme; clas
   );
 }
 
-/**
- * Opacity of the windows. The window follows while the thumb moves; saved is only where the user
- * lets go, so dragging does not write a setting (and a sync) per step.
- */
-export function OpacitySlider({ value, onSave, className }: { value: number; onSave: (percent: number) => void; className?: string }) {
-  const [draft, setDraft] = useState(value);
-  // A change from elsewhere (palette, phone, sync) moves the thumb too.
-  useEffect(() => setDraft(value), [value]);
-  return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <Slider
-        value={draft}
-        min={WINDOW_OPACITY_MIN}
-        max={WINDOW_OPACITY_MAX}
-        onChange={(v) => {
-          setDraft(v);
-          applyWindowOpacity(v);
-        }}
-        onCommit={(v) => v !== value && onSave(v)}
-        aria-label={td.opacityLabel}
-        valueText={td.percent(draft)}
-        className="min-w-0 flex-1"
-      />
-      <span className="w-12 shrink-0 text-right text-body tabular-nums text-muted">{td.percent(draft)}</span>
-    </div>
-  );
+const LEVEL_OPTIONS = TRANSPARENCY_LEVELS.map((level) => ({ value: level, label: td.levels[level] }));
+
+/** How much of the desktop shows blurred through the background of the windows: off and three steps. */
+export function TransparencyChoice({ value, onSave, className }: { value: Transparency; onSave: (level: Transparency) => void; className?: string }) {
+  return <RadioGroup<Transparency> value={value} onChange={onSave} options={LEVEL_OPTIONS} aria-label={td.transparencyLabel} className={className} />;
 }

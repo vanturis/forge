@@ -2,6 +2,9 @@
 export const ui = {
   close: "Schließen",
   cancel: "Abbrechen",
+  colorPicker: { area: "Sättigung und Helligkeit", hue: "Farbton" },
+  showMore: (n: number) => `Weitere anzeigen (${n})`,
+  showFewer: "Weniger anzeigen",
   info: "Info",
   error: "Fehler",
   selectPlaceholder: "Auswählen",

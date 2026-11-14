@@ -2,11 +2,11 @@ mod chat_windows;
 mod i18n;
 mod job;
 mod mic;
-mod opacity;
 mod screenshot;
 mod shell_env;
 mod sidecar;
 mod terminal;
+mod transparency;
 mod update;
 
 use chat_windows::ChatWindows;
@@ -145,7 +145,6 @@ pub fn run() {
         .manage(Terminals::default())
         .manage(ChatWindows::default())
         .manage(Screenshots::default())
-        .manage(opacity::WindowOpacity::default())
         .invoke_handler(tauri::generate_handler![
             i18n::set_language,
             sidecar_send,
@@ -177,7 +176,8 @@ pub fn run() {
             screenshot::screenshot_key_status,
             mic::mic_access,
             mic::mic_settings,
-            opacity::set_window_opacity
+            transparency::transparency_supported,
+            transparency::set_window_transparency
         ])
         .on_window_event(|window, event| {
             // A screenshot goes to the FORGE window the user worked in last.
@@ -187,11 +187,7 @@ pub fn run() {
                     window.app_handle().state::<Screenshots>().focused(label);
                 }
             }
-            if let WindowEvent::Resized(_) | WindowEvent::Focused(_) = event {
-                opacity::reapply(window);
-            }
             if let WindowEvent::Destroyed = event {
-                opacity::forget(window);
                 let app = window.app_handle();
                 // Chat windows belong to the main window: closing it quits FORGE as before.
                 if window.label() == chat_windows::MAIN {
@@ -226,6 +222,7 @@ pub fn run() {
             #[cfg(windows)]
             if let Some(main) = app.get_webview_window(chat_windows::MAIN) {
                 let _ = main.set_decorations(false);
+                transparency::prepare(&main);
             }
             screenshot::start(&handle);
             #[cfg(target_os = "linux")]

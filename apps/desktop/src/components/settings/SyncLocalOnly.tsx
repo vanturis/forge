@@ -9,6 +9,7 @@ import { useUi } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { t } from "@/i18n";
+import { useShown } from "./show-more";
 
 const tl = t.settings.localOnly;
 
@@ -130,15 +131,19 @@ function LocalOnlyActions({ item }: { item: SyncLocalOnly }) {
 
 /** Everything that is only here, for the sync settings. */
 export function LocalOnlyList({ items }: { items: SyncLocalOnly[] }) {
+  const more = useShown(items.length);
   return (
-    <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
-      {items.map((item) => (
-        <li key={item.key} className="flex items-center gap-3 px-3 py-2">
-          <CloudOff className="h-3.5 w-3.5 shrink-0 text-warning" />
-          <div className="min-w-0 flex-1 truncate text-body">{item.label}</div>
-          <LocalOnlyActions item={item} />
-        </li>
-      ))}
-    </ul>
+    <div>
+      <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+        {items.slice(0, more.shown).map((item) => (
+          <li key={item.key} className="flex items-center gap-3 px-3 py-2">
+            <CloudOff className="h-3.5 w-3.5 shrink-0 text-warning" />
+            <div className="min-w-0 flex-1 truncate text-body">{item.label}</div>
+            <LocalOnlyActions item={item} />
+          </li>
+        ))}
+      </ul>
+      {more.button}
+    </div>
   );
 }

@@ -10,6 +10,7 @@ import { PALETTE_ID, menuActions, menuItemState } from "./app-menu";
 import { setChatView } from "@/components/workspace/chat-view";
 import { useSessionEvents } from "@/stores/session-events";
 import { keys } from "@/lib/queries";
+import { useDesign } from "@/lib/design";
 
 const settingKeys = Object.keys(Settings.shape) as Array<keyof typeof Settings.shape>;
 const booleanSettings = settingKeys.filter((k) => Settings.shape[k].def.type === "boolean");
@@ -20,7 +21,7 @@ const settings = {
   disabledPolicyRules: [],
   colorScheme: "default",
   customSchemes: [{ id: "custom-abcd1234", name: "Mitternacht", colors: { bg: "#101018", surface: "#181824", fg: "#e8e8f0", accent: "#00ff88", success: "#3fb97a", warning: "#d9a23b", danger: "#f0605a" } }],
-  windowOpacity: 100,
+  transparency: "light",
 } as unknown as Settings;
 
 const project = {
@@ -73,6 +74,8 @@ function missing(prefix: string, values: readonly string[], ids: Set<string>) {
 }
 
 describe("command palette covers all of FORGE", () => {
+  // As on Windows 11: the transparency steps are offered only where the shell can blur behind a window.
+  useDesign.setState({ transparencySupported: true });
   const entries = buildActions(fullContext());
   const ids = new Set(entries.map((e) => e.id));
   const hint = (what: string, where: string) => `Neu: ${what} ohne Eintrag in der Befehlspalette. Bitte in ${where} ergänzen.`;
@@ -81,15 +84,19 @@ describe("command palette covers all of FORGE", () => {
     expect(missing("settings-", SETTINGS_SECTIONS, ids), hint("Einstellungsbereich", "buildActions (palette-actions.tsx)")).toEqual([]);
   });
 
-  it("can switch to every other color scheme and window opacity", () => {
+  it("can switch to every other color scheme and transparency step", () => {
     const schemes = entries.filter((e) => e.id.startsWith("color-scheme-")).map((e) => e.label);
     expect(schemes).toContain("Farbschema: Gruvbox");
     expect(schemes).toContain("Farbschema: Mitternacht");
     expect(schemes).toContain("Eigenes Farbschema anlegen");
-    // The scheme and the opacity in use are no entries.
+    // The scheme and the step in use are no entries.
     expect(schemes).not.toContain("Farbschema: FORGE");
-    expect(ids.has("window-opacity-100")).toBe(false);
-    expect(entries.find((e) => e.id === "window-opacity-85")?.label).toBe("Deckkraft der Fenster: 85 %");
+    expect(ids.has("transparency-light")).toBe(false);
+    expect(entries.filter((e) => e.id.startsWith("transparency-")).map((e) => e.label)).toEqual([
+      "Transparenz des Fensterhintergrunds: Aus",
+      "Transparenz des Fensterhintergrunds: Mittel",
+      "Transparenz des Fensterhintergrunds: Stark",
+    ]);
   });
 
   it("has an entry for every workspace tab", () => {

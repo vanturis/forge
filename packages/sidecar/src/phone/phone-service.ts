@@ -38,8 +38,6 @@ import {
   elicitationFields,
   activeColorScheme,
   colorSchemes,
-  WINDOW_OPACITY_MAX,
-  WINDOW_OPACITY_MIN,
 } from "@forge/protocol";
 import type { Db } from "../persistence/db.js";
 import { limitWarning } from "../claude/usage.js";
@@ -509,8 +507,8 @@ function settingText(s: Settings, key: keyof ForgeSettingsPatch | "alwaysOnTop")
       const scheme = activeColorScheme(s);
       return m.settings.colorScheme(scheme.custom ? asData(scheme.name) : scheme.name);
     }
-    case "windowOpacity":
-      return m.settings.windowOpacity(s.windowOpacity);
+    case "transparency":
+      return m.settings.transparency[s.transparency];
     case "debugLogs":
       return m.settings.debugLogs(s.debugLogs);
     case "stripApiKey":
@@ -3257,9 +3255,9 @@ export class PhoneService {
             update.colorScheme = scheme.id;
             changed.push("colorScheme");
           }
-          if (patch.windowOpacity !== undefined) {
-            update.windowOpacity = Math.min(WINDOW_OPACITY_MAX, Math.max(WINDOW_OPACITY_MIN, Math.round(patch.windowOpacity)));
-            changed.push("windowOpacity");
+          if (patch.transparency !== undefined) {
+            update.transparency = patch.transparency;
+            changed.push("transparency");
           }
           const rule = patch.policyRule;
           if (rule && patch.policyRuleOn === undefined && !changed.length) return tr().phone.settings.rule(policyRuleLabel(rule), !cur.disabledPolicyRules.includes(rule));
@@ -3268,7 +3266,7 @@ export class PhoneService {
             update.disabledPolicyRules = patch.policyRuleOn ? off : [...off, rule];
             changed.push("policyRule");
           }
-          if (!changed.length) return `${(["defaultModel", "defaultEffort", "defaultProfile", "defaultProjectDir", ...flags, "updateChannel", "subagentEffort", "idleCloseMinutes", "longSessionTokens", "alwaysOnTop", "colorScheme", "windowOpacity", "policyRule"] as const).map((k) => settingText(cur, k)).join(", ")}.`;
+          if (!changed.length) return `${(["defaultModel", "defaultEffort", "defaultProfile", "defaultProjectDir", ...flags, "updateChannel", "subagentEffort", "idleCloseMinutes", "longSessionTokens", "alwaysOnTop", "colorScheme", "transparency", "policyRule"] as const).map((k) => settingText(cur, k)).join(", ")}.`;
           const next = await call("settings.update", update);
           return tr().phone.settings.saved(changed.map((k) => settingText(next, k)).join(", "));
         }),

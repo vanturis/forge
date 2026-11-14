@@ -39,8 +39,8 @@ import { SyncAvailableList } from "@/components/settings/SyncSettings";
 import { effortOptions, fromChoice, modelOptions, toChoice } from "@/components/settings/model-options";
 import { PROFILE_IDS, PROFILE_INFO } from "@/components/projects/ProfileBadge";
 import { LanguageChoice } from "@/components/settings/LanguageSelect";
-import { OpacitySlider, SchemePicker } from "@/components/settings/SchemePicker";
-import { supportsWindowOpacity } from "@/lib/design";
+import { SchemePicker, TransparencyChoice } from "@/components/settings/SchemePicker";
+import { useTransparencySupported } from "@/lib/design";
 import { t } from "@/i18n";
 import { SyncOffer, useEnableSync, useNeedsPassphrase } from "./SyncOffer";
 
@@ -384,14 +384,15 @@ function BasicsStep({
 
 /** After the sync step, so a design that came from GitHub is already the one shown as chosen. */
 function DesignStep({ s, save }: { s: Settings; save: (patch: Partial<Settings>) => Promise<void> }) {
+  const transparent = useTransparencySupported();
   const saveNow = (patch: Partial<Settings>) => void save(patch).catch((e: unknown) => toast.error(ts.basics.settingNotSaved, errorMessage(e)));
   return (
     <div className="flex flex-col gap-5">
       <SchemePicker s={s} onPick={(id) => saveNow({ colorScheme: id })} compact />
-      {supportsWindowOpacity && (
+      {transparent && (
         <div className="flex items-center gap-4">
-          <span className="shrink-0 text-body font-medium">{t.setup.designPrompt.opacityTitle}</span>
-          <OpacitySlider value={s.windowOpacity} onSave={(v) => saveNow({ windowOpacity: v })} className="min-w-0 flex-1" />
+          <span className="shrink-0 text-body font-medium">{t.setup.designPrompt.transparencyTitle}</span>
+          <TransparencyChoice value={s.transparency} onSave={(v) => saveNow({ transparency: v })} />
         </div>
       )}
     </div>

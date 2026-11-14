@@ -294,7 +294,7 @@ describe("encrypted sync over a private GitHub repository", () => {
     });
     for (const k of ["setting:claudePath", "setting:defaultProjectDir", "setting:syncEnabled", "setting:setupDone", "setting:syncAsked"]) expect(items).not.toHaveProperty([k]);
     // The design goes along: scheme, the user's own schemes and the opacity of the windows.
-    expect(items).toMatchObject({ "setting:colorScheme": "default", "setting:customSchemes": [], "setting:windowOpacity": 100 });
+    expect(items).toMatchObject({ "setting:colorScheme": "default", "setting:customSchemes": [], "setting:transparency": "light" });
     expect(JSON.stringify(items)).not.toContain(a.dir.replace(/\\/g, "\\\\"));
   });
 

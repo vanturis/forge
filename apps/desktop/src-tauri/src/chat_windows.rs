@@ -221,7 +221,6 @@ impl ChatWindows {
 
     fn pin<R: Runtime>(&self, app: &AppHandle<R>, w: &WebviewWindow<R>, on: bool) -> Result<(), String> {
         w.set_always_on_top(on).map_err(|e| e.to_string())?;
-        crate::opacity::reapply(&w.as_ref().window());
         let changed = {
             let mut pinned = self.pinned.lock().unwrap();
             if on {
@@ -313,6 +312,7 @@ pub async fn open_chat_window(app: AppHandle, target: ChatTarget, title: String,
         .and_then(|b| b.initialization_script(script).build());
     match built {
         Ok(w) => {
+            crate::transparency::prepare(&w);
             #[cfg(target_os = "linux")]
             crate::mic::allow_in(&w);
             if pinned {
@@ -388,7 +388,6 @@ pub fn update_chat_window(app: AppHandle, window: WebviewWindow, session_id: Opt
 pub fn set_always_on_top(app: AppHandle, on: bool) {
     if let Some(main) = app.get_webview_window(MAIN) {
         let _ = main.set_always_on_top(on);
-        crate::opacity::reapply(&main.as_ref().window());
     }
 }
 

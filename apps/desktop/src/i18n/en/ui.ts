@@ -3,6 +3,9 @@ import type { ui as De } from "../de/ui";
 export const ui: typeof De = {
   close: "Close",
   cancel: "Cancel",
+  colorPicker: { area: "Saturation and brightness", hue: "Hue" },
+  showMore: (n) => `Show more (${n})`,
+  showFewer: "Show fewer",
   info: "Info",
   error: "Error",
   selectPlaceholder: "Select",

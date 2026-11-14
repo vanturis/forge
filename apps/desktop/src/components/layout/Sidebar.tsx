@@ -46,7 +46,7 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex w-64 shrink-0 select-none flex-col overflow-hidden rounded-2xl border border-border bg-sidebar shadow-sm">
+    <aside className="flex w-64 shrink-0 select-none flex-col overflow-hidden rounded-2xl border border-border bg-shell-side shadow-sm">
       {/* With FORGE's own title bar (Windows) the logo sits up there; search and support stay here. */}
       {!hasTitleBar && (
         <div className="flex items-center px-5 pb-4 pt-5">

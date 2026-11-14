@@ -20,11 +20,11 @@ export const settings: typeof De = {
     deleteTitle: (name) => `Delete color scheme "${name}"?`,
     deleteText: "This cannot be undone. If it was selected, the FORGE scheme applies again afterwards.",
     windowTitle: "Window",
-    opacityLabel: "Opacity",
-    opacityDescription: "Below 100% whatever lies behind FORGE shows through. Applies to the main window and the chat windows.",
-    percent: (p) => `${p}%`,
-    syncOn: "FORGE syncs the color scheme, your own schemes and the opacity with your other PCs over GitHub.",
-    syncOff: "With the sync over GitHub, the color scheme, your own schemes and the opacity also apply on your other PCs.",
+    transparencyLabel: "Transparency",
+    transparencyDescription: "The desktop shows blurred through the background of the windows. Text, panels and controls stay solid.",
+    levels: { off: "Off", light: "Light", medium: "Medium", strong: "Strong" },
+    syncOn: "FORGE syncs the color scheme, your own schemes and the transparency with your other PCs over GitHub.",
+    syncOff: "With the sync over GitHub, the color scheme, your own schemes and the transparency also apply on your other PCs.",
     syncOpen: "Set up sync",
     editor: {
       newTitle: "Own color scheme",
@@ -107,7 +107,6 @@ export const settings: typeof De = {
 
   backup: {
     showOlder: (n) => `Show older (${n})`,
-    showFewer: "Show fewer",
     reason: {
       start: "On start",
       manual: "Manual",

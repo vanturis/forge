@@ -153,7 +153,7 @@ export const views = {
   settings: {
     sections: {
       general: { label: "Allgemein", hint: "Modell, Profil, Bedienung" },
-      design: { label: "Design", hint: "Farbschema, Deckkraft" },
+      design: { label: "Design", hint: "Farbschema, eigene Farben, Transparenz" },
       templates: { label: "Vorlagen", hint: "Wiederkehrende Aufträge" },
       claude: { label: "Claude Code", hint: "Anmeldung, Nutzung, Prognose" },
       policy: { label: "Sperrliste", hint: "Was FORGE immer blockiert" },

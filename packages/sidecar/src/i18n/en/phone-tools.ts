@@ -323,7 +323,7 @@ export const phoneTools: typeof De = {
         "Anonymous usage statistics: every 5 minutes totals like tokens, projects and agents, without content, to FORGE's statistics service; off deletes the data sent there",
       language: "Language of FORGE for the interface, messages and the phone: en English, de German. Afterwards you speak the new language",
       color_scheme: `Color scheme of the interface, by name: ${SCHEME_PRESETS.map((x) => x.name).join(", ")} or one of the user's own schemes. FORGE is the default`,
-      window_opacity: "Opacity of the FORGE windows in percent, 50 to 100. 100 is solid, below that what lies behind FORGE shows through",
+      window_transparency: "Transparency of the background of the FORGE windows: off, light (default, barely visible), medium, strong. The desktop shows blurred through the background, text and controls stay solid. Only has an effect on Windows 11",
       policy_rule: "Rule of the blocklist",
       policy_rule_on: "true switches the rule on, false off",
     },

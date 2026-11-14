@@ -9,6 +9,8 @@
   --color-backdrop: #0b0b0c;
   --color-bg: #131314;
   --color-sidebar: #19191a;
+  /* the sidebar panel of the shell; translucent with the transparency setting (lib/design.ts), other bg-sidebar panels stay solid */
+  --color-shell-side: var(--color-sidebar);
   --color-surface: #19191a;
   --color-surface-2: #202022;
   --color-surface-3: #29292b;
@@ -636,36 +638,4 @@ body {
 .file-link:hover {
   color: var(--color-accent);
   text-decoration-color: currentColor;
-}
-
-/* Slider (components/ui/slider.tsx): the part left of the thumb is filled, --slider-fill says how far. */
-.slider {
-  appearance: none;
-  height: 20px;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
-}
-.slider:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.slider::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(to right, var(--color-accent) var(--slider-fill), var(--color-surface-3) var(--slider-fill));
-}
-.slider::-webkit-slider-thumb {
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  margin-top: -5px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 999px;
-  background: var(--color-fg);
-  box-shadow: var(--shadow-md);
-  transition: transform 120ms var(--ease-snappy);
-}
-.slider:active::-webkit-slider-thumb {
-  transform: scale(1.1);
 }

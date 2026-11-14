@@ -38,9 +38,9 @@ function setup(children: (qc: QueryClient) => React.ReactNode) {
 beforeEach(() => {
   callMock.mockReset();
   useUi.setState({ setupWizard: false, view: "home", settingsSection: "general", designRequest: null });
-  useDesign.setState({ saved: SCHEME_PRESETS[0]!, preview: null });
+  useDesign.setState({ saved: SCHEME_PRESETS[0]!, preview: null, transparency: "off", transparencySupported: true });
   previewScheme(null);
-  settings = { setupDone: true, syncAsked: true, usageStatsAsked: true, designAsked: false, syncEnabled: false, colorScheme: "default", customSchemes: [], windowOpacity: 100 };
+  settings = { setupDone: true, syncAsked: true, usageStatsAsked: true, designAsked: false, syncEnabled: false, colorScheme: "default", customSchemes: [], transparency: "light" };
   callMock.mockImplementation(async (method: string, params: Record<string, unknown>) => {
     if (method === "settings.update") settings = { ...settings, ...params };
     return method.startsWith("settings.") ? settings : null;
@@ -51,7 +51,7 @@ afterEach(cleanup);
 describe("design notice after the update", () => {
   it("lets the user choose a scheme, paints it and does not come back once closed", async () => {
     setup(() => <DesignPrompt />);
-    expect(await screen.findByText("Neu: Farbschemata und Deckkraft")).toBeTruthy();
+    expect(await screen.findByText("Neu: Farbschemata und Transparenz")).toBeTruthy();
     expect(screen.getByRole("radio", { name: /FORGE/ }).getAttribute("aria-checked")).toBe("true");
     // FORGE's own look is the stylesheet: no overrides.
     expect(token("--color-accent")).toBe("");
@@ -59,26 +59,35 @@ describe("design notice after the update", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Vampire/ }));
     await waitFor(() => expect(calls("settings.update")).toEqual([{ colorScheme: "vampire" }]));
     await waitFor(() => expect(token("--color-accent")).toBe("#bd93f9"));
-    expect(token("--color-bg")).toBe("#282a36");
+    expect(token("--color-bg")).toBe("#13141d");
     expect(JSON.parse(localStorage.getItem("forge.design")!).id).toBe("vampire");
+
+    // Transparency comes in steps, "Leicht" is the default. The backdrop between the panels turns translucent, the rest stays solid.
+    expect(screen.getByRole("radio", { name: "Leicht" }).getAttribute("aria-checked")).toBe("true");
+    await waitFor(() => expect(token("--color-backdrop")).toBe("#0b0c12cc"));
+    fireEvent.click(screen.getByRole("radio", { name: "Stark" }));
+    await waitFor(() => expect(calls("settings.update")).toContainEqual({ transparency: "strong" }));
+    await waitFor(() => expect(token("--color-backdrop")).toBe("#0b0c124d"));
+    expect(token("--color-shell-side")).toBe("#191a26b3");
+    expect(token("--color-bg")).toBe("#13141d");
 
     fireEvent.click(screen.getByRole("button", { name: "Fertig" }));
     await waitFor(() => expect(calls("settings.update")).toContainEqual({ designAsked: true }));
-    await waitFor(() => expect(screen.queryByText("Neu: Farbschemata und Deckkraft")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Neu: Farbschemata und Transparenz")).toBeNull());
   });
 
   it("waits for the earlier questions and stays away from new installations", async () => {
     settings = { ...settings, usageStatsAsked: false };
     const first = setup(() => <DesignPrompt />);
     await waitFor(() => expect(calls("settings.get")).toHaveLength(1));
-    expect(screen.queryByText("Neu: Farbschemata und Deckkraft")).toBeNull();
+    expect(screen.queryByText("Neu: Farbschemata und Transparenz")).toBeNull();
     first.unmount();
 
     // The setup assistant sets designAsked when it finishes.
     settings = { ...settings, usageStatsAsked: true, designAsked: true };
     setup(() => <DesignPrompt />);
     await waitFor(() => expect(calls("settings.get")).toHaveLength(2));
-    expect(screen.queryByText("Neu: Farbschemata und Deckkraft")).toBeNull();
+    expect(screen.queryByText("Neu: Farbschemata und Transparenz")).toBeNull();
   });
 
   it("opens the design settings from the notice", async () => {
@@ -146,7 +155,7 @@ describe("scheme tokens", () => {
   it("mixes the steps between the named colors and picks a readable text on the accent", () => {
     const gruvbox = SCHEME_PRESETS.find((x) => x.id === "gruvbox")!;
     const tokens = schemeTokens(gruvbox);
-    expect(tokens["--color-backdrop"]).toBe("#1d2021");
+    expect(tokens["--color-backdrop"]).toBe("#0e0d0c");
     expect(tokens["--color-accent-soft"]).toBe("#fabd2f17");
     // Yellow is too light for white text.
     expect(tokens["--color-accent-fg"]).not.toBe("#ffffff");

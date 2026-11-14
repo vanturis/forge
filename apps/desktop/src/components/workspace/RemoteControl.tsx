@@ -14,8 +14,11 @@ import { ErrorBanner, LabelWithInfo, Spinner } from "@/components/ui/misc";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { t } from "@/i18n";
 
-/** Header button + dialog to continue all running FORGE sessions in the Claude app (Remote Control is global). */
-export function RemoteControlButton({ project }: { project: Project }) {
+/**
+ * Button + dialog to continue all running FORGE sessions in the Claude app (Remote Control is global).
+ * `compact`: only the icon, in the size of the other buttons of the title bar.
+ */
+export function RemoteControlButton({ project, compact = false }: { project: Project; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const state = useQuery({ queryKey: keys.remote, queryFn: () => call("remote.state", {}) });
   const enabled = state.data?.enabled ?? false;
@@ -34,12 +37,16 @@ export function RemoteControlButton({ project }: { project: Project }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={cn("relative flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-body hover:bg-surface-3 hover:text-fg", connected ? "text-success" : "text-muted")}
+        className={cn(
+          "relative flex shrink-0 items-center whitespace-nowrap text-body transition-colors duration-120 hover:bg-surface-3 hover:text-fg",
+          compact ? "h-7 w-7 justify-center rounded-full" : "h-9 gap-1.5 rounded-lg px-2.5",
+          connected ? "text-success" : "text-muted",
+        )}
         title={t.workspace.remote.title}
         aria-label={t.workspace.remote.ariaLabel}
       >
-        <Smartphone className="h-3.5 w-3.5" />
-        <span className="hidden lg:inline">{t.workspace.remote.button}</span>
+        <Smartphone className={compact ? "h-4 w-4" : "h-3.5 w-3.5"} />
+        {!compact && <span className="hidden lg:inline">{t.workspace.remote.button}</span>}
         {dot && <span className={cn("absolute right-1 top-1 h-1.5 w-1.5 rounded-full", dot)} />}
       </button>
       <RemoteDialog open={open} onOpenChange={setOpen} project={project} state={state.data ?? null} loading={state.isLoading} />

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Language, pick } from "./i18n.js";
-import { CustomScheme, MAX_CUSTOM_SCHEMES, WINDOW_OPACITY_MAX, WINDOW_OPACITY_MIN } from "./design.js";
+import { CustomScheme, MAX_CUSTOM_SCHEMES, Transparency } from "./design.js";
 
 export const ProfileId = z.enum(["safe", "balanced", "autonomous"]);
 export type ProfileId = z.infer<typeof ProfileId>;
@@ -633,8 +633,8 @@ export const Settings = z.object({
   colorScheme: z.string().min(1).max(40),
   /** color schemes the user made */
   customSchemes: z.array(CustomScheme).max(MAX_CUSTOM_SCHEMES),
-  /** opacity of the windows in percent; below 100 what lies behind FORGE shows through */
-  windowOpacity: z.number().int().min(WINDOW_OPACITY_MIN).max(WINDOW_OPACITY_MAX),
+  /** how much of the desktop shows blurred through the background of the windows (where the system can do it) */
+  transparency: Transparency,
   /** the user saw the notice about the design settings; installations from before them get it once */
   designAsked: z.boolean(),
 });
