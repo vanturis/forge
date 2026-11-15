@@ -203,8 +203,9 @@ unter macOS in `~/Library/Application Support/forge` und unter Linux in `~/.conf
   lässt dich sie ausschalten. Die Gesamtzahlen zeigen uns, wie FORGE genutzt wird.
   Eingeschaltet gehen alle 5 Minuten Summen an [forge.vanturis.de](https://forge.vanturis.de): eine
   zufällige Kennung der Installation, Version von FORGE und vom Betriebssystem, die Sprache der Oberfläche, die Art des Claude-Abos (z. B. Pro oder Ultra)
-  und Zählerstände wie Tokens je Claude-Modell, geschätzte API-Kosten, Sessions, Projekte und Agenten. Keine
-  Inhalte, keine Projektnamen, keine Pfade, keine IP-Adressen. Ein- und ausschalten unter Einstellungen > Über
+  und Zählerstände wie Tokens je Claude-Modell, geschätzte API-Kosten, Sessions, Werkzeugaufrufe, Commits durch
+  FORGE, Projekte, Agenten und die Dauer der Telefonate. Keine Inhalte, keine Projektnamen, keine Pfade, keine
+  IP-Adressen. Ein- und ausschalten unter Einstellungen > Über
   FORGE > Datenschutz; beim Ausschalten löscht FORGE die gesendeten Daten beim Dienst.
 - **Anthropic:** Claude Code schickt deine Prompts und den Projektkontext mit deinem eigenen Konto an Anthropic.
   FORGE liest keine Zugangsdaten.

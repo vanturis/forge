@@ -41,7 +41,7 @@ export interface UsageStatsDeps {
 
 /**
  * Sends anonymous totals of this installation to the statistics service every 5 minutes: a random ID, the
- * version, Windows, the interface language, the Claude plan and counters (tokens, projects, agents ...), never contents, names or paths.
+ * version, Windows, the interface language, the Claude plan and counters (tokens, projects, agents, tool calls, commits, phone time ...), never contents, names or paths.
  * Switched off, it asks the service once to delete the installation's row.
  */
 export class UsageStatsService {

@@ -199,8 +199,8 @@ Projects, chat histories and settings stay on your computer: `%APPDATA%\forge` o
   them off. The totals show us how FORGE is used. When on, FORGE sends totals to
   [forge.vanturis.de](https://forge.vanturis.de) every 5 minutes: a random ID for the installation,
   the versions of FORGE and of the operating system, the interface language, the type of Claude subscription (for example Pro or Ultra) and counters such
-  as tokens per Claude model, estimated API cost, sessions, projects and agents. No content, no project names, no
-  paths, no IP addresses. Turn them on or off under Settings > About FORGE > Privacy; when you turn them off,
+  as tokens per Claude model, estimated API cost, sessions, tool calls, commits made by FORGE, projects, agents and
+  the duration of phone calls. No content, no project names, no paths, no IP addresses. Turn them on or off under Settings > About FORGE > Privacy; when you turn them off,
   FORGE deletes the data already sent from the service.
 - **Anthropic:** Claude Code sends your prompts and the project context to Anthropic with your own account.
   FORGE does not read any credentials.

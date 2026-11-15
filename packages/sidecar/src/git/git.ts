@@ -49,6 +49,9 @@ export function gitMissing(platform: NodeJS.Platform = process.platform): string
 }
 
 export class GitEngine {
+  /** called after every commit() that went through (usage statistics); merges and the initial commit are not among them */
+  onCommit: (() => void) | null = null;
+
   /** shipped git when available, else the one on PATH; null when macOS or Linux have none */
   private get gitBin(): string | null {
     return resolveTool("git")?.path ?? (process.platform === "win32" ? "git" : null);
@@ -249,6 +252,7 @@ export class GitEngine {
     const toAdd = paths.filter((p) => byPath.get(p)?.unstaged);
     if (toAdd.length) await this.ok(cwd, ["add", "-A", "--", ...toAdd]);
     await this.ok(cwd, ["commit", "-q", "-F", "-", "--only", "--", ...list], message);
+    this.onCommit?.();
     const [hash = "", summary = ""] = (await this.ok(cwd, ["log", "-1", "--format=%H%n%s"])).split("\n").map((l) => l.replace(/\r$/, "").trim());
     return { hash, summary };
   }

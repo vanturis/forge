@@ -225,6 +225,11 @@ describe("SessionService", () => {
     expect(types).toEqual(expect.arrayContaining(["user.message", "session.init", "tool.use", "tool.result", "assistant.text", "turn.result"]));
     expect(types).not.toContain("assistant.delta");
     expect(emitted.some((e) => e.event === "session.event" && e.payload.body.type === "assistant.delta")).toBe(true);
+    // Every tool call of the stream counts for the usage statistics, and stays counted without the session.
+    const toolUses = types.filter((x) => x === "tool.use").length;
+    expect(db.usageTotals().toolCalls).toBe(toolUses);
+    db.deleteSession(s.id);
+    expect(db.usageTotals().toolCalls).toBe(toolUses);
   });
 
   it("branches the conversation before a prompt: new session with the history before it, original untouched", async () => {
@@ -557,6 +562,8 @@ describe("SessionService", () => {
     // Without agentProgressSummaries the line comes from the subagent's own tool calls.
     sink.onMessage({ type: "assistant", parent_tool_use_id: "tu1", message: { id: "m-k1", content: [{ type: "tool_use", id: "tk1", name: "Read", input: { file_path: "/repo/src/auth/login.ts" } }] } });
     expect(svc.get(s.id).subagents[0]).toMatchObject({ summary: "Read login.ts" });
+    // A subagent's tool call counts for the usage statistics like one of the main conversation.
+    expect(db.usageTotals().toolCalls).toBe(1);
     sink.onMessage({ type: "system", subtype: "background_tasks_changed", tasks: [{ task_id: "b1", task_type: "local_bash", description: "dev server" }] });
     sink.onMessage({ type: "system", subtype: "task_progress", task_id: "b1", description: "dev server", usage: { total_tokens: 0, tool_uses: 0, duration_ms: 1 }, summary: "läuft auf Port 5173" });
     expect(svc.get(s.id).background).toMatchObject([{ taskId: "b1", summary: "läuft auf Port 5173" }]);

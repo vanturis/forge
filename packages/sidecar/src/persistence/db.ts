@@ -445,6 +445,12 @@ export interface UsageTotals {
   agentsStarted: number;
   agentsMerged: number;
   phoneCalls: number;
+  /** duration of the answered phone calls that ended */
+  phoneMs: number;
+  /** tool calls of Claude in live sessions, subagents included; counted since the version that added the counter */
+  toolCalls: number;
+  /** commits FORGE made itself (GitEngine.commit), not Claude's own and no merge commits; counted like toolCalls */
+  commits: number;
   /** session turns the user started (not FORGE on its own) */
   userTurns: number;
   /** estimated API cost (modelUsage) in US cents, from the calls recorded with it */
@@ -948,7 +954,12 @@ export class Db {
   // ---- usage statistics
 
   private bumpCounter(key: string) {
-    this.sql.prepare("INSERT INTO stats_counters(key, value) VALUES(?, 1) ON CONFLICT(key) DO UPDATE SET value = value + 1").run(key);
+    this.stmt("INSERT INTO stats_counters(key, value) VALUES(?, 1) ON CONFLICT(key) DO UPDATE SET value = value + 1").run(key);
+  }
+
+  /** One more of what only stats_counters keeps: tool calls go with their session, a commit is in no table at all. */
+  countStat(key: "toolCalls" | "commits") {
+    this.bumpCounter(key);
   }
 
   /** Totals since USAGE_STATS_SINCE for the anonymous usage statistics; only from rows that outlive deletions. */
@@ -971,8 +982,16 @@ export class Db {
                 (SELECT COUNT(DISTINCT worktree_id) FROM agent_log WHERE outcome = 'merged' AND ts >= ?1) AS agentsMerged`,
       )
       .get(since) as { agentsStarted: number; agentsMerged: number };
-    const projects = this.sql.prepare("SELECT value FROM stats_counters WHERE key = 'projectsCreated'").get() as { value: number } | undefined;
-    const calls = this.sql.prepare("SELECT COUNT(*) AS n FROM phone_calls WHERE started_at >= ?").get(since) as { n: number };
+    const counters = new Map((this.sql.prepare("SELECT key, value FROM stats_counters").all() as Array<{ key: string; value: number }>).map((r) => [r.key, r.value]));
+    // A call is stored when it ends, so one still running is in neither number. Its time counts when somebody
+    // talked: a missed or rejected call only rang.
+    const calls = this.sql
+      .prepare(
+        `SELECT COUNT(*) AS n,
+                COALESCE(SUM(CASE WHEN result = 'answered' THEN MAX(0, CAST(ROUND((julianday(ended_at) - julianday(started_at)) * 86400000) AS INTEGER)) END), 0) AS ms
+         FROM phone_calls WHERE started_at >= ?`,
+      )
+      .get(since) as { n: number; ms: number };
     const userTurns = this.sql.prepare("SELECT COUNT(*) AS n FROM claude_usage WHERE kind = 'session' AND purpose IS NULL AND ts >= ?").get(since) as { n: number };
     // Cost and models only exist for calls recorded with modelUsage; older ones count in the token sums above only.
     const cost = this.sql.prepare("SELECT COALESCE(SUM(cost_usd), 0) AS c FROM claude_usage WHERE ts >= ?").get(since) as { c: number };
@@ -986,7 +1005,18 @@ export class Db {
     }
     // Rounded once at the end: per call, cents would get lost on many cheap calls.
     const models: UsageTotals["models"] = Object.fromEntries(Object.entries(sums).map(([k, t]) => [k, { tokens: t.tokens, costUsdCents: Math.round(t.costUsd * 100) }]));
-    return { ...u, ...a, projectsCreated: projects?.value ?? 0, phoneCalls: calls.n, userTurns: userTurns.n, costUsdCents: Math.round(cost.c * 100), models };
+    return {
+      ...u,
+      ...a,
+      projectsCreated: counters.get("projectsCreated") ?? 0,
+      phoneCalls: calls.n,
+      phoneMs: calls.ms,
+      toolCalls: counters.get("toolCalls") ?? 0,
+      commits: counters.get("commits") ?? 0,
+      userTurns: userTurns.n,
+      costUsdCents: Math.round(cost.c * 100),
+      models,
+    };
   }
 
   updateProject(id: string, patch: Partial<ProjectRecord>) {

@@ -70,8 +70,10 @@ export class SessionStream {
       // The CLI's text for a stopped turn changes between versions ("[ede_diagnostic] result_type=user …").
       if (body.type === "turn.result" && body.isError && live.interrupting) body.interrupted = true;
       this.core.record(id, body);
-      if (body.type === "tool.use" && body.parentToolUseId) {
-        this.noteSubagentTool(id, live, body.parentToolUseId, toolActivity(body.name, body.input));
+      if (body.type === "tool.use") {
+        // Here and not in Db.appendEvent: the imported history of a session from outside FORGE is not FORGE's work.
+        this.core.db.countStat("toolCalls");
+        if (body.parentToolUseId) this.noteSubagentTool(id, live, body.parentToolUseId, toolActivity(body.name, body.input));
       } else if (body.type === "session.init") {
         this.core.publish(
           this.core.db.updateSession(id, {

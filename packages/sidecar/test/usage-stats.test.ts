@@ -1,11 +1,13 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { USAGE_STATS_URL } from "@forge/protocol";
 import { readPlan, readPlanOrAuth } from "../src/claude/diagnostics.js";
+import { GitEngine } from "../src/git/git.js";
 import { Db, type UsageTotals } from "../src/persistence/db.js";
 import { UsageStatsService } from "../src/stats/usage-stats.js";
+import { initRepo, tempDir } from "./helpers.js";
 
 const TOTALS: UsageTotals = {
   tokensInput: 10,
@@ -19,6 +21,9 @@ const TOTALS: UsageTotals = {
   agentsStarted: 4,
   agentsMerged: 3,
   phoneCalls: 0,
+  phoneMs: 0,
+  toolCalls: 7,
+  commits: 2,
   userTurns: 2,
   costUsdCents: 1234,
   models: { "claude-opus-4-7": { tokens: 100, costUsdCents: 1234 } },
@@ -171,6 +176,64 @@ describe("usage statistics", () => {
       // Only what happened since the release of the statistics counts.
       const later = new Date(Date.now() + 60_000).toISOString();
       expect(db.usageTotals(later)).toMatchObject({ tokensInput: 0, claudeTurns: 0, sessions: 0, userTurns: 0, costUsdCents: 0, models: {}, agentsStarted: 0 });
+    } finally {
+      db.close();
+    }
+  });
+
+  it("keeps tool calls and commits in counters that outlive the session", async () => {
+    const t = tempDir("forge-stats-");
+    const db = new Db(path.join(t.dir, "..", "forge.db"));
+    try {
+      expect(db.usageTotals()).toMatchObject({ toolCalls: 0, commits: 0 });
+      db.countStat("toolCalls");
+      db.countStat("toolCalls");
+      db.countStat("toolCalls");
+
+      // The engine reports every commit it made itself; a refused one is none.
+      mkdirSync(t.dir, { recursive: true });
+      await initRepo(t.dir);
+      const engine = new GitEngine();
+      engine.onCommit = () => db.countStat("commits");
+      writeFileSync(path.join(t.dir, "a.txt"), "a\n");
+      await engine.commit(t.dir, "Erster Stand", ["a.txt"], false);
+      await expect(engine.commit(t.dir, "Nichts", ["fehlt.txt"], false)).rejects.toThrow();
+      writeFileSync(path.join(t.dir, "a.txt"), "b\n");
+      await engine.commit(t.dir, "Zweiter Stand", ["a.txt"], false);
+      expect(db.usageTotals()).toMatchObject({ toolCalls: 3, commits: 2 });
+
+      const now = "2026-11-15T10:00:00.000Z";
+      db.insertProject({ id: "a", name: "a", path: t.dir, favorite: false, tags: [], technologies: [], profile: "balanced", defaultModel: null, defaultEffort: null, createdAt: now, lastOpenedAt: null, testCommand: null, devCommand: null, parentId: null, gitEnabled: true, agentsEnabled: true, group: null }, "a");
+      db.insertSession({ id: "s1", projectId: "a", claudeSessionId: null, cwd: t.dir, title: null, model: null, effort: null, profile: "balanced", permissionMode: "default", status: "idle", apiKeySource: null, createdAt: now, updatedAt: now, lastError: null });
+      db.appendEvent("s1", { type: "tool.use", toolUseId: "t1", name: "Read", input: {}, parentToolUseId: null });
+      db.deleteSession("s1");
+      db.deleteProject("a");
+      expect(db.usageTotals()).toMatchObject({ toolCalls: 3, commits: 2 });
+    } finally {
+      db.close();
+      t.cleanup();
+    }
+  }, 30_000);
+
+  it("adds up the time of answered phone calls since the release", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "forge-stats-db-"));
+    dirs.push(dir);
+    const db = new Db(path.join(dir, "forge.db"));
+    try {
+      const call = (id: string, startedAt: string, endedAt: string | null, result: "answered" | "missed" | "rejected" | "failed" = "answered") =>
+        db.savePhoneCall({ id, direction: "in", number: "100", reason: null, startedAt, endedAt, result, detail: null, transcript: [] });
+      call("c1", "2026-10-18T10:00:00.000Z", "2026-10-18T10:02:30.500Z");
+      call("c2", "2026-10-19T23:59:50.000Z", "2026-10-20T00:00:10.250Z");
+      // Only rang, never ended, or from before the statistics were released.
+      call("c3", "2026-10-20T10:00:00.000Z", "2026-10-20T10:00:40.000Z", "missed");
+      call("c4", "2026-10-20T11:00:00.000Z", "2026-10-20T11:00:01.000Z", "rejected");
+      call("c5", "2026-10-21T10:00:00.000Z", null);
+      call("c6", "2026-10-16T10:00:00.000Z", "2026-10-16T11:00:00.000Z");
+      expect(db.usageTotals()).toMatchObject({ phoneCalls: 5, phoneMs: 150_500 + 20_250 });
+      expect(db.usageTotals("2026-10-19T00:00:00.000Z")).toMatchObject({ phoneCalls: 4, phoneMs: 20_250 });
+      // The same call saved again (the record is written when it ends) counts once.
+      call("c5", "2026-10-21T10:00:00.000Z", "2026-10-21T10:00:05.000Z");
+      expect(db.usageTotals()).toMatchObject({ phoneCalls: 5, phoneMs: 150_500 + 20_250 + 5_000 });
     } finally {
       db.close();
     }

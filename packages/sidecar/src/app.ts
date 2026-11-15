@@ -73,6 +73,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
   setLanguage(db.getSettings().language);
   db.markOrphanedSessions();
   const git = new GitEngine();
+  git.onCommit = () => db.countStat("commits");
   const projects = new ProjectManager(db, git, () => db.getSettings().defaultProfile, () => db.getSettings().defaultProjectDir, opts.dataDir);
   let server: RpcServer | null = null;
   let phone: PhoneService | null = null;
