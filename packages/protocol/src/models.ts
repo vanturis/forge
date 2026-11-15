@@ -867,6 +867,20 @@ export const PlanUsage = z.object({
 });
 export type PlanUsage = z.infer<typeof PlanUsage>;
 
+/** From this many days before the Claude sign-in ends, FORGE says so (Claude Code itself warns 10 days ahead). */
+export const LOGIN_WARN_DAYS = 10;
+
+/**
+ * Whole days until the Claude sign-in ends, when that is close enough to warn about; null otherwise.
+ * 0 means it ends within a day.
+ */
+export function loginDaysLeft(usage: Pick<PlanUsage, "loginExpiresAt"> | null | undefined, now = Date.now()): number | null {
+  const at = usage?.loginExpiresAt ? Date.parse(usage.loginExpiresAt) : NaN;
+  if (Number.isNaN(at) || at <= now) return null;
+  const days = Math.floor((at - now) / 86_400_000);
+  return days <= LOGIN_WARN_DAYS ? days : null;
+}
+
 /** What one session took of a usage window. */
 export const SessionUsageWindow = z.object({
   key: z.string(),

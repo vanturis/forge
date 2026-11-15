@@ -92,6 +92,7 @@ Sicherheit:
     "review-required": "Commits nur nach Prüfung",
     "no-network": "Ohne Internet",
     "project-files-only": "Dateien nur im Projekt",
+    "no-prompts": "Ohne Rückfragen",
     "sandbox-only": "Autonomous sperren",
   } satisfies Record<AutomationTag, string>,
 
@@ -373,6 +374,7 @@ Sicherheit:
     subagent: (desc: string, since: string, summary: string) => `Subagent ${desc}, ${since}${summary ? `, zuletzt: ${summary}` : ""}`,
     background: (kind: string, desc: string, since: string, summary: string) => `Im Hintergrund: ${kind} ${desc}, ${since}${summary ? `, zuletzt: ${summary}` : ""}`,
     context: (percent: number) => ` Kontext zu ${percent} Prozent voll.`,
+    suggestion: (text: string) => `Claude Code schlägt als nächste Nachricht vor: ${text}. Mit send_message schicken, wenn der Anrufer das will.`,
     usage: (tokens: string, windows: string) => `Verbrauch der Session: ${tokens} Tokens${windows ? `, geschätzter Anteil am Abo: ${windows}` : ""}.`,
     usageWindow: (label: string, percent: string) => `${label} ${percent} Prozent`,
     tokens: (n: number) =>
@@ -971,6 +973,8 @@ Sicherheit:
     limitWarnings: (v: boolean) => `Warnungen vor dem Nutzungslimit ${on(v)}`,
     subagentEffort: (e: string | null) => `Denkaufwand der Subagenten ${e ?? "von Claude Code"}`,
     idleCompaction: (v: boolean) => `Komprimieren langer Sessions im Leerlauf ${on(v)}`,
+    promptSuggestions: (v: boolean) => `Vorschlag für die nächste Nachricht ${on(v)}`,
+    autoBackgroundTasks: (v: boolean) => `lange Aufgaben automatisch in den Hintergrund ${on(v)}`,
     idleClose: (m: number) => `untätige Claude-Prozesse schließen nach ${m} Minuten`,
     idleOpen: "untätige Claude-Prozesse bleiben offen",
     longSession: (thousands: number) => `Hinweis auf lange Sessions ab ${thousands} Tausend Tokens Kontext`,
@@ -1172,6 +1176,7 @@ Sicherheit:
     rate: (n: number) => `Gerade ${n} Tokens pro Sekunde über alle Sessions und Agenten.`,
     noRate: "Gerade gibt Claude keine Tokens aus.",
     unavailable: (error: string | null) => `Nutzung nicht verfügbar${error ? `: ${error}` : ""}.`,
+    loginEnds: (days: number) => `Die Anmeldung bei Claude endet ${days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}. Danach muss man sich am Computer neu anmelden.`,
     window: (label: string, percent: number, reset: string | null, forecast: string) => `${label}: ${percent} Prozent${reset ? `, zurückgesetzt ${reset}` : ""}. ${forecast}`,
   },
 };

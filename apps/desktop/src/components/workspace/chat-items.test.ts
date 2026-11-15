@@ -431,3 +431,49 @@ describe("subagent threads", () => {
     expect(buildEventItems([...all, shell], "agent1").at(-1)).toMatchObject({ text: "Prüf auch Logout" });
   });
 });
+
+describe("what newer Claude Code versions report", () => {
+  it("drops answers and tool calls Claude Code took back, also when the retraction arrives live", () => {
+    seq = 0;
+    const events = [
+      ev({ type: "user.message", text: "Frage" }),
+      ev({ type: "assistant.text", messageId: "m1", index: 0, text: "abgelehnter Versuch" }),
+      ev({ type: "tool.use", toolUseId: "t1", name: "Read", input: { file_path: "a.txt" }, parentToolUseId: null }),
+      ev({ type: "tool.result", toolUseId: "t1", isError: false, content: { text: "x", truncated: false } }),
+    ];
+    const retry = [
+      ev({ type: "messages.superseded", texts: ["m1:0", "unknown:0"], toolUseIds: ["t1", "t9"] }),
+      ev({ type: "model.refusal", model: "claude-fable-5-2", fallbackModel: "claude-opus-5-5", scope: "session", category: "cyber", explanation: null }),
+      ev({ type: "assistant.text", messageId: "m2", index: 0, text: "neue Antwort" }),
+    ];
+    const items = buildEventItems([...events, ...retry]);
+    expect(items.map((i) => (i.kind === "user" || i.kind === "assistant" ? i.text : i.kind))).toEqual(["Frage", "notice", "neue Antwort"]);
+    expect(items[1]).toMatchObject({ kind: "notice", tone: "warning", card: { icon: "refusal", title: "Antwort abgelehnt, anderes Modell hat übernommen" } });
+    const inc = new IncrementalItems();
+    expect(inc.build(events)).toHaveLength(3);
+    expect(inc.build([...events, ...retry])).toEqual(items);
+  });
+
+  it("shows notices of the CLI, a refusal without another model, lost writes, recalled memories and goals as cards", () => {
+    seq = 0;
+    const items = buildEventItems([
+      ev({ type: "cli.notice", level: "warning", text: "PreToolUse: Hook callback failed." }),
+      ev({ type: "cli.notice", level: "notice", text: "Hinweis" }),
+      ev({ type: "model.refusal", model: "claude-fable-5-2", fallbackModel: null, scope: "session", category: null, explanation: null }),
+      ev({ type: "writes.lost", errorCode: "ENOSPC", lost: ["transcript"] }),
+      ev({ type: "memory.recall", mode: "select", memories: [{ path: "C:\\Users\\x\\memory\\stil.md", scope: "personal" }, { path: "/m/regeln.md", scope: "team" }] }),
+      ev({ type: "goal", condition: "Tests grün", iterations: 2, reason: "2 rot" }),
+      ev({ type: "goal", condition: null, iterations: 0, reason: null }),
+    ]);
+    const cards = items.map((i) => (i.kind === "notice" ? { tone: i.tone, icon: i.card?.icon, title: i.card?.title, detail: i.card?.detail } : null));
+    expect(cards).toEqual([
+      { tone: "warning", icon: "cli", title: "Warnung von Claude Code", detail: "PreToolUse: Hook callback failed." },
+      { tone: "info", icon: "cli", title: "Hinweis von Claude Code", detail: "Hinweis" },
+      { tone: "warning", icon: "refusal", title: "Antwort abgelehnt", detail: "claude-fable-5-2 hat die Antwort abgelehnt. Formuliere die Nachricht um oder wähle ein anderes Modell." },
+      { tone: "danger", icon: "disk", title: "Verlauf nicht gespeichert", detail: "Der Datenträger ist voll. Teile dieser Unterhaltung wurden nicht gespeichert. Schaffe Platz, bevor du weiterarbeitest." },
+      { tone: "info", icon: "memory", title: "Aus dem Memory geholt", detail: "2 Einträge: stil.md, regeln.md" },
+      { tone: "info", icon: "goal", title: "Ziel noch nicht erreicht", detail: "Tests grün · Prüfung 2 · 2 rot" },
+      { tone: "success", icon: "goal", title: "Ziel erreicht", detail: "Claude Code hat das Ziel als erfüllt gemeldet" },
+    ]);
+  });
+});

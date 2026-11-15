@@ -104,6 +104,8 @@ export const claude = {
   mcpLoginUnavailable: "Diese Claude-Code-Version kann sich nicht ohne Terminal an MCP-Servern anmelden. Bitte Claude Code aktualisieren.",
   noForecast: "Prognose: noch zu wenig Messwerte oder kein Anstieg.",
   subscription: (type: string) => `Abo: ${type}`,
+  loginEnds: (days: number) =>
+    `Die Anmeldung bei Claude endet ${days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}. Danach scheitern Durchläufe, bis sich der Nutzer in FORGE unter Einstellungen, Claude Code neu anmeldet.`,
   today: (time: string) => `heute ${time}`,
   forecastLimit: (at: string) => `bei diesem Tempo ist das Limit gegen ${at} erreicht, vor dem Reset`,
   forecastEnough: "reicht bis zum Reset",

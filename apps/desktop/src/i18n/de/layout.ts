@@ -398,6 +398,8 @@ export const layout = {
       learnTemplates: "Vorlagen automatisch lernen",
       limitWarnings: "Vor dem Nutzungslimit warnen",
       idleCompaction: "Lange Sessions im Leerlauf komprimieren",
+      promptSuggestions: "Nächste Nachricht vorschlagen",
+      autoBackgroundTasks: "Lange Aufgaben in den Hintergrund",
       askPushOnClose: "Beim Schließen nach Ungepushtem fragen",
       uiCompare: "Vorher-Nachher-Bilder bei UI-Änderungen",
       stripApiKey: "ANTHROPIC_API_KEY ausblenden",

@@ -135,8 +135,22 @@ export class RuntimeCatalog {
   }
 
   private forecast(usage: PlanUsage, now: number): PlanUsage {
-    if (!usage.available) return usage;
-    return withForecasts(usage, this.core.db.listUsageSamples(now - SAMPLE_MAX_AGE_MS), now);
+    const login = this.loginExpiresAt(now);
+    const u = login ? { ...usage, loginExpiresAt: login } : usage;
+    if (!u.available) return u;
+    return withForecasts(u, this.core.db.listUsageSamples(now - SAMPLE_MAX_AGE_MS), now);
+  }
+
+  /** credential_expires_at of a turn result: when the claude.ai sign-in in use ends for good. */
+  noteLoginExpiry(iso: unknown) {
+    if (typeof iso !== "string" || Number.isNaN(Date.parse(iso)) || iso === this.core.db.getLoginExpiry()) return;
+    this.core.db.setLoginExpiry(iso);
+  }
+
+  /** The end of the sign-in while it still lies ahead; a date that passed belongs to a sign-in since renewed or lost. */
+  private loginExpiresAt(now: number): string | null {
+    const iso = this.core.db.getLoginExpiry();
+    return iso && Date.parse(iso) > now ? iso : null;
   }
 
   async runtimeInfo(): Promise<RuntimeInfo | null> {

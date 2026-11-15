@@ -39,6 +39,8 @@ const fixture = readFileSync(path.join(import.meta.dirname, "fixtures", "stream-
 /** Replays recorded CLI output and lets tests drive approvals/hooks like the real CLI would. */
 class FakeRuntime implements ClaudeRuntime {
   reloads: boolean[] = [];
+  /** a reload noticed in the background finds the session at work */
+  reloadBusy = false;
   reconnects: string[] = [];
   async mcpLogin() {
     return { url: "https://login.example.com", finished: new Promise<boolean>(() => {}), cancel() {} };
@@ -128,6 +130,7 @@ class FakeRuntime implements ClaudeRuntime {
       supportedCommands: async () => [],
       reloadPlugins: async (apply) => {
         this.reloads.push(apply);
+        if (this.reloadBusy && !apply) return "busy";
         return [{ name: "probe", status: "connected" }];
       },
       reconnectMcp: async (name) => {
@@ -2394,5 +2397,94 @@ describe("copies of crew members' sessions", () => {
     const own = svc.importCopy({ projectId, cwd: projects.get(projectId).path, title: "Login (von Ben)", model: "opus", effort: null, claudeSessionId: "c-1", events: [{ type: "user.message", text: "a" }] });
     await svc.resume(own.id, "weiter");
     expect(rt.started[0]).toMatchObject({ resume: "c-1", model: "opus" });
+  });
+});
+
+describe("what newer Claude Code versions report", () => {
+  const done = { type: "result", subtype: "success", is_error: false, result: "ok", usage: {} };
+
+  it("keeps Claude Code's suggestion for the next message until the next turn starts", async () => {
+    const s = await svc.start({ projectId, prompt: "Lies a.txt" });
+    const sink = rt.sinks[0]!;
+    expect(rt.started[0]).toMatchObject({ promptSuggestions: true });
+    sink.onMessage(done);
+    sink.onMessage({ type: "prompt_suggestion", suggestion: "  Dann die README anpassen ", uuid: "u", session_id: "x" });
+    expect(svc.get(s.id).suggestion).toBe("Dann die README anpassen");
+    expect(persistedTypes(s.id)).not.toContain("prompt_suggestion");
+    await svc.send(s.id, "Jetzt b.txt");
+    expect(svc.get(s.id).suggestion).toBeNull();
+    // one that arrives while the next turn runs is out of date
+    sink.onMessage({ type: "prompt_suggestion", suggestion: "zu spät", uuid: "u2", session_id: "x" });
+    expect(svc.get(s.id).suggestion).toBeNull();
+  });
+
+  it("asks for no suggestions and shows none when they are switched off", async () => {
+    db.updateSettings({ promptSuggestions: false });
+    const s = await svc.start({ projectId, prompt: "Lies a.txt" });
+    expect(rt.started[0]).toMatchObject({ promptSuggestions: false });
+    rt.sinks[0]!.onMessage(done);
+    rt.sinks[0]!.onMessage({ type: "prompt_suggestion", suggestion: "Weiter", uuid: "u", session_id: "x" });
+    expect(svc.get(s.id).suggestion).toBeNull();
+  });
+
+  it("reports when the Claude sign-in ends, as long as that lies ahead", async () => {
+    rt.usage = { available: true, subscriptionType: "max", windows: [{ key: "seven_day", label: "Woche", utilization: 10, resetsAt: null }], fetchedAt: new Date().toISOString(), error: null };
+    await svc.start({ projectId, prompt: "Lies a.txt" });
+    expect((await svc.planUsage(false)).loginExpiresAt).toBeUndefined();
+    const ends = new Date(Date.now() + 5 * 86_400_000).toISOString();
+    rt.sinks[0]!.onMessage({ ...done, credential_expires_at: ends });
+    expect((await svc.planUsage(false)).loginExpiresAt).toBe(ends);
+    expect(db.getLoginExpiry()).toBe(ends);
+    // a date that passed belongs to a sign-in that was renewed or is gone
+    rt.sinks[0]!.onMessage({ ...done, credential_expires_at: new Date(Date.now() - 1000).toISOString() });
+    expect((await svc.planUsage(false)).loginExpiresAt).toBeUndefined();
+  });
+
+  it("starts sessions of a project without questions so that nothing waits for an approval", async () => {
+    projects.update(projectId, { tags: ["no-prompts"] });
+    await svc.start({ projectId, prompt: "Lies a.txt" });
+    expect(rt.started[0]).toMatchObject({ denyPrompts: true });
+    // plan mode needs the approval of its plan
+    projects.update(projectId, { tags: ["no-prompts", "plan-first"] });
+    await svc.start({ projectId, prompt: "Plane b" });
+    expect(rt.started[1]).toMatchObject({ permissionMode: "plan", denyPrompts: false });
+  });
+
+  it("moves long tasks to the background only when the setting is on", async () => {
+    await svc.start({ projectId, prompt: "a" });
+    expect(rt.started[0]!.env.CLAUDE_AUTO_BACKGROUND_TASKS).toBeUndefined();
+    db.updateSettings({ autoBackgroundTasks: true });
+    await svc.start({ projectId, prompt: "b" });
+    expect(rt.started[1]!.env.CLAUDE_AUTO_BACKGROUND_TASKS).toBe("1");
+  });
+
+  it("loads changed plugins after the turn when the session was at work", async () => {
+    await svc.start({ projectId, prompt: "Lies a.txt" });
+    rt.reloadBusy = true;
+    svc.extensionsChanged(false);
+    await Promise.resolve();
+    expect(rt.reloads).toEqual([false]);
+    rt.reloadBusy = false;
+    rt.sinks[0]!.onMessage(done);
+    await Promise.resolve();
+    expect(rt.reloads).toEqual([false, false]);
+    // nothing is pending any more
+    rt.sinks[0]!.onMessage(done);
+    await Promise.resolve();
+    expect(rt.reloads).toEqual([false, false]);
+  });
+
+  it("records taken back answers, notices, refusals and lost writes in the timeline", async () => {
+    const s = await svc.start({ projectId, prompt: "Lies a.txt" });
+    const sink = rt.sinks[0]!;
+    sink.onMessage({ type: "assistant", uuid: "u1", message: { id: "m1", content: [{ type: "text", text: "Das mache ich nicht." }] } });
+    sink.onMessage({ type: "system", subtype: "model_refusal_fallback", trigger: "refusal", direction: "retry", scope: "session", original_model: "claude-fable-5-2", fallback_model: "claude-opus-5-5", api_refusal_category: "cyber", retracted_message_uuids: ["u1"], content: "x" });
+    sink.onMessage({ type: "system", subtype: "informational", level: "warning", content: "PreToolUse: Hook callback hook_0 failed." });
+    sink.onMessage({ type: "system", subtype: "session_writes_lost", error_code: "ENOSPC", lost: ["transcript"] });
+    const bodies = db.listEvents(s.id).map((e) => e.body);
+    expect(bodies).toContainEqual({ type: "messages.superseded", texts: ["m1:0"], toolUseIds: [] });
+    expect(bodies).toContainEqual({ type: "model.refusal", model: "claude-fable-5-2", fallbackModel: "claude-opus-5-5", scope: "session", category: "cyber", explanation: null });
+    expect(bodies).toContainEqual({ type: "cli.notice", level: "warning", text: "PreToolUse: Hook callback hook_0 failed." });
+    expect(bodies).toContainEqual({ type: "writes.lost", errorCode: "ENOSPC", lost: ["transcript"] });
   });
 });

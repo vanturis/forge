@@ -656,3 +656,27 @@ describe("info commands", () => {
     expect(cliCommands([cmd("status"), cmd("review")]).map((c) => c.name)).toEqual(["review"]);
   });
 });
+
+describe("suggestion for the next message", () => {
+  it("shows Claude Code's suggestion in the empty field and takes it over with Tab or a click", async () => {
+    setup(<Composer project={project("p1")} session={{ ...session, suggestion: "Dann die README anpassen" }} />);
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    expect(box.placeholder).toBe("Dann die README anpassen");
+    fireEvent.keyDown(box, { key: "Tab" });
+    await waitFor(() => expect(box.value).toBe("Dann die README anpassen"));
+    // with text in the field the suggestion is out of the way
+    expect(screen.queryByRole("button", { name: "Vorschlag übernehmen" })).toBeNull();
+    act(() => useDrafts.getState().setText("s1", ""));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Vorschlag übernehmen" })));
+    expect(useDrafts.getState().drafts.s1?.text).toBe("Dann die README anpassen");
+    expect(callMock).not.toHaveBeenCalledWith("sessions.send", expect.anything());
+  });
+
+  it("shows none while Claude works or without one", () => {
+    const { rerender } = setup(<Composer project={project("p1")} session={{ ...session, status: "running", suggestion: "Weiter" }} />);
+    expect((screen.getByRole("textbox") as HTMLTextAreaElement).placeholder).not.toBe("Weiter");
+    expect(screen.queryByRole("button", { name: "Vorschlag übernehmen" })).toBeNull();
+    rerender(<Composer project={project("p1")} session={session} />);
+    expect(screen.queryByRole("button", { name: "Vorschlag übernehmen" })).toBeNull();
+  });
+});

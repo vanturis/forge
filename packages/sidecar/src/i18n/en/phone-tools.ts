@@ -111,7 +111,7 @@ export const phoneTools: typeof De = {
   },
   project_automation: {
     description:
-      "Automation of a project, as in the project settings: plan-first (new sessions plan first), auto-test (test command after a turn that changed code), auto-commit, auto-push, auto-merge (merge finished agents back into the branch they started from), review-required (no auto-commit), no-network (no web tools), project-files-only (file tools only in the project folder), sandbox-only (Autonomous blocked). Switch with tag and on; without tag it tells what is on. auto-merge always applies to the main project and its agents.",
+      "Automation of a project, as in the project settings: plan-first (new sessions plan first), auto-test (test command after a turn that changed code), auto-commit, auto-push, auto-merge (merge finished agents back into the branch they started from), review-required (no auto-commit), no-network (no web tools), project-files-only (file tools only in the project folder), no-prompts (what would need an approval is denied; Claude asks no questions), sandbox-only (Autonomous blocked). Switch with tag and on; without tag it tells what is on. auto-merge always applies to the main project and its agents.",
     params: {
       tag: "Which automation; leave out for the current state",
       on: "true switches on, false off",

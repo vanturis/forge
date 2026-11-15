@@ -19,6 +19,12 @@ export const usage = {
   used: (pct: number) => `${pct} % genutzt`,
   fetched: (relative: string) => `Stand ${relative}`,
   skeletonLabel: "Lädt Nutzung",
+  loginEnds: {
+    title: (days: number) => `Die Anmeldung bei Claude endet ${days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}.`,
+    short: (days: number) => `Anmeldung endet ${days === 0 ? "heute" : days === 1 ? "morgen" : `in ${days} Tagen`}`,
+    detail: (date: string) => `Am ${date} läuft sie ab. Danach scheitern Durchläufe, bis du dich neu anmeldest. Melde dich vorher neu an, dann läuft nichts ins Leere.`,
+    action: "Neu anmelden",
+  },
   forecastWarning: {
     title: "Bei diesem Tempo ist das Limit vor dem Reset erreicht.",
     window: (label: string, text: string, reset: string | null) => `${label}: ${text}${reset ? `, Reset ${reset}` : ""}`,

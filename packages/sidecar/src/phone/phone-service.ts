@@ -38,6 +38,7 @@ import {
   elicitationFields,
   activeColorScheme,
   colorSchemes,
+  loginDaysLeft,
 } from "@forge/protocol";
 import type { Db } from "../persistence/db.js";
 import { limitWarning } from "../claude/usage.js";
@@ -489,6 +490,10 @@ function settingText(s: Settings, key: keyof ForgeSettingsPatch | "alwaysOnTop")
       return m.settings.subagentEffort(s.subagentEffort);
     case "idleCompaction":
       return m.settings.idleCompaction(s.idleCompaction);
+    case "promptSuggestions":
+      return m.settings.promptSuggestions(s.promptSuggestions);
+    case "autoBackgroundTasks":
+      return m.settings.autoBackgroundTasks(s.autoBackgroundTasks);
     case "idleCloseMinutes":
       return s.idleCloseMinutes > 0 ? m.settings.idleClose(s.idleCloseMinutes) : m.settings.idleOpen;
     case "longSessionTokens":
@@ -1808,6 +1813,7 @@ export class PhoneService {
             m.details.last(last ? excerptData(last, 1500) : null),
             s.status === "waiting_approval" ? m.details.open(pendingText(db, s.id)) : "",
             tasks.length ? m.details.tasks(tasks.join("\n")) : "",
+            s.suggestion && s.status === "idle" ? m.details.suggestion(excerptData(s.suggestion, 300)) : "",
           ]
             .filter(Boolean)
             .join("\n");
@@ -3207,7 +3213,7 @@ export class PhoneService {
           const cur = await call("settings.get", {});
           const update: Partial<Settings> = {};
           const changed: Array<keyof ForgeSettingsPatch> = [];
-          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "idleCompaction", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
+          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "idleCompaction", "promptSuggestions", "autoBackgroundTasks", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
           for (const k of flags) {
             const v = patch[k];
             if (v === undefined) continue;
@@ -3564,9 +3570,11 @@ export class PhoneService {
           const reached = limit.status === "reached" ? um.reached(limit.resetsAt ? spokenTime(limit.resetsAt) : null) : "";
           const perSecond = Math.round(tokenMeter.rate());
           const rate = perSecond ? um.rate(perSecond) : um.noRate;
-          if (!u.available || !u.windows.length) return [reached || um.unavailable(u.error ?? null), rate].join("\n");
+          const loginDays = loginDaysLeft(u);
+          const login = loginDays !== null ? um.loginEnds(loginDays) : "";
+          if (!u.available || !u.windows.length) return [reached || um.unavailable(u.error ?? null), rate, login].filter(Boolean).join("\n");
           const windows = u.windows.map((w) => um.window(w.label, Math.round(w.utilization), w.resetsAt ? spokenTime(w.resetsAt) : null, spokenForecast(w)));
-          return [reached, ...windows, rate].filter(Boolean).join("\n");
+          return [reached, ...windows, rate, login].filter(Boolean).join("\n");
         }),
     };
   }

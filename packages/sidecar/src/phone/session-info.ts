@@ -17,10 +17,13 @@ export function excerptData(text: string, max: number): string {
 /** The last thing Claude said in a session (result text, else last answer). */
 export function lastAnswer(db: Db, sessionId: string): string {
   const events = db.listEvents(sessionId);
+  /** texts Claude Code took back (a refused answer retried on another model) */
+  const gone = new Set<string>();
   for (let i = events.length - 1; i >= 0; i--) {
     const b = events[i]!.body;
+    if (b.type === "messages.superseded") for (const k of b.texts) gone.add(k);
     if (b.type === "turn.result" && b.text && !b.isError) return b.text;
-    if (b.type === "assistant.text" && !b.parentToolUseId && b.text.trim()) return b.text;
+    if (b.type === "assistant.text" && !b.parentToolUseId && b.text.trim() && !gone.has(`${b.messageId}:${b.index}`)) return b.text;
   }
   return "";
 }

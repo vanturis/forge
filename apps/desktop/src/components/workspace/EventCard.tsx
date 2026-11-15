@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Collapse } from "@/components/ui/collapse";
-import { ArrowUpCircle, BellRing, ChevronRight, GitCommitHorizontal, GitMerge, Hourglass, Shrink, SkipForward, Undo2, Upload, Gauge } from "lucide-react";
+import { ArrowUpCircle, BellRing, Brain, ChevronRight, GitCommitHorizontal, GitMerge, HardDrive, Hourglass, Info, ShieldAlert, Shrink, SkipForward, Target, Undo2, Upload, Gauge } from "lucide-react";
 import { clockTime, cn } from "@/lib/utils";
 import type { NoticeIcon } from "./chat-items";
 import { ChatRow, Guide, HoverTime } from "./ChatRow";
@@ -32,6 +32,11 @@ const ICONS: Record<NoticeIcon, ReactNode> = {
   limit: <Gauge className={EVENT_ICON} />,
   notify: <BellRing className={EVENT_ICON} />,
   update: <ArrowUpCircle className={EVENT_ICON} />,
+  cli: <Info className={EVENT_ICON} />,
+  refusal: <ShieldAlert className={EVENT_ICON} />,
+  disk: <HardDrive className={EVENT_ICON} />,
+  memory: <Brain className={EVENT_ICON} />,
+  goal: <Target className={EVENT_ICON} />,
 };
 
 export function noticeIcon(icon: NoticeIcon): ReactNode {

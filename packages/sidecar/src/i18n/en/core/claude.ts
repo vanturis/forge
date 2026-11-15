@@ -101,6 +101,8 @@ export const claude: typeof De = {
   mcpLoginUnavailable: "This version of Claude Code cannot sign in to MCP servers without a terminal. Please update Claude Code.",
   noForecast: "Forecast: not enough readings yet, or no increase.",
   subscription: (type) => `Subscription: ${type}`,
+  loginEnds: (days) =>
+    `The Claude sign-in ends ${days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}. After that turns fail until the user signs in again in FORGE under Settings, Claude Code.`,
   today: (time) => `today ${time}`,
   forecastLimit: (at) => `at this pace the limit is reached around ${at}, before the reset`,
   forecastEnough: "lasts until the reset",

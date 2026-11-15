@@ -91,6 +91,7 @@ Security:
     "review-required": "Commits only after review",
     "no-network": "No internet",
     "project-files-only": "Files only in the project",
+    "no-prompts": "No questions",
     "sandbox-only": "Block Autonomous",
   },
 
@@ -372,6 +373,7 @@ Security:
     subagent: (desc: string, since: string, summary: string) => `Subagent ${desc}, ${since}${summary ? `, latest: ${summary}` : ""}`,
     background: (kind: string, desc: string, since: string, summary: string) => `In the background: ${kind} ${desc}, ${since}${summary ? `, latest: ${summary}` : ""}`,
     context: (percent: number) => ` Context ${percent} percent full.`,
+    suggestion: (text: string) => `Claude Code suggests as the next message: ${text}. Send it with send_message if the caller wants that.`,
     usage: (tokens, windows) => `Session usage: ${tokens} tokens${windows ? `, estimated share of the plan: ${windows}` : ""}.`,
     usageWindow: (label, percent) => `${label} ${percent} percent`,
     tokens: (n) => (n >= 1e6 ? `${(n / 1e6).toLocaleString("en-US", { maximumFractionDigits: 1 })} million` : n >= 1000 ? `${Math.round(n / 1000)} thousand` : String(n)),
@@ -968,6 +970,8 @@ Security:
     limitWarnings: (v: boolean) => `warnings before the usage limit ${on(v)}`,
     subagentEffort: (e: string | null) => `subagent thinking effort ${e ?? "from Claude Code"}`,
     idleCompaction: (v: boolean) => `compacting long idle sessions ${on(v)}`,
+    promptSuggestions: (v: boolean) => `suggestion for the next message ${on(v)}`,
+    autoBackgroundTasks: (v: boolean) => `moving long tasks to the background ${on(v)}`,
     idleClose: (m: number) => `idle Claude processes close after ${m} ${m === 1 ? "minute" : "minutes"}`,
     idleOpen: "idle Claude processes stay open",
     longSession: (thousands) => `long session hint from ${thousands} thousand tokens of context`,
@@ -1165,6 +1169,7 @@ Security:
     rate: (n: number) => `Right now ${n} tokens per second across all sessions and agents.`,
     noRate: "Claude isn't producing any tokens right now.",
     unavailable: (error: string | null) => `Usage not available${error ? `: ${error}` : ""}.`,
+    loginEnds: (days: number) => `The Claude sign-in ends ${days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}. After that you have to sign in again at the computer.`,
     window: (label: string, percent: number, reset: string | null, forecast: string) => `${label}: ${percent} percent${reset ? `, resets ${reset}` : ""}. ${forecast}`,
   },
 };

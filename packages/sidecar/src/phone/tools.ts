@@ -270,6 +270,10 @@ export interface ForgeSettingsPatch {
   subagentEffort?: EffortLevel | "default";
   /** Claude Code compacts long idle conversations */
   idleCompaction?: boolean;
+  /** Claude Code suggests the next message after a turn */
+  promptSuggestions?: boolean;
+  /** long subagents and MCP calls move to the background */
+  autoBackgroundTasks?: boolean;
   /** minutes until an idle session's process ends; 0 never */
   idleCloseMinutes?: number;
   /** context tokens from which FORGE suggests a new session; 0 never */
@@ -334,7 +338,7 @@ export const SYSTEM_ACTIONS = [
 export type SystemAction = (typeof SYSTEM_ACTIONS)[number];
 
 /** Project tags with behaviour, as in Projekt-Einstellungen > Automatik. */
-export const AUTOMATION_TAG_IDS = ["plan-first", "auto-test", "auto-commit", "auto-push", "auto-merge", "review-required", "no-network", "project-files-only", "sandbox-only"] as const;
+export const AUTOMATION_TAG_IDS = ["plan-first", "auto-test", "auto-commit", "auto-push", "auto-merge", "review-required", "no-network", "project-files-only", "no-prompts", "sandbox-only"] as const;
 export type AutomationTag = (typeof AUTOMATION_TAG_IDS)[number];
 
 /** An automation tag named as in the project settings. */
@@ -991,6 +995,8 @@ const TOOL_DEFS: readonly ToolDef[] = [
       limit_warnings: { type: "boolean", optional: true },
       subagent_effort: { type: "string", optional: true, enum: [...EffortLevel.options, "default"] },
       idle_compaction: { type: "boolean", optional: true },
+      prompt_suggestions: { type: "boolean", optional: true },
+      auto_background_tasks: { type: "boolean", optional: true },
       idle_close_minutes: { type: "number", optional: true, min: 0, max: 1440 },
       long_session_tokens: { type: "number", optional: true, min: 0, max: 2000000 },
       update_checks: { type: "boolean", optional: true },
@@ -1021,6 +1027,8 @@ const TOOL_DEFS: readonly ToolDef[] = [
         limitWarnings: optBool(a.limit_warnings),
         subagentEffort: [...EffortLevel.options, "default" as const].find((x) => x === a.subagent_effort),
         idleCompaction: optBool(a.idle_compaction),
+        promptSuggestions: optBool(a.prompt_suggestions),
+        autoBackgroundTasks: optBool(a.auto_background_tasks),
         idleCloseMinutes: optNum(a.idle_close_minutes),
         longSessionTokens: optNum(a.long_session_tokens),
         updateChecks: optBool(a.update_checks),

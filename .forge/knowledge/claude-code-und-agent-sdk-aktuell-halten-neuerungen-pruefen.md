@@ -1,35 +1,53 @@
 ---
 title: "Claude Code und Agent SDK aktuell halten: Neuerungen prüfen und einbauen (Dependabot, Changelog, MCP-Rückfragen, Probe)"
-summary: "Wie FORGE Claude-Code-Neuerungen nachzieht, was zuletzt geprüft wurde, was bewusst fehlt, wie MCP-Rückfragen (Elicitation) laufen und wie man neue Optionen mit der echten CLI prüft."
+summary: "Wie FORGE Claude-Code-Neuerungen nachzieht, was zuletzt geprüft und eingebaut wurde (Stand 2.1.325), was bewusst fehlt oder nicht geht, wie MCP-Rückfragen laufen und wie man neue Optionen mit der echten CLI prüft."
 tags: ["sdk","update","sidecar","konvention","telefon"]
-updated: "2026-11-02T14:40:06.101Z"
+updated: "2026-11-15T10:01:40.655Z"
 ---
 
-Wunsch des Besitzers (2026-11-02): FORGE soll immer auf dem neuesten Stand von Claude Code sein und gute Funktionen vereinfacht zeigen.
+Wunsch des Besitzers (2026-11-02, bekräftigt 2026-11-15): FORGE soll immer auf dem neuesten Stand von Claude Code sein und gute Funktionen vereinfacht zeigen.
 
 ## Stand
-Geprüft bis Claude Code 2.1.316 und Agent SDK 0.3.316. „Claude Code 2.0“ ist im offiziellen Changelog die Version von September 2025; FORGE arbeitet längst auf 2.1.x. Aus 2.0 sind `/rewind`, `/usage`, dynamische Subagenten und die Verlaufssuche (Composer: Pfeil hoch, Strg+R) abgedeckt; das Denken stellt FORGE über die Aufwand-Auswahl ein.
+Geprüft bis Claude Code 2.1.325 und Agent SDK 0.3.325 (2026-11-15). Aus Claude Code 2.0 (September 2025) sind `/rewind`, `/usage`, dynamische Subagenten und die Verlaufssuche abgedeckt; das Denken stellt FORGE über die Aufwand-Auswahl ein.
 
 ## Ablauf bei neuen Versionen
-- `.github/dependabot.yml` öffnet wöchentlich einen PR gegen `dev`, nur für `@anthropic-ai/claude-agent-sdk`. Die Konfiguration greift erst, wenn sie auf `main` liegt. Nach dem Update `pnpm notices` nicht vergessen.
-- FORGE startet die CLI selbst (`pathToClaudeCodeExecutable`), CLI-Fehlerbehebungen kommen also unabhängig vom SDK. Neue Optionen und Typen brauchen das SDK.
-- Changelogs: `raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md` und `.../claude-agent-sdk-typescript/main/CHANGELOG.md`. Die CLI-Datei ist über 1 MB groß, darum mit curl holen und abschnittsweise lesen. Zum Vergleich hilft ein diff der `sdk.d.ts` zwischen installierter und neuer Version.
-- Neue Optionen zuerst mit der echten CLI prüfen: kleines Skript im Temp-Ordner mit `query()` aus dem SDK des Sidecars, `model: "haiku"`, `settingSources: []`, `persistSession: false`, `pathToClaudeCodeExecutable: ~/.local/bin/claude`. Die CLI unter `/opt/homebrew/bin` kann älter sein als die von FORGE. Das CLI-Binary ist über 300 MB groß: `grep -a` mit langen Mustern hängt, kurze Muster und `LC_ALL=C` nutzen.
+- `.github/dependabot.yml` öffnet wöchentlich einen PR gegen `dev`, nur für `@anthropic-ai/claude-agent-sdk`. Nach dem Update `pnpm notices` nicht vergessen.
+- FORGE startet die CLI selbst (`pathToClaudeCodeExecutable`), CLI-Fehlerbehebungen und neue Modelle kommen also ohne SDK-Update. Neue Optionen und Typen brauchen das SDK.
+- Changelogs: `raw.githubusercontent.com/anthropics/claude-code/refs/heads/main/CHANGELOG.md` und `.../claude-agent-sdk-typescript/main/CHANGELOG.md`. Die CLI-Datei ist über 1 MB groß: mit curl holen, `grep -n '^## '` für die Versionszeilen, dann abschnittsweise lesen. Die Typen ändern sich pro Version wenig: ein Vergleich der exportierten Namen der `sdk.d.ts` (alt gegen das Tarball der neuen Version von registry.npmjs.org) zeigt Neues sofort. Viele Meldungstypen gibt es im SDK schon länger, ohne dass FORGE sie auswertet: also auch `grep` der Typnamen gegen `normalize.ts`.
+- Neue Optionen zuerst mit der echten CLI prüfen: kleines Skript im Temp-Ordner mit `query()` aus dem SDK des Sidecars (`packages/sidecar/node_modules/@anthropic-ai/claude-agent-sdk/sdk.mjs`, per `pathToFileURL` importieren), `model: "haiku"`, `settingSources: []`, `persistSession: false`, `pathToClaudeCodeExecutable` (Windows: `~/.local/bin/claude`). Für mehrere Durchläufe einen async-Generator als `prompt` nehmen und nach jedem `result` die nächste Nachricht liefern. Die CLI unter `/opt/homebrew/bin` kann älter sein als die von FORGE.
+- Danach gezielt `pnpm vitest run -c vitest.e2e.config.ts -t "..."` in `packages/sidecar` (echte CLI, Haiku). Die Tests bauen aufeinander auf: „imports the project“ und „shows the real git status“ mitnehmen. Der Test „diagnostics“ erwartet ein `five_hour`-Fenster und schlägt mit einem Ultra-Konto fehl; das ist kein Fehler der Änderung.
+
+## Eingebaut in der Runde 2.1.317 bis 2.1.325
+- `supersedes` und `retracted_message_uuids`: Der Normalizer merkt sich je SDK-`uuid`, welche Texte (`<messageId>:<index>`) und Werkzeugaufrufe eine Meldung gezeigt hat, und meldet `messages.superseded`. Achtung: Mehrere SDK-Meldungen teilen sich eine API-`message.id` (eine je Inhaltsblock), darum der Weg über die uuid. `chat-items.ts` blendet die Einträge in jedem Thread aus, `lastAnswer` am Telefon überspringt sie.
+- Vorschlag für die nächste Nachricht: Option `promptSuggestions`, Meldung `prompt_suggestion` kommt nach dem `result` (nicht nach dem ersten Durchlauf). Liegt flüchtig an `LiveSession.suggestion` / `Session.suggestion`, wird in `SessionCore.setStatus("running")` gelöscht. Composer zeigt ihn als Platzhalter, Tab oder Klick übernimmt. Einstellung `promptSuggestions` (Standard an).
+- Ablauf der Anmeldung: `credential_expires_at` steht an jedem `result`. Gespeichert unter dem Schlüssel `loginExpiry` in der Tabelle `settings` (kein Setting), ausgeliefert als `PlanUsage.loginExpiresAt`. `loginDaysLeft` (protocol) warnt ab 10 Tagen: Seitenleiste, Nutzungsansichten, einmal je Start als Toast, `usage_status`, Telefon `usage`.
+- Neue Ereignisse: `cli.notice` (`system/informational`, Stufen notice, suggestion, warning; `info` und Fortschrittszeilen zu einem Werkzeug fallen weg), `model.refusal` (`model_refusal_fallback` nur bei `direction: "retry"`, und `model_refusal_no_fallback`), `writes.lost` (`session_writes_lost`), `memory.recall`, `goal` (`active_goal`).
+- `onFailure: "block"` am PreToolUse-Guard. Das SDK lehnt eine CLI vor 2.1.317 beim Start ab („does not honor onFailure“); `describeRuntimeError` meldet das als „Claude Code zu alt“.
+- `reloadPlugins` im Hintergrund mit `refuseIfBusy`: Antwort „busy“ setzt `live.reloadPending`, nach dem Turn-Ende lädt der Stream nach.
+- Projekt-Tag `no-prompts` (Automatik „Ohne Rückfragen“): setzt `settings.permissions.denyInsteadOfPrompting`. Geprüft: `canUseTool` wird dann nicht gefragt, AskUserQuestion und ExitPlanMode werden dem Modell gar nicht angeboten, die CLI meldet `system/permission_denied`. Darum nicht in Sessions im Planmodus (lifecycle.ts).
+- Einstellung `autoBackgroundTasks` (Standard aus): setzt `CLAUDE_AUTO_BACKGROUND_TASKS=1`. Das schiebt Subagenten nach etwa zwei Minuten in den Hintergrund und ist zugleich die Voraussetzung für MCP-Tasks im Hintergrund in SDK-Sessions (`task_type: "mcp_task"`). Wegen der geänderten Turn-Abfolge nicht ungefragt eingeschaltet.
+- Archiv für Sessions (`archiveSession`, `unarchiveSession`): eigener Eintrag.
+
+## Geht nicht oder bewusst nicht eingebaut
+- Code Mode (`CLAUDE_CODE_EXPERIMENTAL_CODE_MODE`): läuft laut Doku nur im interaktiven Terminal, nicht mit `-p`, dem Agent SDK oder Desktop-Apps. In FORGE nicht möglich, bis Anthropic das ändert.
+- `tool_use_summary`: kam in den Proben nicht an; FORGE zeigt jede Werkzeugkarte einzeln.
+- `tool_progress` mit `tool_use_id` „hook-…“ (Herzschlag bei langen Hooks): FORGE wertet `tool_progress` nicht aus, darum unkritisch.
+- `wakeup_source`: steht im Node-SDK nicht im Stream.
+- Cache-Aufteilung 5 Minuten / 1 Stunde: erfordert neue Zähler, ohne dass eine Entscheidung davon abhängt.
+- `permission_policy` je MCP-Werkzeug: FORGE fragt über `autoAllow` ohnehin nach.
+- `matchDeniedModels`, `machinePolicy`, Gateway, Mods, Self-hosted Runner, OpenTelemetry, Sandbox-Option: für FORGE ohne Nutzen.
+- Offen zu beobachten: Seit 2.1.325 fragen nur lesende Git-Befehle in einem Repository außerhalb des Arbeitsordners nach. Ob das die Hauptsession beim Blick in Agenten-Worktrees trifft, ist nicht getestet.
 
 ## MCP-Rückfragen (Elicitation)
 Ohne `onElicitation` lehnt die CLI Rückfragen von MCP-Servern automatisch ab. FORGE führt sie als Freigabe mit `toolName = ELICITATION_TOOL` (`packages/protocol/src/elicitation.ts`, `ApprovalGate.elicit`). Dadurch funktionieren Status, Benachrichtigung, Telefon (`respond`) und Tagesbericht ohne zweiten Weg.
 - Antworten stehen absichtlich nicht im Session-Verlauf (`updatedInput.content`, nicht `answers`).
 - Adressen nur http/https (`elicitationUrl`). Die Anmeldung im Browser lässt sich am Telefon nur ablehnen.
-- Geprüft mit einem eigenen stdio-MCP-Server, der `elicitation/create` sendet: Das Ergebnis kommt beim Server an.
 
-## Weitere Punkte dieser Runde
-Einstellungen `subagentEffort` (Umgebung `CLAUDE_CODE_SUBAGENT_EFFORT`) und `idleCompaction`, Tag `project-files-only`, Verbrauchs-Tipps (`PlanUsage.advice` aus `behaviors.*.recommendations`), Kontext je MCP-Server (`mcpShares`), übersprungene Fragen (`ask_user_question_unanswered_v1`), Karten für ReportFindings, Cron und Wecker. MCP-Login, Plugin-Einstellungen und Erkennen ohne Neustart stehen im Eintrag zur MCP-Verwaltung.
-
-## Bewusst nicht eingebaut
-- `wakeup_source`: steht im Node-SDK nicht im Stream.
-- Cache-Aufteilung 5 Minuten / 1 Stunde: erfordert neue Zähler, ohne dass eine Entscheidung davon abhängt.
-- `permission_policy` je MCP-Werkzeug: FORGE fragt über `autoAllow` ohnehin nach.
-- Gateway, Mods, Self-hosted Runner, OpenTelemetry: für FORGE ohne Nutzen.
+## Frühere Runde (bis 2.1.316)
+Einstellungen `subagentEffort` (`CLAUDE_CODE_SUBAGENT_EFFORT`) und `idleCompaction`, Tag `project-files-only`, Verbrauchs-Tipps (`PlanUsage.advice`), Kontext je MCP-Server (`mcpShares`), übersprungene Fragen (`ask_user_question_unanswered_v1`), Karten für ReportFindings, Cron und Wecker.
 
 ## Stolperfalle: Git-Version auf dem Mac
-macOS bringt Apple Git 2.39 mit. `git merge-tree --merge-base` gibt es erst ab Git 2.40, `merge-tree --write-tree` ab 2.38. Neue Git-Aufrufe in FORGE dürfen nichts über 2.38 voraussetzen; auf dem Mac nutzt FORGE kein mitgeliefertes Git. In `agent-finish.ts` war `--merge-base=HEAD` überflüssig, weil Agenten-Stand und Stash beide von HEAD abstammen.
+macOS bringt Apple Git 2.39 mit. `git merge-tree --merge-base` gibt es erst ab Git 2.40, `merge-tree --write-tree` ab 2.38. Neue Git-Aufrufe in FORGE dürfen nichts über 2.38 voraussetzen.
+
+## Desktop-Komponenten ohne Tauri ansehen
+Siehe Eintrag zum Git-Reiter. Es geht auch ohne Brücke: Die temporäre Seite setzt `window.__TAURI_INTERNALS__` (`invoke`, `transformCallback`) und beantwortet `sidecar_send` selbst mit festen Daten als `sidecar://messages`-Ereignis. Danach `rpc.start({ manageSidecar: false })` aufrufen, sonst kommt keine Antwort an. Der erste Aufruf dauert über 20 Sekunden (Vite bündelt Abhängigkeiten), die Seite ist so lange schwarz.

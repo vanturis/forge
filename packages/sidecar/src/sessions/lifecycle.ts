@@ -5,7 +5,7 @@ import { fallbackFor, type ClaudeRuntime, type OutgoingMessage, type RuntimeSess
 import { Normalizer } from "../claude/normalize.js";
 import { locateClaude, sessionEnv } from "../claude/environment.js";
 import type { SessionRecord } from "../persistence/db.js";
-import { blockedTools, effectivePermissionMode, resolveProfile, type ProfileConfig, PROJECT_FILES_ONLY_TAG } from "../policy/profiles.js";
+import { blockedTools, effectivePermissionMode, resolveProfile, type ProfileConfig, NO_PROMPTS_TAG, PROJECT_FILES_ONLY_TAG } from "../policy/profiles.js";
 import { claudePlansDir } from "../policy/guard.js";
 import type { ProjectManager } from "../projects/project-manager.js";
 import { denyPending, type ApprovalGate } from "./approvals.js";
@@ -222,6 +222,8 @@ export class SessionLifecycle {
       subagents: new Map(),
       taskToolUse: new Map(),
       context: null,
+      suggestion: null,
+      reloadPending: false,
     };
     this.core.live.set(rec.id, live);
     const sink = this.sinkFor(rec.id, live);
@@ -233,6 +235,8 @@ export class SessionLifecycle {
       extra = null;
       this.core.record(rec.id, { type: "status", status: "starting", detail: tr().core.sessions.forgeToolsUnavailable(e instanceof Error ? e.message : String(e)) });
     }
+    const settings = this.core.db.getSettings();
+    const tags = this.projects.get(rec.projectId).tags;
     try {
       live.rt = this.runtime.startSession(
         {
@@ -242,11 +246,19 @@ export class SessionLifecycle {
           permissionMode: rec.permissionMode,
           resume,
           resumeAt,
-          disallowedTools: blockedTools(profile, this.projects.get(rec.projectId).tags),
-          env: { ...sessionEnv(stripApiKey), ...(this.core.db.getSettings().subagentEffort ? { CLAUDE_CODE_SUBAGENT_EFFORT: this.core.db.getSettings().subagentEffort! } : {}) },
-          idleCompaction: this.core.db.getSettings().idleCompaction,
+          disallowedTools: blockedTools(profile, tags),
+          env: {
+            ...sessionEnv(stripApiKey),
+            ...(settings.subagentEffort ? { CLAUDE_CODE_SUBAGENT_EFFORT: settings.subagentEffort } : {}),
+            // Also what lets an SDK session run a long MCP call as a background task (task_type "mcp_task").
+            ...(settings.autoBackgroundTasks ? { CLAUDE_AUTO_BACKGROUND_TASKS: "1" } : {}),
+          },
+          idleCompaction: settings.idleCompaction,
+          promptSuggestions: settings.promptSuggestions,
+          // Plan mode needs its own approval (ExitPlanMode), which the CLI withholds together with the prompts.
+          denyPrompts: tags.includes(NO_PROMPTS_TAG) && rec.permissionMode !== "plan",
           // The plan file of plan mode lies outside the project; without it a session could not finish a plan.
-          ...(this.projects.get(rec.projectId).tags.includes(PROJECT_FILES_ONLY_TAG) ? { confineFiles: { allow: [claudePlansDir()] } } : {}),
+          ...(tags.includes(PROJECT_FILES_ONLY_TAG) ? { confineFiles: { allow: [claudePlansDir()] } } : {}),
           claudePath,
           firstMessage: first,
           fallbackModel: fallbackFor(rec.model),

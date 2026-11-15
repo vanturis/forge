@@ -25,6 +25,7 @@ export class SessionCore {
       subagents: live ? [...live.subagents.values()] : [],
       context: live?.context ?? this.db.getSessionContext(r.id),
       autoContinueAt: this.db.getAutoContinue(r.id)?.dueAt ?? null,
+      suggestion: live?.suggestion ?? null,
     };
   }
 
@@ -51,6 +52,9 @@ export class SessionCore {
   }
 
   setStatus(id: string, status: SessionStatus, detail: string | null = null, extra: Partial<SessionRecord> = {}) {
+    // A suggestion answers the turn before it; with the next turn it is out of date.
+    const live = status === "running" ? this.live.get(id) : undefined;
+    if (live) live.suggestion = null;
     const rec = this.db.updateSession(id, { status, ...extra });
     this.record(id, { type: "status", status, detail });
     this.publish(rec);

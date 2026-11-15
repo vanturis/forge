@@ -517,7 +517,7 @@ export class AgentSdkRuntime implements ClaudeRuntime {
         ...(opts.context ? { systemPrompt: { type: "preset", preset: "claude_code", append: opts.context } } : {}),
         // The guard fails closed by itself; "block" also covers an answer that never reaches the CLI.
         // The SDK refuses a CLI that does not know the option (before 2.1.317), reported as "please update".
-        hooks: { PreToolUse: [{ onFailure: "block", hooks: [guard] }],...(sink.toolContext ? { PostToolUse: [{ hooks: [after] }] } : {}) },
+        hooks: { PreToolUse: [{ onFailure: "block", hooks: [guard] }], ...(sink.toolContext ? { PostToolUse: [{ hooks: [after] }] } : {}) },
         ...(opts.tools?.length
           ? {
               mcpServers: { [FORGE_MCP]: forgeServer(opts.tools) },

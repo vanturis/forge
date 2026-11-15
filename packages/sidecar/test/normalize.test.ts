@@ -135,3 +135,53 @@ describe("Normalizer compaction", () => {
     ]);
   });
 });
+
+describe("Normalizer retractions and notices", () => {
+  const text = (uuid: string, id: string, t: string, extra: Record<string, unknown> = {}) => ({ type: "assistant", uuid, message: { id, content: [{ type: "text", text: t }] }, ...extra });
+
+  it("takes back the texts and tool calls a later message supersedes", () => {
+    const n = new Normalizer();
+    n.normalize(text("u1", "m1", "erster Versuch"));
+    n.normalize({ type: "assistant", uuid: "u2", message: { id: "m1", content: [{ type: "tool_use", id: "t1", name: "Read", input: {} }] } });
+    n.normalize({ type: "user", uuid: "u3", message: { content: [{ type: "tool_result", tool_use_id: "t1", content: "x" }] } });
+    const out = n.normalize(text("u4", "m2", "zweiter Versuch", { supersedes: ["u1", "u2", "u3", "unknown"] }));
+    expect(out).toEqual([
+      { type: "messages.superseded", texts: ["m1:0"], toolUseIds: ["t1", "t1"] },
+      { type: "assistant.text", messageId: "m2", index: 0, text: "zweiter Versuch" },
+    ]);
+    // naming them again changes nothing
+    expect(n.normalize({ type: "system", subtype: "model_refusal_fallback", direction: "sticky", retracted_message_uuids: ["u1"] })).toEqual([]);
+  });
+
+  it("reports a refusal with and without a fallback model", () => {
+    const n = new Normalizer();
+    expect(n.normalize({ type: "system", subtype: "model_refusal_fallback", direction: "retry", scope: "local", original_model: "a", fallback_model: "b", api_refusal_explanation: "why" })).toEqual([
+      { type: "model.refusal", model: "a", fallbackModel: "b", scope: "local", category: null, explanation: "why" },
+    ]);
+    expect(n.normalize({ type: "system", subtype: "model_refusal_no_fallback", original_model: "a", api_refusal_category: "bio" })).toEqual([
+      { type: "model.refusal", model: "a", fallbackModel: null, scope: "session", category: "bio", explanation: null },
+    ]);
+  });
+
+  it("keeps the CLI's notices for the user and drops transcript lines and tool progress", () => {
+    const n = new Normalizer();
+    const info = (level: string, extra: Record<string, unknown> = {}) => n.normalize({ type: "system", subtype: "informational", level, content: " Hinweis ", ...extra });
+    expect(info("warning")).toEqual([{ type: "cli.notice", level: "warning", text: "Hinweis" }]);
+    expect(info("suggestion")).toEqual([{ type: "cli.notice", level: "suggestion", text: "Hinweis" }]);
+    expect(info("notice")).toEqual([{ type: "cli.notice", level: "notice", text: "Hinweis" }]);
+    expect(info("notice", { tool_use_id: "t1" })).toEqual([]);
+    expect(info("warning", { tool_use_id: "t1" })).toHaveLength(1);
+    expect(info("info")).toEqual([]);
+  });
+
+  it("reports lost writes, recalled memories and the state of a goal", () => {
+    const n = new Normalizer();
+    expect(n.normalize({ type: "system", subtype: "session_writes_lost", error_code: "EDQUOT", lost: ["transcript", "global_config"] })).toEqual([{ type: "writes.lost", errorCode: "EDQUOT", lost: ["transcript", "global_config"] }]);
+    expect(n.normalize({ type: "system", subtype: "memory_recall", mode: "select", memories: [{ path: "/m/a.md", scope: "personal", content: "x" }, { scope: "team" }] })).toEqual([
+      { type: "memory.recall", mode: "select", memories: [{ path: "/m/a.md", scope: "personal" }] },
+    ]);
+    expect(n.normalize({ type: "system", subtype: "memory_recall", mode: "select", memories: [] })).toEqual([]);
+    expect(n.normalize({ type: "active_goal", value: { condition: "Tests grün", iterations: 2, set_at: 1, tokens_at_start: 0, last_reason: "2 Tests rot" } })).toEqual([{ type: "goal", condition: "Tests grün", iterations: 2, reason: "2 Tests rot" }]);
+    expect(n.normalize({ type: "active_goal", value: null })).toEqual([{ type: "goal", condition: null, iterations: 0, reason: null }]);
+  });
+});

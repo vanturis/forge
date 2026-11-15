@@ -144,6 +144,8 @@ const SETTING_TOGGLES: Record<Exclude<BooleanSetting, keyof typeof UNLISTED_SETT
   sounds: { label: t.layout.actions.toggles.sounds, section: "general", keywords: "töne ton sound sounds signal klang audio klingel crew anfrage beitritt doorbell request" },
   autoContinueAfterLimit: { label: t.layout.actions.toggles.autoContinueAfterLimit, section: "claude", keywords: "auto weitermachen nutzungslimit limit reset continue usage" },
   idleCompaction: { label: t.layout.actions.toggles.idleCompaction, section: "claude", keywords: "komprimieren zusammenfassen leerlauf lange session cache tokens compact idle compaction summarize" },
+  promptSuggestions: { label: t.layout.actions.toggles.promptSuggestions, section: "claude", keywords: "vorschlag vorschläge nächste nachricht eingabefeld tab grau prompt suggestion suggestions next message ghost text" },
+  autoBackgroundTasks: { label: t.layout.actions.toggles.autoBackgroundTasks, section: "claude", keywords: "hintergrund lange aufgaben subagenten mcp aufruf task warten background long tasks subagents auto" },
   limitWarnings: { label: t.layout.actions.toggles.limitWarnings, section: "claude", keywords: "limit warnung warnungen nutzungslimit fast voll bald voll prognose hinweis abfragen nerven usage warning forecast nearly full" },
   askPushOnClose: { label: t.layout.actions.toggles.askPushOnClose, section: "general", keywords: "schließen beenden pushen push github ungepusht commit andere gerät weiterarbeiten close quit unpushed other device" },
   learnTemplates: { label: t.layout.actions.toggles.learnTemplates, section: "templates", keywords: "prompt vorlagen templates wiederkehrende nachrichten shortcuts textvorschläge selbst anlegen lernen learn automatic recurring messages suggestions" },

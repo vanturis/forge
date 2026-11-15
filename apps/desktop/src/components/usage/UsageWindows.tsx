@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { AlertTriangle, RefreshCw, TrendingUp } from "lucide-react";
-import type { PlanUsage, UsageWindow } from "@forge/protocol";
+import { loginDaysLeft, type PlanUsage, type UsageWindow } from "@forge/protocol";
 import type { MenuItem } from "@/components/ui/dropdown";
 import { refreshUsage, useSettings, useUsage } from "@/lib/queries";
 import { limitTime } from "@/lib/rate-limit";
@@ -8,6 +8,8 @@ import { Meter, MeterSkeleton, usageTone } from "@/components/ui/meter";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { forecastLabel, forecastSentence, windowsRunningOut } from "@/lib/usage-forecast";
 import { relativeTime } from "@/lib/utils";
+import { useUi } from "@/stores/ui";
+import { Button } from "@/components/ui/button";
 import { locale, t } from "@/i18n";
 
 export const resetText = (iso: string | null) => {
@@ -57,11 +59,34 @@ function UsageAdvice({ usage }: { usage: PlanUsage }) {
 export function UsageWindows({ usage }: { usage: PlanUsage }) {
   return (
     <div className="space-y-4">
+      <LoginExpiryWarning usage={usage} />
       {usage.windows.map((w) => (
         <Meter key={w.key} label={w.label} value={w.utilization} detail={<WindowDetail w={w} />} toneOf={usageTone} />
       ))}
       <UsageAdvice usage={usage} />
       <div className="text-caption text-subtle">{t.usage.fetched(relativeTime(usage.fetchedAt))}</div>
+    </div>
+  );
+}
+
+/**
+ * The stored Claude sign-in ends soon (credential_expires_at of the last turn): says when and offers to
+ * sign in again, so sessions and agents do not fail in the middle of their work.
+ */
+export function LoginExpiryWarning({ usage }: { usage: PlanUsage | undefined }) {
+  const days = loginDaysLeft(usage);
+  if (days === null || !usage?.loginExpiresAt) return null;
+  const date = new Date(usage.loginExpiresAt).toLocaleString(locale, { weekday: "short", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return (
+    <div role="alert" className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning-soft px-3 py-2 text-body">
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+      <div className="min-w-0 flex-1">
+        <div className="font-medium">{t.usage.loginEnds.title(days)}</div>
+        <div className="text-xs text-muted">{t.usage.loginEnds.detail(date)}</div>
+      </div>
+      <Button size="sm" variant="outline" className="shrink-0" onClick={() => useUi.getState().openClaudeLogin("switch")}>
+        {t.usage.loginEnds.action}
+      </Button>
     </div>
   );
 }

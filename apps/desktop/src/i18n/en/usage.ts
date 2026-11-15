@@ -20,6 +20,12 @@ export const usage: typeof De = {
   used: (pct: number) => `${pct}% used`,
   fetched: (relative) => `Updated ${relative}`,
   skeletonLabel: "Loading usage",
+  loginEnds: {
+    title: (days) => `The Claude sign-in ends ${days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}.`,
+    short: (days) => `Sign-in ends ${days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}`,
+    detail: (date) => `It expires on ${date}. After that turns fail until you sign in again. Sign in again before then so nothing runs into it.`,
+    action: "Sign in again",
+  },
   forecastWarning: {
     title: "At this pace the limit is reached before the reset.",
     window: (label, text, reset) => `${label}: ${text}${reset ? `, reset ${reset}` : ""}`,
