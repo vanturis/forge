@@ -186,14 +186,6 @@
 }
 
 .hero {
-  /*
-   * The frame of the picture and the pixel art. Up to this width it is the window. On wider windows
-   * it stays centred around the text column: at the window's edges the picture hung far away from
-   * the text and the page leaned to the right. Only the line below still crosses the whole window.
-   */
-  --hero-frame: calc(var(--page-width) + 720px);
-  --hero-inset: max(0px, calc((100% - var(--hero-frame)) / 2));
-
   position: relative;
   display: flex;
   align-items: center;
@@ -202,7 +194,7 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-/* pixel art in the two bottom corners of the frame, standing on the hero's line */
+/* pixel art in the two bottom corners, standing on the hero's line */
 .hero-pixels {
   position: absolute;
   bottom: 0;
@@ -210,11 +202,11 @@
 }
 
 .hero-pixels-left {
-  left: var(--hero-inset);
+  left: 0;
 }
 
 .hero-pixels-right {
-  right: var(--hero-inset);
+  right: 0;
 }
 
 .hero-text {
@@ -284,26 +276,19 @@
 }
 
 /*
- * ---- the smithy: the owner's pixel art behind the right half of the hero. It reaches the right edge
- * of the hero's frame (the window's edge up to the frame's width) and runs up under the floating top
- * bar (72px: its 12px gap and 60px height). Toward the text and toward the bottom it fades into the
- * page, so it has no edge and no frame. Where the frame is narrower than the window, it fades out
- * toward the right as well: the fade grows with the window, so the edge is soft from the first pixel
- * the picture stands away from the window's edge.
+ * ---- the smithy: the owner's pixel art behind the right half of the hero. It reaches the window's
+ * right edge and runs up under the floating top bar (72px: its 12px gap and 60px height). Toward the
+ * text and toward the bottom it fades into the page, so it has no edge and no frame.
  */
 
 .hero-art {
   position: absolute;
   top: -72px;
-  right: var(--hero-inset);
+  right: 0;
   bottom: 0;
-  /* capped: on very wide windows it would otherwise lose its top and bottom to the crop */
-  width: min(62vw, calc(var(--hero-frame) * 0.62));
+  width: 62vw;
   pointer-events: none;
-  mask-image:
-    linear-gradient(to right, transparent, black 34%),
-    linear-gradient(to left, transparent, black clamp(0px, calc(100vw - var(--hero-frame)), 280px)),
-    linear-gradient(to bottom, black 78%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 34%), linear-gradient(to bottom, black 78%, transparent);
   mask-composite: intersect;
 }
 
@@ -313,6 +298,46 @@
   height: 100%;
   object-fit: cover;
   object-position: 60% 60%;
+}
+
+/*
+ * ---- windows wider than 1920px: the window is no frame for the hero any more. At its edges the
+ * picture hangs far from the text and the pixel corners stand alone in empty space. So the hero
+ * becomes a surface of its own, like the showcase blocks below: a little wider than the page column,
+ * the picture fills its right side up to the rounded edge, the pixel art sits in its corners.
+ */
+
+@media (min-width: 1921px) {
+  .hero {
+    width: calc(var(--page-width) + 2 * var(--page-gutter) + 2 * 88px);
+    min-height: 620px;
+    margin: 20px auto 0;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-raised);
+  }
+
+  /* the fine warm line of the showcase blocks along the bottom edge */
+  .hero::after {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-accent) 55%, transparent) 50%, transparent);
+    content: "";
+  }
+
+  .hero-art {
+    top: 0;
+    width: 60%;
+    /* eased toward the text: on the lighter surface a linear fade shows where the picture begins */
+    mask-image:
+      linear-gradient(to right, transparent, rgb(0 0 0 / 0.06) 8%, rgb(0 0 0 / 0.26) 18%, rgb(0 0 0 / 0.62) 28%, black 40%),
+      linear-gradient(to bottom, black 78%, transparent);
+  }
 }
 
 /* ---- four feature cards */
