@@ -93,6 +93,36 @@
     </td>
   </tr>
   <tr>
+    <td valign="top">
+      <h3>Chat-Fenster und temporärer Chat</h3>
+      Eine Session in ein eigenes Fenster lösen und im Vordergrund halten. Ein temporärer Chat braucht kein Projekt und wird nach 30 Tagen gelöscht.
+    </td>
+    <td valign="top">
+      <h3>Diktat und Screenshots</h3>
+      Ins Eingabefeld diktieren, mit der Spracheingabe von Claude. Den Bildschirm mit der Druck-Taste aufnehmen, die Stelle markieren und an die Nachricht hängen.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>Prompt-Vorlagen</h3>
+      Vorlagen für wiederkehrende Aufträge mit Feldern zum Ausfüllen, vorgeschlagen beim Tippen von <code>#</code>. Aus wiederholten Nachrichten kann FORGE Vorlagen selbst lernen.
+    </td>
+    <td valign="top">
+      <h3>In der Claude-App weiterarbeiten</h3>
+      Mit eingeschalteter Remote-Steuerung erscheint jede laufende FORGE-Session in der Claude-App und auf claude.ai. Freigaben und Sperrliste von FORGE gelten auch dort.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>Design</h3>
+      Farbschemata, eigene Farben und ein weichgezeichneter Fensterhintergrund (Windows 11).
+    </td>
+    <td valign="top">
+      <h3>Backup</h3>
+      Sichert Einstellungen, Projektliste, Telefon, Claude-Code-Konfiguration und Vorlagen und stellt sie wieder her. Chatverläufe und Anmeldungen gehören nicht dazu.
+    </td>
+  </tr>
+  <tr>
     <td colspan="2" valign="top">
       <h3>Crew: zusammen live an einem Projekt</h3>
       Mehrere Leute arbeiten mit FORGE gleichzeitig am selben Repository, jeder auf seinem Rechner. Beitritt per Einladungscode oder QR-Code mit Freigabe, Ende-zu-Ende-verschlüsselt. Die Agenten aller Mitglieder sehen, wer woran arbeitet, teilen sich ein Aufgabenbrett, werden vor Dateien gewarnt, an denen ein anderer gerade arbeitet, und bekommen gepushte Änderungen der anderen automatisch.

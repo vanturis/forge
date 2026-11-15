@@ -93,6 +93,36 @@
     </td>
   </tr>
   <tr>
+    <td valign="top">
+      <h3>Chat windows and temporary chat</h3>
+      Pop a session out into its own window and keep it on top. A temporary chat needs no project and is deleted after 30 days.
+    </td>
+    <td valign="top">
+      <h3>Dictation and screenshots</h3>
+      Dictate into the input field with Claude's own speech input. Capture the screen with the Print key, mark what you mean and attach it to the message.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>Prompt templates</h3>
+      Templates for recurring tasks with fields to fill in, suggested while you type <code>#</code>. FORGE can learn templates from messages you repeat.
+    </td>
+    <td valign="top">
+      <h3>Continue in the Claude app</h3>
+      With remote control on, every running FORGE session appears in the Claude app and on claude.ai. FORGE's approvals and blocklist apply there too.
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <h3>Design</h3>
+      Color schemes, your own colors and a blurred window background (Windows 11).
+    </td>
+    <td valign="top">
+      <h3>Backup</h3>
+      Backs up settings, project list, phone, Claude Code configuration and templates, and restores them. Chat histories and logins are not part of it.
+    </td>
+  </tr>
+  <tr>
     <td colspan="2" valign="top">
       <h3>Crew: work live on one project together</h3>
       Several people work with FORGE on the same repository at the same time, each on their own computer. Join with an invite code or QR code and approval, end-to-end encrypted. The agents of all members see who works on what, share a task board, get warned about files someone else is working on, and receive the others' pushed changes automatically.
