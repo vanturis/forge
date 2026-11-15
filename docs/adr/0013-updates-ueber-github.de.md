@@ -15,6 +15,10 @@ Neue Versionen ohne manuelles Neuinstallieren: Sobald auf GitHub ein Update lieg
 (einmal, `beforeBuildCommand` leer über `tauri.ci.json`), dann `gh release create v0.1.<n>` mit den
 Commit-Betreffs seit dem letzten Tag als Notizen. Ein neuerer Push bricht einen laufenden Build ab.
 
+**Version 2.0** (Nachtrag 2026-11-15): Mit dem Redesign wurde die Version `2.0.<n>`. Die Zählung begann
+neu: `n` ist die Laufnummer minus 194, der erste Build von 2.0 ist also `2.0.0` (Schritt Plan in
+`release.yml`). Dev-Builds heißen `2.0.<n>-dev`. Alles bis Lauf 193 bleibt `0.1.<run>`.
+
 **Zwei Arten von Releases** (Nachtrag 2026-10-12, vorher dauerte jeder Build 9,5 Minuten): node, git und gh sind
 476 MB und ändern sich fast nie; allein das LZMA-Packen im NSIS-Installer kostete 2 Minuten.
 

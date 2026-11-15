@@ -1,5 +1,5 @@
 # Builds FORGE once a night when main changed since the last release, or by hand (Run workflow), and
-# publishes it as a GitHub release (version 0.1.<run number>). Nightly instead of on every push: installed
+# publishes it as a GitHub release (version 2.0.<n>, see the step Plan). Nightly instead of on every push: installed
 # apps offer each release as an update, and one a day is enough for people who use FORGE.
 #
 # Two kinds of release assets:
@@ -33,7 +33,7 @@
 # The apps there take the newest release that has their platform asset, so a failed or late macOS/Linux job
 # never touches the Windows release. macOS builds are signed ad hoc only (no Apple notarization).
 #
-# Dev channel: every push to the branch dev builds a pre-release 0.1.<run>-dev (tag v0.1.<run>-dev; run
+# Dev channel: every push to the branch dev builds a pre-release 2.0.<n>-dev (tag v2.0.<n>-dev; run
 # numbers are shared, so dev and main versions never collide). Each channel only takes its own builds, and
 # switching the channel installs the newest build of the other one, also a lower number (channelReleases
 # and versionChannel). FORGE Setup, the download counter, install.sh and the download page skip
@@ -149,7 +149,12 @@ jobs:
           $codesign = [bool]$env:AZURE_CLIENT_ID -and -not $dev
           if (-not $codesign -and -not $dev) { Write-Host "::warning::Secret AZURE_CLIENT_ID fehlt: FORGE wird ohne Code-Signatur gebaut." }
           # Dev builds carry -dev: the app tells the channels apart by the version (versionChannel).
-          $core = "0.1.${{ github.run_number }}"
+          # 2.0 (the redesign) started the count again: up to run 193 the version was 0.1.<run>, since then
+          # it is 2.0.<runs after it>, so the first build of 2.0 is 2.0.0. Dev and main still share the run
+          # numbers and never get the same version.
+          $patch = ${{ github.run_number }} - 194
+          if ($patch -lt 0) { throw "Laufnummer ${{ github.run_number }} liegt vor dem Start von 2.0." }
+          $core = "2.0.$patch"
           $version = if ($dev) { "$core-dev" } else { $core }
           $key = (node scripts/prepare-runtime.mjs --key).Trim()
           # One line per release with its asset names. Only a signed installer counts: the app ignores the

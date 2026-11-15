@@ -13,6 +13,8 @@ export default tseslint.config(
       "**/src-tauri/runtime/**",
       ".runtime-cache/**",
       "**/.e2e-tmp/**",
+      // local demo instance for videos (data folder and WebView profile), never in the repository
+      ".forge-demo/**",
       // own project with its own lint and types (not part of the pnpm workspace)
       "services/**",
       "*.png",

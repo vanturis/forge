@@ -1,25 +1,29 @@
 ---
-title: "Entwicklungsversion (Branch dev): Version 0.1.N-dev, Kanalwechsel, Dev nach Main (DevChannelService, versionChannel)"
-summary: "Neue Arbeit immer auf dev, nie direkt auf main; Dev-Releases mit -dev-Version, jeder Kanal nimmt nur eigene Builds, Kanalwechsel, Rechteprüfung, Dev nach Main, Stolperfallen im Release-Workflow."
+title: "Entwicklungsversion (Branch dev): Version 2.0.N-dev, Kanalwechsel, Dev nach Main (DevChannelService, versionChannel)"
+summary: "Neue Arbeit immer auf dev, nie direkt auf main; Versionsschema 2.0.<n> (seit 2026-11-15, vorher 0.1.<run>), Dev-Releases mit -dev, jeder Kanal nimmt nur eigene Builds, Kanalwechsel, Rechteprüfung, Dev nach Main, Stolperfallen im Release-Workflow."
 tags: ["release","update","github-actions","konvention","stolperfalle"]
-updated: "2026-10-22T15:33:05.698Z"
+updated: "2026-11-15T09:11:34.014Z"
 ---
 
 # Entwicklungsversion (Branch dev)
 
 ## Arbeitsweise (Regel des Besitzers, 2026-10-22)
 - **Neue Features und größere Änderungen entstehen auf `dev`, nie direkt auf `main`.** Vor Beginn den Branch prüfen; steht die Session auf main: `git switch dev` (fehlt der lokale Branch: `git switch -c dev --track origin/dev`). Nicht committete Änderungen kommen beim Wechsel mit.
-- Commits und Pushes gehen nach `origin/dev`. main bekommt die Arbeit nur über „Dev nach Main übernehmen“.
+- Commits und Pushes gehen nach `origin/dev`. main bekommt die Arbeit nur über „Dev nach Main übernehmen“ (oder, wenn der Besitzer es in einer Session verlangt, per Fast-Forward `git push origin dev:main`).
 - Dev-Läufe machen kein Lint und keinen Typecheck: beides vor dem Push selbst ausführen.
 
-Gebaut 2026-10-20 (Wunsch des Besitzers: auf dev pushen, Apps auf dev aktualisieren sich daraus, später nach main übernehmen; dev schnell und ohne Zertifikat; nur Repo-Mitglieder dürfen umschalten; Dev muss in der App klar sichtbar sein). Versionsschema und Kanalwechsel neu seit 2026-10-22.
+Gebaut 2026-10-20 (Wunsch des Besitzers: auf dev pushen, Apps auf dev aktualisieren sich daraus, später nach main übernehmen; dev schnell und ohne Zertifikat; nur Repo-Mitglieder dürfen umschalten; Dev muss in der App klar sichtbar sein). Versionsschema und Kanalwechsel neu seit 2026-10-22, Version 2.0 seit 2026-11-15.
 
-## Versionsschema (seit 2026-10-22, Entscheidung des Besitzers)
-- main: `0.1.<run>`, Tag `v0.1.<run>`. dev: `0.1.<run>-dev`, Tag `v0.1.<run>-dev`, Pre-release. Run-Nummern teilen sich beide Branches, Versionen kollidieren nie.
-- **Warum:** Vorher hatten beide Kanäle dieselbe Form und der Dev-Kanal nahm einfach die höchste Nummer aus beiden. Ein nächtlicher main-Build (0.1.131), der kurz nach einem Dev-Build (0.1.130) fertig wurde, hat Dev-Nutzer auf den älteren main-Stand gebracht: Funktionen aus dev fehlten plötzlich.
+## Versionsschema
+- **Seit 2026-11-15 (Entscheidung des Besitzers: „es wird die 2.0, neue Major-Version mit Redesign“):** main `2.0.<n>`, dev `2.0.<n>-dev`. `n` = Laufnummer des Workflows minus 194 (Schritt „Plan“ in `release.yml`), die Zählung begann also neu bei `2.0.0`. Lauf 193 war der letzte mit `0.1.<run>`. Ein Lauf mit kleinerer Nummer bricht ab.
+- Dev und main teilen sich weiter die Laufnummern, Versionen kollidieren nie. Folge: Welche Nummer ein main-Build bekommt, hängt davon ab, wie viele Dev-Builds vorher liefen.
+- Eine nächste Major- oder Minor-Version: im Schritt „Plan“ den Präfix und die Zahl ändern, von der abgezogen wird (= Nummer des nächsten Laufs, `gh run list --workflow release.yml --limit 1`). Ein Commit mit `[skip ci]` im Betreff löst beim Push keinen Lauf aus und verbraucht keine Nummer.
+- Die festen Versionen im Repo (`package.json`, `tauri.conf.json`, `Cargo.toml`) bleiben `0.1.0`: lokale Builds sehen damit jedes Release als neuer.
+- **Warum -dev (2026-10-22):** Vorher hatten beide Kanäle dieselbe Form und der Dev-Kanal nahm einfach die höchste Nummer aus beiden. Ein nächtlicher main-Build, der kurz nach einem Dev-Build fertig wurde, hat Dev-Nutzer auf den älteren main-Stand gebracht.
 - `versionChannel()` und `DEV_VERSION_SUFFIX` in `packages/protocol/src/models.ts`, `releaseChannel()` / `channelReleases()` in `packages/sidecar/src/update/app-update.ts`. Dev-Builds bis 0.1.130 (plain Version, Pre-release) gehören zu keinem Kanal und werden ignoriert; ein installiertes 0.1.127–0.1.130 zählt als stable.
-- Windows-Patch: `update.json` hat `version` (nur Ziffern/Punkte, weil der Apply-Schritt bis 0.1.131 nichts anderes nimmt) und `fullVersion` mit Suffix; neues `read_version` in `apps/desktop/src-tauri/src/update.rs` liest `fullVersion` zuerst.
-- Pre-release-Flag bleibt für Dev-Builds: FORGE Setup (`releases.rs`), Download-Zähler, `scripts/install.sh` und Download-Seite überspringen Pre-releases.
+- Versionsvergleiche sind überall numerisch (`compareVersions` in TypeScript, `version_of` in `apps/installer/src/releases.rs`): 2.0.0 ist neuer als 0.1.193. Nirgends hängt Logik an „0.1“.
+- Windows-Patch: `update.json` hat `version` (nur Ziffern/Punkte, weil der Apply-Schritt bis 0.1.131 nichts anderes nimmt) und `fullVersion` mit Suffix; `read_version` in `apps/desktop/src-tauri/src/update.rs` liest `fullVersion` zuerst.
+- Pre-release-Flag bleibt für Dev-Builds: FORGE Setup (`releases.rs`), Download-Zähler, `scripts/install.sh`, Download-Seite und die Seite „Was ist neu“ überspringen Pre-releases.
 
 ## Kanäle in der App (AppUpdateService.check)
 - Jeder Kanal sieht nur seine eigenen Builds. Ausnahme Windows: der Dev-Kanal nimmt volle Installer auch von main (`pickRelease(..., installers)`), main nie einen Dev-Installer (ohne Authenticode).
@@ -33,8 +37,8 @@ Gebaut 2026-10-20 (Wunsch des Besitzers: auf dev pushen, Apps auf dev aktualisie
 - **Stolperfalle:** Commits, die `.github/workflows/*` ändern, lehnt GitHub ohne Token-Scope `workflow` ab. Einmal `gh auth refresh -h github.com -s workflow`; das Token des Besitzers hat ihn seit 2026-10-21.
 
 ## Release-Seite (.github/workflows/release.yml)
-- Push auf `dev` startet den Workflow (paths-ignore wie der Nacht-Check, u. a. `**.md`, `.forge/**`). **Stolperfalle:** Das Anlegen von dev als Kopie von main löst nichts aus; dann `gh workflow run release.yml -R vanturis/forge --ref dev`. Ein Dev-Lauf nutzt die `release.yml` des Branches dev.
-- Main baut nur nachts oder per `gh workflow run release.yml -R vanturis/forge --ref main`. Main-Läufe machen Lint und Typecheck, Dev-Läufe nicht: Lint-Fehler auf dev fallen erst beim main-Release auf, vor dem Übernehmen `pnpm lint` laufen lassen.
+- Push auf `dev` startet den Workflow (paths-ignore wie der Nacht-Check, u. a. `**.md`, `.forge/**`, `services/**`). **Stolperfalle:** Das Anlegen von dev als Kopie von main löst nichts aus; dann `gh workflow run release.yml -R vanturis/forge --ref dev`. Ein Dev-Lauf nutzt die `release.yml` des Branches dev.
+- Main baut nur nachts (03:00 UTC, wenn main sich geändert hat) oder per `gh workflow run release.yml -R vanturis/forge --ref main`. Main-Läufe machen Lint und Typecheck, Dev-Läufe nicht: Lint-Fehler auf dev fallen erst beim main-Release auf, vor dem Übernehmen `pnpm lint` und `pnpm typecheck` laufen lassen.
 - Kanal aus `github.ref_name` (Job `changes`, Output `channel`); Plan-Schritt gibt `version` (mit -dev) und `core` (ohne) aus.
 - Dev schneller: kein Lint/Typecheck, keine Authenticode-Signatur, keine Alt-Signaturen, kein Linux-Job. macOS-Job läuft auch für dev (Besitzer nutzt die Entwicklungsversion auf dem Mac). Ed25519-Update-Signatur bleibt Pflicht.
 - Voller Installer im Dev-Lauf nur, wenn es für den Laufzeit-Schlüssel in keinem Release (auch main) einen gibt.

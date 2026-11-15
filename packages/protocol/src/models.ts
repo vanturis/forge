@@ -566,8 +566,8 @@ export const UpdateChannel = z.enum(["stable", "dev"]);
 export type UpdateChannel = z.infer<typeof UpdateChannel>;
 
 /**
- * Builds of the branch dev carry this suffix (0.1.<run>-dev, release.yml), those of main none (0.1.<run>).
- * Dev builds up to 0.1.130 had plain versions and count as stable.
+ * Builds of the branch dev carry this suffix (2.0.<n>-dev, release.yml; before 2.0 it was 0.1.<run>-dev),
+ * those of main none (2.0.<n>). Dev builds up to 0.1.130 had plain versions and count as stable.
  */
 export const DEV_VERSION_SUFFIX = "-dev";
 
