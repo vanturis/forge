@@ -1,6 +1,4 @@
-/** Repository whose releases carry the FORGE builds. */
-const REPO = "vanturis/forge";
-const CACHE_MS = 15 * 60_000;
+import { getReleases, type GithubRelease } from "./releases";
 
 export type Os = "windows" | "macos" | "linux";
 
@@ -18,8 +16,7 @@ export interface Builds {
   linux: { version: string; files: BuildFile[] } | null;
 }
 
-type Asset = { name?: string; browser_download_url?: string };
-type Release = { tag_name?: string; draft?: boolean; prerelease?: boolean; assets?: Asset[] };
+type Release = Pick<GithubRelease, "tag_name" | "draft" | "prerelease" | "assets">;
 
 /** File names of the release workflow (ADR 0014) and how the download page names them. */
 const FILES: Record<"macos" | "linux", { key: string; pattern: RegExp; label: string }[]> = {
@@ -55,18 +52,9 @@ export function findBuilds(releases: Release[]): Builds {
   return { macos: newest(releases, "macos"), linux: newest(releases, "linux") };
 }
 
-let cache: { value: Builds; at: number } | null = null;
-
-/** The newest macOS and Linux builds from the GitHub API without login, at most every 15 minutes. */
-export async function latestBuilds(fetchFn: typeof fetch = fetch): Promise<Builds> {
-  if (cache && Date.now() - cache.at < CACHE_MS) return cache.value;
-  const res = await fetchFn(`https://api.github.com/repos/${REPO}/releases?per_page=40`, {
-    headers: { Accept: "application/vnd.github+json", "User-Agent": "forge-stats" },
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!res.ok) throw new Error(`GitHub antwortet mit HTTP ${res.status}`);
-  cache = { value: findBuilds((await res.json()) as Release[]), at: Date.now() };
-  return cache.value;
+/** The newest macOS and Linux builds from the releases on GitHub (lib/releases.ts, at most 15 minutes old). */
+export async function latestBuilds(): Promise<Builds> {
+  return findBuilds(await getReleases());
 }
 
 /** The visitor's system from the client hint Chrome and Edge send, else from the user agent; null on phones. */

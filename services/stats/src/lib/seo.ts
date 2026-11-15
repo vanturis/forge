@@ -4,14 +4,14 @@ import ogEn from "@/assets/og-en.png";
 import shotDe from "@/assets/app-de-1600.webp";
 import shotEn from "@/assets/app-en-1600.webp";
 import { DOWNLOAD_PAGE, REPO_URL } from "./constants";
-import { LOCALES, localePath, type Locale, type LocaleBase } from "./i18n";
+import { LOCALES, localePath, type Locale, type LocaleBase, type SitePage } from "./i18n";
 import { i18n } from "./messages";
 
 export const SITE_URL = "https://forge.vanturis.de";
 export const SITE_NAME = "FORGE";
 const PUBLISHER = { name: "Vanturis UG (haftungsbeschränkt)", url: "https://vanturis.de" } as const;
 
-export type PagePath = "/" | "/stats";
+export type PagePath = SitePage;
 
 /** Link previews (scripts/og-images.mjs), 1200 x 630. */
 const OG_IMAGES = { de: ogDe, en: ogEn } as const;
@@ -27,7 +27,7 @@ const absolute = (path: string) => new URL(path, SITE_URL).toString();
  */
 export function pageMetadata(path: PagePath, locale: Locale, base: LocaleBase): Metadata {
   const { t } = i18n(locale);
-  const m = path === "/stats" ? t.statsMeta : t.meta;
+  const m = path === "/stats" ? t.statsMeta : path === "/changelog" ? t.changelogMeta : t.meta;
   const url = localePath(path, base);
   const og = OG_IMAGES[locale];
   return {
@@ -138,7 +138,17 @@ export function homeJsonLd(locale: Locale, base: LocaleBase): JsonLd {
 /** Structured data of the live stats: a page of the site with the way back to the start page. */
 export function statsJsonLd(locale: Locale, base: LocaleBase): JsonLd {
   const { t } = i18n(locale);
-  const url = absolute(localePath("/stats", base));
+  return subPageJsonLd("/stats", t.statsMeta, t.header.liveStats, locale, base);
+}
+
+/** Structured data of the "what's new" page. */
+export function changelogJsonLd(locale: Locale, base: LocaleBase): JsonLd {
+  const { t } = i18n(locale);
+  return subPageJsonLd("/changelog", t.changelogMeta, t.header.changelog, locale, base);
+}
+
+function subPageJsonLd(path: Exclude<PagePath, "/">, meta: { title: string; description: string }, crumb: string, locale: Locale, base: LocaleBase): JsonLd {
+  const url = absolute(localePath(path, base));
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -146,8 +156,8 @@ export function statsJsonLd(locale: Locale, base: LocaleBase): JsonLd {
         "@type": "WebPage",
         "@id": url,
         url,
-        name: t.statsMeta.title,
-        description: t.statsMeta.description,
+        name: meta.title,
+        description: meta.description,
         inLanguage: locale,
         isPartOf: { "@id": `${SITE_URL}/#website` },
         breadcrumb: { "@id": `${url}#breadcrumb` },
@@ -157,7 +167,7 @@ export function statsJsonLd(locale: Locale, base: LocaleBase): JsonLd {
         "@id": `${url}#breadcrumb`,
         itemListElement: [
           { "@type": "ListItem", position: 1, name: SITE_NAME, item: absolute(localePath("/", base)) },
-          { "@type": "ListItem", position: 2, name: t.header.liveStats, item: url },
+          { "@type": "ListItem", position: 2, name: crumb, item: url },
         ],
       },
     ],

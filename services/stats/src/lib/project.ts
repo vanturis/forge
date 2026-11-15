@@ -1,4 +1,4 @@
-import { compareVersions } from "./versions";
+import { getReleases, publishedReleases, type GithubRelease } from "./releases";
 
 /** Repository of FORGE. */
 const REPO = "vanturis/forge";
@@ -22,34 +22,28 @@ export function lastPage(link: string | null): number | null {
   return m ? Number(m[1]) : null;
 }
 
-export async function fetchProject(fetchFn: typeof fetch = fetch): Promise<Project> {
+/**
+ * Stars and commits from the GitHub API, the newest version from the releases (null: not available).
+ * That is the highest published version, not GitHub's "latest", which stays on the release with the
+ * full installer.
+ */
+export async function fetchProject(fetchFn: typeof fetch, releases: GithubRelease[] | null): Promise<Project> {
   const get = (path: string) =>
     fetchFn(`https://api.github.com/repos/${REPO}${path}`, {
       headers: { Accept: "application/vnd.github+json", "User-Agent": "forge-stats" },
       signal: AbortSignal.timeout(8_000),
     });
-  const [repo, commits, releases] = await Promise.all([get(""), get("/commits?per_page=1"), get("/releases?per_page=30")]);
+  const [repo, commits] = await Promise.all([get(""), get("/commits?per_page=1")]);
   if (!repo.ok) throw new Error(`GitHub antwortet mit HTTP ${repo.status}`);
-  if (!commits.ok || !releases.ok) console.error(`project: commits HTTP ${commits.status}, releases HTTP ${releases.status}`);
+  if (!commits.ok) console.error(`project: commits HTTP ${commits.status}`);
   const r = (await repo.json()) as { stargazers_count?: number };
-  const l = releases.ok ? newestRelease((await releases.json()) as Release[]) : null;
+  const newest = releases ? publishedReleases(releases)[0] : undefined;
   return {
     stars: r.stargazers_count ?? 0,
     commits: commits.ok ? (lastPage(commits.headers.get("link")) ?? 1) : null,
-    latestVersion: l?.tag_name ? l.tag_name.replace(/^v/i, "") : null,
-    latestAt: l?.published_at ?? null,
+    latestVersion: newest?.tag_name ? newest.tag_name.replace(/^v/i, "") : null,
+    latestAt: newest?.published_at ?? null,
   };
-}
-
-type Release = { tag_name?: string; published_at?: string; draft?: boolean; prerelease?: boolean };
-
-/**
- * The published FORGE version with the highest number. Not GitHub's "latest": that one stays on the
- * release with the full installer. Pre-releases are dev builds and the FORGE Setup release.
- */
-export function newestRelease(releases: Release[]): Release | null {
-  const published = releases.filter((r) => !r.draft && !r.prerelease && /^v\d/i.test(r.tag_name ?? ""));
-  return published.reduce<Release | null>((max, r) => (max === null || compareVersions(r.tag_name!.slice(1), max.tag_name!.slice(1)) > 0 ? r : max), null);
 }
 
 let cache: { value: Project | null; at: number } | null = null;
@@ -58,7 +52,9 @@ let inflight: Promise<Project | null> | null = null;
 /** The facts at most 30 minutes old; null while GitHub cannot be reached and nothing was fetched before. */
 export function getProject(fetchFn: typeof fetch = fetch): Promise<Project | null> {
   if (cache && Date.now() - cache.at < CACHE_MS) return Promise.resolve(cache.value);
-  inflight ??= fetchProject(fetchFn)
+  inflight ??= getReleases(fetchFn)
+    .catch(() => null)
+    .then((releases) => fetchProject(fetchFn, releases))
     .then((value) => {
       cache = { value, at: Date.now() };
       return value;

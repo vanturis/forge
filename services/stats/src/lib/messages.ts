@@ -31,9 +31,14 @@ const de = {
     description:
       "Live-Statistik aller FORGE-Installationen mit anonymer Nutzungsstatistik: Tokens, Sessions, Kosten, installierte Versionen, Claude-Modelle, Abos und Plattformen.",
   },
+  changelogMeta: {
+    title: "Was ist neu in FORGE: Änderungen jeder Version",
+    description: "Alle veröffentlichten FORGE-Versionen mit ihren Änderungen, die neueste zuerst. FORGE aktualisiert sich selbst auf die aktuelle Version.",
+  },
   header: {
     home: "FORGE, zur Startseite",
     nav: "Seiten",
+    changelog: "Was ist neu",
     liveStats: "Live Stats",
     github: "GitHub",
     download: "Download",
@@ -267,6 +272,20 @@ const de = {
     title: "Die Zahlen sind gerade nicht abrufbar",
     text: "Die Datenbank antwortet nicht. Bitte versuche es in ein paar Minuten noch einmal.",
   },
+  changelog: {
+    title: "Was ist",
+    titleAccent: "neu",
+    lead: "Die Änderungen jeder veröffentlichten Version, die neueste zuerst.\nFORGE sucht selbst nach Updates und installiert sie mit einem Klick.",
+    // Only the English page needs it: the notes are written in German.
+    notesLanguage: "",
+    latest: "aktuell",
+    changes: (n: number): string => (n === 1 ? "1 Änderung" : `${n} Änderungen`),
+    onGithub: "Auf GitHub ansehen",
+    allReleases: "Alle Releases auf GitHub",
+    empty: "Noch ist keine Version veröffentlicht.",
+    unavailableTitle: "Die Versionen sind gerade nicht abrufbar",
+    unavailableText: "GitHub antwortet nicht. Bitte versuche es in ein paar Minuten noch einmal.",
+  },
   language: {
     label: "Sprache",
   },
@@ -355,9 +374,14 @@ const en: Messages = {
     description:
       "Live statistics of all FORGE installations with anonymous usage statistics: tokens, sessions, cost, installed versions, Claude models, plans and platforms.",
   },
+  changelogMeta: {
+    title: "What's new in FORGE: the changes of every version",
+    description: "Every published FORGE version with its changes, newest first. FORGE updates itself to the current version.",
+  },
   header: {
     home: "FORGE, to the home page",
     nav: "Pages",
+    changelog: "What's new",
     liveStats: "Live Stats",
     github: "GitHub",
     download: "Download",
@@ -590,6 +614,19 @@ const en: Messages = {
   unavailable: {
     title: "The numbers are unavailable right now",
     text: "The database is not responding. Please try again in a few minutes.",
+  },
+  changelog: {
+    title: "What's",
+    titleAccent: "new",
+    lead: "The changes of every published version, newest first.\nFORGE checks for updates itself and installs them with one click.",
+    notesLanguage: "The notes are written in German.",
+    latest: "current",
+    changes: (n: number) => (n === 1 ? "1 change" : `${n} changes`),
+    onGithub: "View on GitHub",
+    allReleases: "All releases on GitHub",
+    empty: "No version has been published yet.",
+    unavailableTitle: "The versions are unavailable right now",
+    unavailableText: "GitHub is not responding. Please try again in a few minutes.",
   },
   language: {
     label: "Language",

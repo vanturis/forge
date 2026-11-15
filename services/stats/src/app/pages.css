@@ -1453,6 +1453,131 @@
   text-align: center;
 }
 
+/* ---- what's new: a card per published version, its changes as rows of area and text */
+
+.changelog {
+  max-width: calc(860px + 2 * var(--page-gutter));
+  padding-top: 72px;
+  padding-bottom: 96px;
+}
+
+.changelog-note {
+  margin-top: 12px;
+  color: var(--color-subtle);
+  font-size: var(--text-body);
+}
+
+.changelog > .error-banner,
+.changelog-empty {
+  margin-top: 40px;
+}
+
+.releases {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.release {
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+  /* a link to #v0.1.183 stops below the floating top bar */
+  scroll-margin-top: 96px;
+}
+
+.release-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.release-head h2 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.release-head .release-badge {
+  margin-left: 0;
+}
+
+.release-date {
+  flex: 1;
+  min-width: 8rem;
+  color: var(--color-muted);
+  font-size: var(--text-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.release-link {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: var(--radius-full);
+  color: var(--color-muted);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.release-link:hover {
+  background: var(--color-surface-3);
+  color: var(--color-fg);
+}
+
+.release-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+.release-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+  font-size: var(--text-ui);
+  line-height: 22px;
+}
+
+.release-items li {
+  display: grid;
+  grid-template-columns: minmax(0, 8.5rem) minmax(0, 1fr);
+  column-gap: 16px;
+}
+
+.release-area {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.release-items li > span:last-child {
+  color: var(--color-fg-soft);
+  overflow-wrap: anywhere;
+}
+
+.changelog-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
 /* ---- download page: a tab per system, the setup or the install command */
 
 .download-page {
@@ -1979,9 +2104,29 @@
     width: 100%;
   }
 
-  .download-page {
+  .download-page,
+  .changelog {
     padding-top: 40px;
     padding-bottom: 56px;
+  }
+
+  .releases {
+    gap: 10px;
+    margin-top: 28px;
+  }
+
+  .release {
+    padding: 18px;
+    border-radius: var(--radius-panel);
+  }
+
+  /* the area above its text: beside it the text would get a third of the width */
+  .release-items li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .release-area:empty {
+    display: none;
   }
 
   .download-lead {

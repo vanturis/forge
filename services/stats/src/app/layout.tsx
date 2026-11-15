@@ -85,6 +85,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <div className="footer-side">
                   <nav className="footer-links" aria-label={t.header.nav}>
                     <a href={localePath("/stats", base)}>{t.header.liveStats}</a>
+                    <a href={localePath("/changelog", base)}>{t.header.changelog}</a>
                     <a href={REPO_URL}>{t.header.github}</a>
                     <a href={IMPRINT_URL}>{t.footer.imprint}</a>
                     <a href={PRIVACY_URL}>{t.footer.privacy}</a>

@@ -38,6 +38,7 @@ The service creates the tables itself on first access (`CREATE TABLE IF NOT EXIS
 | `GET /api/v1/donations` | Donated so far (`{ donations: { cents, count } }`, euro cents; `donations: null` without `STRIPE_SECRET_KEY`); for the heart in the app, fetched from Stripe at most every 10 minutes | 200; 503 |
 | `GET /api/health` | Health check with a DB query | 200 `ok`; 503 |
 | `GET /` | Public page | 200, on DB failure with a notice instead of numbers |
+| `GET /changelog` | "What's new": every published version with the lines of its release notes, from the releases on GitHub (`src/lib/releases.ts`, one list for this page, the download page and the project facts, at most 15 minutes old) | 200, with a notice while GitHub cannot be reached |
 | `POST /crew/v1/rooms/<room>` | Crew relay: put a sealed message `{ from, kid, iv, tag, data }` into the room | 200 `{ seq }`; 400; 404 invalid room; 413 over 256 KB; 429 too often; 503 full |
 | `GET /crew/v1/rooms/<room>/stream?after=<seq>` | Crew relay: server-sent events (kept messages after `seq`, then `event: ready`, then live; `event: gap` on gaps, `: ping` every 20 s) | 200 `text/event-stream` |
 | `GET /crew/health` | Crew relay: `{ ok, rooms, streams }`, no database | 200 |

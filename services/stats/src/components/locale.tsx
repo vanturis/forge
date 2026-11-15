@@ -4,7 +4,7 @@ import { createContext, useContext, useId, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { setLocale } from "@/app/actions";
-import { DEFAULT_LOCALE, LOCALES, type Locale, type LocaleBase } from "@/lib/i18n";
+import { DEFAULT_LOCALE, LOCALES, sitePage, type Locale, type LocaleBase } from "@/lib/i18n";
 import { i18n, LANGUAGE_NAMES } from "@/lib/messages";
 
 const LocaleContext = createContext<{ locale: Locale; base: LocaleBase }>({ locale: DEFAULT_LOCALE, base: "" });
@@ -31,7 +31,7 @@ export function LanguageSwitch() {
   const { locale, t } = useI18n();
   const base = useLocaleBase();
   // On /de and /en pages the switch goes to the same page in the other language.
-  const page = usePathname().endsWith("/stats") ? "/stats" : "/";
+  const page = sitePage(usePathname());
   return (
     <form action={setLocale} className="lang-switch" role="group" aria-label={t.language.label}>
       {base && <input type="hidden" name="page" value={page} />}

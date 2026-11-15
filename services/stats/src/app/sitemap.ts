@@ -6,6 +6,8 @@ const PAGES: { path: PagePath; changeFrequency: "daily" | "weekly"; priority: nu
   { path: "/", changeFrequency: "weekly", priority: 1 },
   // The numbers change all the time.
   { path: "/stats", changeFrequency: "daily", priority: 0.7 },
+  // A new entry with every release.
+  { path: "/changelog", changeFrequency: "daily", priority: 0.6 },
 ];
 
 /** Every page in both languages, each with its alternates (hreflang) and the unprefixed x-default. */

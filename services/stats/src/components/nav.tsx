@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, Newspaper } from "lucide-react";
 import { REPO_URL } from "@/lib/constants";
 import { localePath } from "@/lib/i18n";
 import { useI18n, useLocaleBase } from "./locale";
 
-/** Links of the top bar as pills: live stats (filled while open) and the repository. */
+/** Links of the top bar as pills: live stats and what's new (filled while open) and the repository. */
 export function TopLinks() {
   const { t } = useI18n();
   const path = usePathname();
@@ -18,6 +18,12 @@ export function TopLinks() {
         <a href={localePath("/stats", base)} aria-current={path.endsWith("/stats") ? "page" : undefined} aria-label={h.liveStats}>
           <BarChart3 aria-hidden />
           <span className="nav-label">{h.liveStats}</span>
+        </a>
+      </li>
+      <li>
+        <a href={localePath("/changelog", base)} aria-current={path.endsWith("/changelog") ? "page" : undefined} aria-label={h.changelog}>
+          <Newspaper aria-hidden />
+          <span className="nav-label">{h.changelog}</span>
         </a>
       </li>
       <li>

@@ -38,6 +38,7 @@ Die Tabellen legt der Dienst beim ersten Zugriff selbst an (`CREATE TABLE IF NOT
 | `GET /api/v1/donations` | Bisher gespendet (`{ donations: { cents, count } }`, Euro-Cent; `donations: null` ohne `STRIPE_SECRET_KEY`); für das Herz in der App, höchstens alle 10 Minuten von Stripe | 200; 503 |
 | `GET /api/health` | Healthcheck mit DB-Abfrage | 200 `ok`; 503 |
 | `GET /` | Öffentliche Seite | 200, bei DB-Ausfall mit Hinweis statt Zahlen |
+| `GET /changelog` | „Was ist neu“: jede veröffentlichte Version mit den Zeilen ihrer Release-Notizen, aus den Releases auf GitHub (`src/lib/releases.ts`, eine Liste für diese Seite, die Download-Seite und die Projektfakten, höchstens 15 Minuten alt) | 200, mit Hinweis, solange GitHub nicht erreichbar ist |
 | `POST /crew/v1/rooms/<raum>` | Crew-Relay: versiegelte Nachricht `{ from, kid, iv, tag, data }` in den Raum legen | 200 `{ seq }`; 400; 404 ungültiger Raum; 413 über 256 KB; 429 zu häufig; 503 voll |
 | `GET /crew/v1/rooms/<raum>/stream?after=<seq>` | Crew-Relay: Server-Sent Events (gespeicherte Nachrichten nach `seq`, dann `event: ready`, dann live; `event: gap` bei Lücken, `: ping` alle 20 s) | 200 `text/event-stream` |
 | `GET /crew/health` | Crew-Relay: `{ ok, rooms, streams }`, ohne Datenbank | 200 |

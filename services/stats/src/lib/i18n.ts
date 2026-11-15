@@ -14,8 +14,17 @@ export const LOCALE_HEADER = "x-forge-locale";
 /** "" for pages without a language in the path, else "/de" or "/en". */
 export type LocaleBase = "" | `/${Locale}`;
 
+/** The pages that exist once per language (/de/stats, /en/changelog); proxy.ts and the sitemap list the same ones. */
+export const SITE_PAGES = ["/", "/stats", "/changelog"] as const;
+export type SitePage = (typeof SITE_PAGES)[number];
+
+/** The page a path belongs to, with or without a language in front; "/" for anything else. */
+export function sitePage(pathname: string): SitePage {
+  return SITE_PAGES.find((p) => p !== "/" && pathname.endsWith(p)) ?? "/";
+}
+
 /** Path of a page under a base: ("/stats", "/de") is "/de/stats", ("/", "/de") is "/de". */
-export function localePath(path: "/" | "/stats", base: LocaleBase): string {
+export function localePath(path: SitePage, base: LocaleBase): string {
   if (!base) return path;
   return path === "/" ? base : `${base}${path}`;
 }
