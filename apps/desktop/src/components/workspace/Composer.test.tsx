@@ -54,6 +54,7 @@ const session: Session = {
   claudeSessionId: null,
   cwd: "C:\\p1",
   title: "Test",
+  archived: false,
   model: null,
   effort: null,
   profile: "balanced",
@@ -102,6 +103,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Composer", () => {
+  it("gives way to the way back out of the archive: an archived session is read-only", async () => {
+    setup(<Composer project={project("p1")} session={{ ...session, archived: true, live: false, status: "stopped" }} />);
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByText("Diese Session liegt im Archiv")).toBeTruthy();
+    callMock.mockImplementation(async (method: string) => (method === "sessions.archive" ? { ...session, archived: false } : []));
+    fireEvent.click(screen.getByRole("button", { name: "Aus dem Archiv holen" }));
+    await waitFor(() => expect(callMock).toHaveBeenCalledWith("sessions.archive", { sessionId: "s1", archived: false }));
+  });
+
   it("brings back what was sent with the arrow keys, and what was typed at the end", async () => {
     localStorage.clear();
     rememberSent("p1", "erste");

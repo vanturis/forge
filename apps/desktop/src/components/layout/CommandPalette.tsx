@@ -183,6 +183,7 @@ function PaletteBody({ onClose, openDialog }: { onClose: () => void; openDialog:
                     <Snippet text={e.hit.snippet} className="line-clamp-1 block text-body" />
                     <span className="block truncate text-caption text-subtle">
                       {HIT_ROLE_LABEL[e.hit.role]} ·{e.hit.sessionTitle ?? t.layout.palette.untitled} · {e.hit.projectName}
+                      {e.hit.archived ? ` · ${t.search.archived}` : ""}
                     </span>
                   </span>
                 ) : (

@@ -1,7 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { AppWindow, Bot, CalendarDays, ChevronDown, Columns2, Eye, FileStack, Gauge, Hourglass, LayoutGrid, MessageSquare, MessageSquarePlus, Plus, SquareArrowOutUpRight, Users, X } from "lucide-react";
+import { AppWindow, Archive, Bot, CalendarDays, ChevronDown, Columns2, Eye, FileStack, Gauge, Hourglass, LayoutGrid, MessageSquare, MessageSquarePlus, Plus, SquareArrowOutUpRight, Users, X } from "lucide-react";
 import { openChatWindow, useChatWindows } from "@/lib/chat-windows";
 import { contextItems } from "@/lib/context-menu";
 import { call, keys, useLiveSessions, useProjects, useSession } from "@/lib/queries";
@@ -12,6 +12,7 @@ import { useTabTearOff } from "@/lib/tab-drag";
 import { isBusy, isWorking } from "@/lib/working";
 import { cn, formatTokens } from "@/lib/utils";
 import { handoffSession } from "@/components/workspace/handoff";
+import { archiveMenuItems } from "@/components/workspace/session-archive";
 import { splitActive, useUi, type SplitPane } from "@/stores/ui";
 import { toast } from "@/stores/toast";
 import { useTemplateDialogs } from "@/stores/templates";
@@ -329,6 +330,7 @@ export function OpenSessions() {
                                 },
                               ]
                             : []),
+                          ...archiveMenuItems(s),
                           ...(closable
                             ? [
                                 {
@@ -366,6 +368,7 @@ export function OpenSessions() {
                           {s.mirror ? (
                             <Eye aria-label={s.mirror.live ? t.crew.mirrorBadge(s.mirror.memberName) : t.crew.copyBadge(s.mirror.memberName)} className={cn("h-3.5 w-3.5 shrink-0", s.mirror.live ? "text-accent" : "text-subtle")} />
                           ) : null}
+                          {s.archived && <Archive aria-label={t.workspace.archive.badge} className="h-3.5 w-3.5 shrink-0 text-subtle" />}
                           <span className={cn("truncate", !s.live && !s.mirror?.live && "italic")}>{title}</span>
                           {s.mirror?.live && <span className="shrink-0 rounded-full bg-accent/15 px-1.5 text-[10px] font-semibold uppercase text-accent">live</span>}
                           {inWindow && <AppWindow aria-hidden className="h-3 w-3 shrink-0 text-subtle" />}

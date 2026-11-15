@@ -38,6 +38,7 @@ interface FakeSession {
   projectName: string;
   background: BackgroundTask[];
   subagents: SubagentProgress[];
+  archived?: boolean;
 }
 
 const fakeSession = (o: Omit<FakeSession, "updatedAt" | "background" | "subagents"> & Partial<FakeSession>): FakeSession => ({
@@ -1797,6 +1798,39 @@ describe("PhoneService end to end with a test PBX", () => {
     expect(said).toContain("Vorher- und Nachher-Bild liegen vor. Die Bilder gibt es nur am Computer.");
     expect(await conv.tools.sessions("ui_compare_retake", { session: "S1" })).toMatch(/^Das Nachher-Bild des letzten Vergleichs von S1 wird neu aufgenommen/);
     expect(rpcCalls.at(-1)).toEqual(["uiCompare.retake", { sessionId: "s1", compareId: "x" }]);
+    await end();
+  }, 30_000);
+
+  it("archives a session, lists the archive and brings a session back, by short name or title", async () => {
+    const old = fakeSession({ id: "s9", projectId, title: "Alter Export", status: "stopped", live: false, projectName: "shop", updatedAt: "2026-10-01T10:00:00Z", archived: true });
+    let archive = [old];
+    rpcResults = {
+      "sessions.listAll": (p: { archived?: string }) => (p.archived === "only" ? archive : sessionList),
+      "sessions.archive": (p: { sessionId: string; archived: boolean }) => {
+        const s = [...sessionList, ...archive].find((x) => x.id === p.sessionId)!;
+        s.archived = p.archived;
+        archive = p.archived ? [...archive, s] : archive.filter((x) => x.id !== s.id);
+        return s;
+      },
+    };
+    const { conv, end } = await openCall("c-archive");
+    expect(await conv.tools.sessions("archive", {})).toMatch(/^Fehler: Welche Session/);
+    expect(await conv.tools.sessions("archive", { session: "Warenkorb" })).toBe("S1 liegt jetzt im Archiv. Die Session bleibt mit ihrem Verlauf erhalten und taucht in den Listen nicht mehr auf.");
+    expect(rpcCalls.at(-1)).toEqual(["sessions.archive", { sessionId: "s1", archived: true }]);
+    expect(await conv.tools.sessions("archive", { session: "S1" })).toBe("S1 liegt schon im Archiv.");
+
+    const list = await conv.tools.sessions("archive_list");
+    expect(list).toMatch(/^2 Sessions im Archiv:\n/);
+    expect(list).toContain("S2: <<<SESSION-DATEN>>>Alter Export<<<ENDE SESSION-DATEN>>> im Projekt shop, zuletzt 01.10.26");
+    expect(rpcCalls.at(-1)).toEqual(["sessions.listAll", { archived: "only" }]);
+    expect(await conv.tools.sessions("archive_list", { query: "Rechnung" })).toBe("Im Archiv passt keine Session dazu.");
+
+    expect(await conv.tools.sessions("unarchive", { session: "alter export" })).toBe("S2 ist aus dem Archiv zurück und steht wieder in den Listen.");
+    expect(rpcCalls.at(-1)).toEqual(["sessions.archive", { sessionId: "s9", archived: false }]);
+    expect(await conv.tools.sessions("unarchive", { session: "S1" })).toBe("S1 ist aus dem Archiv zurück und steht wieder in den Listen.");
+    expect(await conv.tools.sessions("unarchive", { session: "S1" })).toBe("S1 liegt nicht im Archiv.");
+    expect(await conv.tools.sessions("unarchive", { session: "Rechnung" })).toBe("Fehler: Im Archiv gibt es keine Session zu „Rechnung“. Erst archive_list aufrufen.");
+    expect(await conv.tools.sessions("archive_list")).toBe("Das Archiv ist leer.");
     await end();
   }, 30_000);
 

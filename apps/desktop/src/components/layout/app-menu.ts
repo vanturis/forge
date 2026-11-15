@@ -142,6 +142,8 @@ export const APP_MENU: ReadonlyArray<{ submenu: string; items: readonly MenuNode
       a("template-new", m.templateNew),
       a("templates-manage", m.templatesManage),
       "-",
+      a("session-archive", m.sessionArchive),
+      a("archive-open", m.archiveOpen),
       a("session-delete", m.sessionDelete),
     ],
   },

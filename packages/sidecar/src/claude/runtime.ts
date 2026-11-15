@@ -6,6 +6,8 @@ import {
   listSessions as sdkListSessions,
   deleteSession as sdkDeleteSession,
   renameSession as sdkRenameSession,
+  archiveSession as sdkArchiveSession,
+  unarchiveSession as sdkUnarchiveSession,
   forkSession as sdkForkSession,
   getSessionMessages,
   query,
@@ -203,6 +205,8 @@ export interface ClaudeRuntime {
   deleteTranscript(claudeSessionId: string, dir: string): Promise<void>;
   /** writes a new title into the CLI's transcript; for sessions without a running process */
   renameTranscript(claudeSessionId: string, title: string, dir: string): Promise<void>;
+  /** marks the CLI's transcript as archived or takes the mark away, so `claude --resume` hides or lists it */
+  archiveTranscript(claudeSessionId: string, archived: boolean, dir: string): Promise<void>;
   /**
    * copies a transcript into a new Claude session, up to and including `upToMessageId` (null: all);
    * returns the new session id. The copy has no file checkpoints.
@@ -681,6 +685,7 @@ export class AgentSdkRuntime implements ClaudeRuntime {
       lastModified: new Date(s.lastModified).toISOString(),
       gitBranch: s.gitBranch ?? null,
       cwd: s.cwd ?? null,
+      ...(s.archived ? { archived: true } : {}),
     }));
   }
 
@@ -694,6 +699,10 @@ export class AgentSdkRuntime implements ClaudeRuntime {
 
   async renameTranscript(claudeSessionId: string, title: string, dir: string): Promise<void> {
     await sdkRenameSession(claudeSessionId, title, { dir });
+  }
+
+  async archiveTranscript(claudeSessionId: string, archived: boolean, dir: string): Promise<void> {
+    await (archived ? sdkArchiveSession : sdkUnarchiveSession)(claudeSessionId, { dir });
   }
 
   async forkTranscript(claudeSessionId: string, dir: string, upToMessageId: string | null, title: string): Promise<string> {

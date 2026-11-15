@@ -23,6 +23,7 @@ const session = (autoContinueAt: string | null): Session => ({
   claudeSessionId: "c1",
   cwd: "C:\\p1",
   title: "Test",
+  archived: false,
   model: null,
   effort: null,
   profile: "balanced",

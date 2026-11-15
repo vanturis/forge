@@ -110,6 +110,7 @@ export const PHONE_TOOL_FOR: Partial<Record<MethodName, string>> = {
   "sessions.listLive": "status",
   "sessions.delete": "sessions",
   "sessions.deleteAll": "sessions",
+  "sessions.archive": "sessions",
   "sessions.fork": "sessions",
   "sessions.handoff": "sessions",
   "sessions.rewind": "sessions",

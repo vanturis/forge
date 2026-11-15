@@ -203,6 +203,8 @@ export const Session = z.object({
   claudeSessionId: z.string().nullable(),
   cwd: z.string(),
   title: z.string().nullable(),
+  /** in the archive: hidden from the lists, kept with its history; a message to it brings it back */
+  archived: z.boolean(),
   model: z.string().nullable(),
   /** reasoning effort; null = Claude Code's default for the model */
   effort: EffortLevel.nullable(),
@@ -235,6 +237,8 @@ export const ExternalSession = z.object({
   lastModified: z.string(),
   gitBranch: z.string().nullable(),
   cwd: z.string().nullable(),
+  /** archived in the terminal (Claude Code keeps the mark beside the transcript) */
+  archived: z.boolean().optional(),
 });
 export type ExternalSession = z.infer<typeof ExternalSession>;
 
@@ -1238,6 +1242,8 @@ export const SearchHit = z.object({
   projectId: z.string(),
   projectName: z.string(),
   sessionTitle: z.string().nullable(),
+  /** the session is in the archive */
+  archived: z.boolean().optional(),
   seq: z.number().int(),
   ts: z.string(),
   /** tool: a tool call (name and input) or its result */

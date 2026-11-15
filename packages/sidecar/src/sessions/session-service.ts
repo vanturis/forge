@@ -234,6 +234,8 @@ export class SessionService {
     core.onRecord = (id, body) => {
       this.idle.touch(id);
       if (body.type === "user.message" && body.source !== "auto") this.autoContinue.userInput(id);
+      // Messages that do not come through send() (the Claude app, a returning agent): Claude Code drops its own mark with the prompt.
+      if (body.type === "user.message" && this.db.getSession(id)?.archived) this.core.publish(this.db.updateSession(id, { archived: false }));
       if (body.type === "tool.use") this.uiCompare?.toolUsed(id, body.name, body.input);
       else if (body.type === "turn.result") this.uiCompare?.turnEnded(id);
       else if (body.type === "status" && (body.status === "stopped" || body.status === "error")) this.uiCompare?.drop(id);
@@ -410,19 +412,21 @@ ${crew.context}` } : own;
     return this.core.get(id);
   }
 
-  async list(projectId: string): Promise<{ sessions: Session[]; external: ExternalSession[] }> {
+  /** The project's sessions without the archived ones, which come as their own list. */
+  async list(projectId: string): Promise<{ sessions: Session[]; external: ExternalSession[]; archived: Session[] }> {
     const project = this.projects.get(projectId);
-    const sessions = this.db.listSessions(projectId).map((r) => this.core.toSession(r));
+    const all = this.db.listSessions(projectId).map((r) => this.core.toSession(r));
     let external: ExternalSession[] = [];
     if (project.exists) {
-      const known = new Set(sessions.map((s) => s.claudeSessionId).filter(Boolean));
+      const known = new Set(all.map((s) => s.claudeSessionId).filter(Boolean));
       try {
-        external = (await this.externalSessions(project.path)).filter((e) => !known.has(e.claudeSessionId));
+        // What the terminal archived stays hidden here too.
+        external = (await this.externalSessions(project.path)).filter((e) => !known.has(e.claudeSessionId) && !e.archived);
       } catch {
         external = [];
       }
     }
-    return { sessions, external };
+    return { sessions: all.filter((s) => !s.archived), external, archived: all.filter((s) => s.archived) };
   }
 
   /** Transcript scans per project folder, briefly cached: the list is asked for often, the files change rarely. */
@@ -437,8 +441,9 @@ ${crew.context}` } : own;
     return list;
   }
 
-  listAll(query?: string, status?: string) {
-    return this.db.listAllSessions(query, status).map((r) => ({ ...this.core.toSession(r), projectName: r.projectName }));
+  /** Without `archived` the archive is left out; "only" lists just it, "all" both. */
+  listAll(query?: string, status?: string, archived?: "only" | "all") {
+    return this.db.listAllSessions(query, status, archived ?? "no").map((r) => ({ ...this.core.toSession(r), projectName: r.projectName }));
   }
 
   /** Sessions with a running CLI process, across all projects (for the session tabs). */
@@ -543,12 +548,47 @@ ${crew.context}` } : own;
 
   async resume(sessionId: string, prompt: string | null, attachments: Attachment[] = []): Promise<Session> {
     this.assertWritable(sessionId);
+    // Only an archived session waits here: the message must count as "being sent" right away (idle check).
+    if (this.db.getSession(sessionId)?.archived) await this.archive(sessionId, false);
     return this.lifecycle.resume(sessionId, prompt, attachments);
   }
 
   async send(sessionId: string, text: string, attachments: Attachment[] = [], source?: MessageSource): Promise<Session> {
     this.assertWritable(sessionId);
+    if (this.db.getSession(sessionId)?.archived) await this.archive(sessionId, false);
     return this.turns.send(sessionId, text, attachments, source);
+  }
+
+  // ---------- archive
+
+  /**
+   * Moves a session into the archive or back. An archived session is left out of every list and keeps
+   * its history. A working session is refused; an idle process ends, as after the idle time. Claude Code
+   * gets the same mark, so the terminal hides the session too.
+   */
+  async archive(sessionId: string, archived: boolean): Promise<Session> {
+    const rec = this.db.getSession(sessionId);
+    if (!rec) throw new ForgeError("SESSION_NOT_FOUND", tr().core.sessions.notFound);
+    if (rec.archived === archived) return this.get(sessionId);
+    if (archived) {
+      if (this.isWorking(sessionId)) throw new ForgeError("SESSION_BUSY", tr().core.sessions.archiveBusy);
+      // A planned continuation would bring the session back by itself.
+      this.autoContinue.cancel(sessionId, tr().core.sessions.autoContinueArchived);
+      this.lifecycle.close(sessionId, tr().core.sessions.archivedDetail);
+    }
+    this.core.publish(this.db.updateSession(sessionId, { archived }));
+    if (rec.claudeSessionId) {
+      // Claude Code's mark is an extra: without it the session is archived in FORGE all the same.
+      await this.runtime.archiveTranscript(rec.claudeSessionId, archived, rec.cwd).catch(() => {});
+    }
+    return this.get(sessionId);
+  }
+
+  /** A turn, an approval, background work or the work after a turn (tests, commit) is under way. */
+  private isWorking(id: string): boolean {
+    const live = this.core.live.get(id);
+    if (this.agentReturnBusy(id) || this.lifecycle.isAttaching(id)) return true;
+    return !!live && !live.closing && (live.turnActive || live.pending.size > 0 || live.background.size > 0 || live.subagents.size > 0);
   }
 
   /** A crew member's session shown here read-only takes no messages; taking it over makes an own copy. */
@@ -573,6 +613,7 @@ ${crew.context}` } : own;
       claudeSessionId: o.claudeSessionId,
       cwd: o.cwd,
       title: o.title,
+      archived: false,
       model: o.model,
       effort: o.effort,
       profile: profile.id,
@@ -704,9 +745,12 @@ ${crew.context}` } : own;
     return this.lifecycle.delete(sessionId, deleteTranscript);
   }
 
-  /** Deletes every session. In parallel, because each live one may wait about 10 s for its process to end. */
+  /**
+   * Deletes every session outside the archive: what was put aside to keep goes only one by one.
+   * In parallel, because each live one may wait about 10 s for its process to end.
+   */
   async deleteAll(deleteTranscript: boolean) {
-    const ids = this.db.listSessionIds();
+    const ids = this.db.listSessionIds().filter((id) => !this.db.getSession(id)?.archived);
     const results = await Promise.allSettled(ids.map((id) => this.delete(id, deleteTranscript)));
     const deleted = ids.filter((_, i) => results[i]!.status === "fulfilled");
     const reason = results.find((r): r is PromiseRejectedResult => r.status === "rejected")?.reason as unknown;
@@ -846,7 +890,7 @@ ${crew.context}` } : own;
     const title = tr().core.sessions.forkTitle(rec.title ?? "Session");
     const claudeSessionId = await this.runtime.forkTranscript(rec.claudeSessionId, rec.cwd, upTo ?? null, title);
     const now = new Date().toISOString();
-    const branch = { ...rec, id: randomUUID(), claudeSessionId, title, status: "stopped" as const, apiKeySource: null, createdAt: now, updatedAt: now, lastError: null };
+    const branch = { ...rec, id: randomUUID(), claudeSessionId, title, archived: false, status: "stopped" as const, apiKeySource: null, createdAt: now, updatedAt: now, lastError: null };
     this.db.insertSession(branch);
     this.db.copyEvents(sessionId, branch.id, opts.beforeSeq);
     this.core.publish(branch);
@@ -870,7 +914,7 @@ ${crew.context}` } : own;
     const title = tr().core.sessions.handoffTitle((rec.title ?? "Session").replace(/ \((?:Fortsetzung|continued)\)$/, ""));
     const claudeSessionId = await this.runtime.forkTranscript(rec.claudeSessionId, rec.cwd, null, title);
     const now = new Date().toISOString();
-    const next = { ...rec, id: randomUUID(), claudeSessionId, title, status: "stopped" as const, apiKeySource: null, createdAt: now, updatedAt: now, lastError: null };
+    const next = { ...rec, id: randomUUID(), claudeSessionId, title, archived: false, status: "stopped" as const, apiKeySource: null, createdAt: now, updatedAt: now, lastError: null };
     this.db.insertSession(next);
     this.core.record(next.id, { type: "session.handoff", direction: "from", otherSessionId: rec.id, otherTitle: rec.title, contextTokens });
     this.core.record(rec.id, { type: "session.handoff", direction: "to", otherSessionId: next.id, otherTitle: title, contextTokens });

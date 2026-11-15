@@ -4,5 +4,6 @@ export const search: typeof De = {
   you: "You",
   tool: "Tool",
   untitled: "Untitled",
+  archived: "Archived",
   loadingHits: "Loading matches",
 };

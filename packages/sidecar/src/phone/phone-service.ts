@@ -2971,6 +2971,39 @@ export class PhoneService {
             const lines = list.slice(0, 10).map((s) => sm.line(refFor(s.id), asData(s.title ?? tr().phone.untitled), p ? null : s.projectName, statusText(s), dateTime(s.updatedAt)));
             return `${list.length > 10 ? sm.newest(list.length) : ""}${lines.join("\n")}${outside}`;
           }
+          if (action === "archive_list" || action === "unarchive") {
+            const p = o?.project?.trim() ? findProject(o.project) : null;
+            const archive = (await call("sessions.listAll", { archived: "only" })).filter((s) => !p || s.projectId === p.id);
+            if (action === "archive_list") {
+              const query = o?.query?.trim().toLowerCase();
+              const list = archive.filter((s) => !query || (s.title ?? "").toLowerCase().includes(query));
+              if (!list.length) return query ? sm.archiveNoMatch : sm.archiveEmpty;
+              const lines = list.slice(0, 10).map((s) => sm.archiveLine(refFor(s.id), asData(s.title ?? tr().phone.untitled), p ? null : s.projectName, dateTime(s.updatedAt)));
+              return `${sm.archiveCount(list.length)}${lines.join("\n")}`;
+            }
+            // Archived sessions are in no other list, so a title is looked up in the archive itself.
+            const raw = o?.session?.trim() ?? "";
+            if (!raw) throw new Error(tr().phone.common.whichSession);
+            const known = /^S?\d+$/i.test(raw.replace(/\s+/g, "")) ? resolve(raw) : null;
+            const q = raw.toLowerCase();
+            const exact = archive.filter((s) => (s.title ?? "").toLowerCase() === q);
+            const hits = known ? [known] : exact.length ? exact : archive.filter((s) => (s.title ?? "").toLowerCase().includes(q));
+            if (!hits.length) return sm.notInArchive(raw);
+            if (hits.length > 1) {
+              throw new Error(tr().phone.common.manySessions(raw, hits.slice(0, 5).map((s) => `${refFor(s.id)} ${asData(s.title ?? tr().phone.untitled)}`).join(", ")));
+            }
+            const s = hits[0]!;
+            if (!s.archived) return sm.notArchived(refFor(s.id));
+            await call("sessions.archive", { sessionId: s.id, archived: false });
+            return sm.unarchived(refFor(s.id));
+          }
+          if (action === "archive") {
+            const s = resolve(o?.session ?? "");
+            if (s.archived) return sm.alreadyArchived(refFor(s.id));
+            await call("sessions.archive", { sessionId: s.id, archived: true });
+            if (a.focus === s.id) a.focus = null;
+            return sm.archived(refFor(s.id));
+          }
           const transcripts = o?.keepTranscript === true ? sm.keepTranscripts : sm.deleteTranscripts;
           if (action === "delete_all") {
             const all = await call("sessions.listAll", {});
@@ -3492,7 +3525,7 @@ export class PhoneService {
           for (const h of db.searchEvents(query, 30, { projectId: p?.id, phrase: o?.phrase })) {
             if (seen.has(h.sessionId) || lines.length >= 5) continue;
             seen.add(h.sessionId);
-            lines.push(sr.line(refFor(h.sessionId), asData(h.sessionTitle ?? tr().phone.untitled), h.projectName, excerptData(plain(h.snippet), 300)));
+            lines.push(sr.line(refFor(h.sessionId), asData(h.sessionTitle ?? tr().phone.untitled), h.projectName, excerptData(plain(h.snippet), 300), h.archived === true));
           }
           if (lines.length) return lines.join("\n");
           return p ? sr.noneInProject(p.name) : sr.none;

@@ -28,7 +28,7 @@ function project(id: string, dir: string): Project {
 
 function session(id: string, projectId: string, cwd: string, title: string): Session {
   return {
-    id, projectId, claudeSessionId: null, cwd, title, model: null, effort: null, profile: "balanced", permissionMode: "default",
+    id, projectId, claudeSessionId: null, cwd, title, archived: false, model: null, effort: null, profile: "balanced", permissionMode: "default",
     status: "idle", apiKeySource: null, createdAt: "", updatedAt: "", lastError: null, live: true, background: [], subagents: [], context: null, autoContinueAt: null,
   };
 }

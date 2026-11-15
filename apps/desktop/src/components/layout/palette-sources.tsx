@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Blocks, CheckCheck, FileText, FolderMinus, Folders, GitBranch, GitCommitHorizontal, History, ListPlus, PackageSearch, Pencil, PenLine, Server, Sparkles } from "lucide-react";
+import { Archive, BookOpen, Blocks, CheckCheck, FileText, FolderMinus, Folders, GitBranch, GitCommitHorizontal, History, ListPlus, PackageSearch, Pencil, PenLine, Server, Sparkles } from "lucide-react";
 import type { ProjectWithStatus } from "@forge/protocol";
-import { call, keys, useKnowledgeStale, useProjects } from "@/lib/queries";
+import { call, keys, useArchivedSessions, useKnowledgeStale, useProjects } from "@/lib/queries";
 import { relativeTime } from "@/lib/utils";
 import { knowledgeFixRequest, useUi } from "@/stores/ui";
 import { useProjectGroupDialogs } from "@/stores/project-groups";
@@ -35,6 +35,8 @@ export function usePaletteSources(query: string, project: ProjectWithStatus | nu
 
   const projects = useProjects();
   const sessions = useQuery({ queryKey: keys.allSessions("", "all"), queryFn: () => call("sessions.listAll", {}), staleTime: 10_000 });
+  // Archived sessions are in no list, so the search is the way to find one again.
+  const archived = useArchivedSessions(typed);
   const branches = useQuery({
     queryKey: keys.branches(project?.id ?? ""),
     queryFn: () => call("git.branches", { projectId: project!.id }),
@@ -94,6 +96,17 @@ export function usePaletteSources(query: string, project: ProjectWithStatus | nu
         keywords: s.projectName,
         hint: `${s.projectName} · ${relativeTime(s.updatedAt)}`,
         icon: <History className="h-4 w-4" />,
+        run: () => ui.openProject(s.projectId, s.id),
+      });
+    }
+    for (const s of archived.data ?? []) {
+      list.push({
+        id: `session-${s.id}`,
+        group: "Sessions",
+        label: s.title ?? t.layout.sources.untitled,
+        keywords: `${s.projectName} archiv archiviert archive archived`,
+        hint: `${t.layout.sources.archived} · ${s.projectName} · ${relativeTime(s.updatedAt)}`,
+        icon: <Archive className="h-4 w-4" />,
         run: () => ui.openProject(s.projectId, s.id),
       });
     }
@@ -210,8 +223,8 @@ export function usePaletteSources(query: string, project: ProjectWithStatus | nu
       });
     }
     return list;
-  }, [projects.data, sessions.data, project, branches.data, commits.data, knowledge.data, stale.data, owner, files.data, mcp.data, skills.data, plugins.data, qc]);
+  }, [projects.data, sessions.data, archived.data, project, branches.data, commits.data, knowledge.data, stale.data, owner, files.data, mcp.data, skills.data, plugins.data, qc]);
 
-  const pending = [branches, commits, knowledge, files, mcp, skills, plugins].some((q) => q.isLoading);
+  const pending = [archived, branches, commits, knowledge, files, mcp, skills, plugins].some((q) => q.isLoading);
   return { entries, loading: typed && pending };
 }

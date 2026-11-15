@@ -303,10 +303,11 @@ export function createHandlers(s: Services): Handlers {
     "projects.readFileChunk": ({ projectId, path, offset }) => s.projects.readFileChunk(projectId, path, offset),
 
     "sessions.list": ({ projectId }) => s.sessions.list(projectId),
-    "sessions.listAll": ({ query, status }) => s.sessions.listAll(query, status),
+    "sessions.listAll": ({ query, status, archived }) => s.sessions.listAll(query, status, archived),
     "sessions.listLive": () => s.sessions.listLive(),
     "sessions.delete": ({ sessionId, deleteTranscript }) => s.sessions.delete(sessionId, deleteTranscript),
     "sessions.deleteAll": ({ deleteTranscript }) => s.sessions.deleteAll(deleteTranscript),
+    "sessions.archive": ({ sessionId, archived }) => s.sessions.archive(sessionId, archived),
     "sessions.get": ({ sessionId }) => s.sessions.get(sessionId),
     "sessions.stopTask": ({ sessionId, taskId }) => s.sessions.stopTask(sessionId, taskId),
     "sessions.taskOutput": ({ sessionId, taskId }) => s.sessions.taskOutput(sessionId, taskId),

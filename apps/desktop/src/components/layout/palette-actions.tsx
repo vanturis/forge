@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { Archive, Blend, Palette, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
+import { Archive, ArchiveRestore, Blend, Palette, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
 import { isTmpChat } from "@forge/protocol";
 import { openTempChat } from "@/lib/temp-chat";
 import type {
@@ -63,6 +63,8 @@ import { checkRemote } from "@/stores/remote-check";
 import { SECTIONS as PROJECT_SECTION_DEFS, TAG_INFO } from "@/components/workspace/ProjectSettingsTab";
 import { compactSession, PROFILE_MODE, stopSession } from "@/components/workspace/useSendMessage";
 import { useSessionUsageDialog } from "@/stores/session-usage";
+import { useSessionArchiveDialog } from "@/stores/session-archive";
+import { archiveSession, canArchive, unarchiveSession } from "@/components/workspace/session-archive";
 import { revealInProject } from "@/components/workspace/file-links";
 import { taskViewOf } from "@/components/workspace/WorkingIndicator";
 import { recheckKnowledgeRefs } from "@/components/knowledge/knowledge-actions";
@@ -464,6 +466,11 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
           keywords: "letzte nachricht bearbeiten ändern korrigieren neu senden prompt edit last message change correct resend",
         });
       }
+      if (s.archived) {
+        act("session-unarchive", t.layout.actions.sessionUnarchive, icon(ArchiveRestore), () => void unarchiveSession(s), { keywords: "archiv zurückholen wiederherstellen einblenden unarchive restore bring back" });
+      } else if (canArchive(s)) {
+        act("session-archive", t.layout.actions.sessionArchive, icon(Archive), () => void archiveSession(s), { keywords: "archiv ausblenden aufräumen ablegen weglegen archive hide tidy put away" });
+      }
       act("session-delete", t.layout.actions.sessionDelete, icon(Trash2), () => ctx.openDialog({ kind: "delete-session", session: s }), { keywords: "session löschen entfernen delete remove" });
       for (const m of ctx.models) {
         if (m.value === "default" || m.value === s.model) continue;
@@ -592,6 +599,11 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
     }
     if (!temp) addProjectSettings(project);
   }
+
+  // The archive of the open project; without one, of all projects.
+  act("archive-open", project ? t.layout.actions.archiveOpenProject(project.name) : t.layout.actions.archiveOpen, icon(Archive), () => useSessionArchiveDialog.getState().open(project?.id ?? null), {
+    keywords: "archiv archivierte sessions zurückholen ausgeblendet archive archived sessions restore hidden",
+  });
 
   function addProjectSettings(project: NonNullable<ActionContext["project"]>) {
     for (const p of PROFILE_IDS) {

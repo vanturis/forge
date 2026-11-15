@@ -52,6 +52,7 @@ describe("DailyReportService", () => {
       claudeSessionId: null,
       cwd: repo,
       title,
+      archived: false,
       model: null,
       effort: null,
       profile: "balanced",

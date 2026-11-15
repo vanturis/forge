@@ -28,6 +28,7 @@ import { useDictation } from "./useDictation";
 import { compactSession, stopSession, useComposerOptions, useSendMessage } from "./useSendMessage";
 import { composerInputId, useChatSlot } from "./chat-slot";
 import { hasUltrathink, withUltrathink } from "./ultrathink";
+import { ArchivedBar } from "./SessionArchive";
 import { TemplateSuggestions } from "@/components/templates/TemplateSuggestions";
 import { TemplateFillDialog } from "@/components/templates/TemplateFillDialog";
 import { t } from "@/i18n";
@@ -80,20 +81,21 @@ interface LiveAnchor {
   detached: boolean;
 }
 
-/** Memoized: the chat re-renders while text streams in, the composer has nothing to do with that. */
-export const Composer = memo(function Composer({
-  project,
-  session,
-  resumeClaudeSessionId,
-  prefill,
-  onPrefillConsumed,
-}: {
+interface ComposerProps {
   project: Project;
   session: Session | null;
   resumeClaudeSessionId?: string;
   prefill?: string | null;
   onPrefillConsumed?: () => void;
-}) {
+}
+
+/** The input of a chat. An archived session is read-only: in its place stands the way back out of the archive. */
+export function Composer(props: ComposerProps) {
+  return props.session?.archived ? <ArchivedBar session={props.session} /> : <ComposerInput {...props} />;
+}
+
+/** Memoized: the chat re-renders while text streams in, the composer has nothing to do with that. */
+const ComposerInput = memo(function ComposerInput({ project, session, resumeClaudeSessionId, prefill, onPrefillConsumed }: ComposerProps) {
   const slot = useChatSlot();
   const key = draftKey(project.id, session?.id ?? null, resumeClaudeSessionId, slot.pane);
   const text = useDrafts((s) => s.drafts[key]?.text ?? "");

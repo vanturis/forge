@@ -99,6 +99,7 @@ export class SessionLifecycle {
       claudeSessionId: params.resumeClaudeSessionId ?? null,
       cwd: project.path,
       title: titleFrom(params.prompt) || remotePlaceholderTitle(),
+      archived: false,
       model,
       effort: params.effort ?? project.defaultEffort ?? settings.defaultEffort ?? null,
       profile: profile.id,

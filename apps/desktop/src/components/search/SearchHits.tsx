@@ -48,6 +48,7 @@ export function SearchHitRow({ hit, active, onSelect }: { hit: SearchHit; active
         <Snippet text={hit.snippet} className="line-clamp-2 block break-words text-body" />
         <span className="mt-0.5 block truncate text-caption text-subtle">
           {hit.sessionTitle ?? t.search.untitled} · {hit.projectName} · {relativeTime(hit.ts)}
+          {hit.archived ? ` · ${t.search.archived}` : ""}
         </span>
       </span>
     </button>

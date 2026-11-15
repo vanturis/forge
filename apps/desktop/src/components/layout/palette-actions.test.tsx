@@ -9,6 +9,7 @@ import { NAV } from "./nav";
 import { PALETTE_ID, menuActions, menuItemState } from "./app-menu";
 import { setChatView } from "@/components/workspace/chat-view";
 import { useSessionEvents } from "@/stores/session-events";
+import { useSessionArchiveDialog } from "@/stores/session-archive";
 import { keys } from "@/lib/queries";
 import { useDesign } from "@/lib/design";
 
@@ -219,6 +220,28 @@ describe("command palette covers all of FORGE", () => {
     expect(entries.length).toBe(ids.size);
   });
 
+  it("archives the shown session, brings an archived one back and opens the archive", () => {
+    const idle = { ...session, background: [], archived: false } as Session;
+    const has = (s: Session, id: string) => buildActions({ ...fullContext(), session: s }).some((e) => e.id === id);
+    expect(has(idle, "session-archive")).toBe(true);
+    expect(has(idle, "session-unarchive")).toBe(false);
+    // A session that works or has background tasks cannot go into the archive.
+    expect(has(session, "session-archive")).toBe(false);
+    expect(has({ ...idle, status: "running" } as Session, "session-archive")).toBe(false);
+    expect(has({ ...idle, archived: true } as Session, "session-unarchive")).toBe(true);
+    expect(has({ ...idle, archived: true } as Session, "session-archive")).toBe(false);
+
+    const open = (ctx: ActionContext) => buildActions(ctx).find((e) => e.id === "archive-open")!;
+    expect(open(fullContext()).label).toBe("Archiv von Forge öffnen");
+    open(fullContext()).run();
+    expect(useSessionArchiveDialog.getState()).toMatchObject({ shown: true, projectId: "p1" });
+    const all = open({ ...fullContext(), project: null, root: null, session: null });
+    expect(all.label).toBe("Archiv öffnen");
+    all.run();
+    expect(useSessionArchiveDialog.getState()).toMatchObject({ shown: true, projectId: null });
+    useSessionArchiveDialog.getState().close();
+  });
+
   it("leaves out project entries without an open project", () => {
     const none = buildActions({ ...fullContext(), project: null, root: null, session: null });
     expect(none.some((e) => e.id.startsWith("tab-") || e.id.startsWith("tag-") || e.id.startsWith("session-"))).toBe(false);
@@ -256,6 +279,7 @@ describe("macOS menu bar", () => {
     // the other side of the switches, and what only shows in some states
     collect({ ...ctx, devServer: { status: "running" } as ActionContext["devServer"], testDb: { status: "running" } as ActionContext["testDb"], chatWindows: { sessions: [session.id], pinned: [] } });
     collect({ ...ctx, session: { ...session, status: "running" } as Session });
+    collect({ ...ctx, session: { ...session, background: [] } as Session });
     collect({ ...ctx, session: { ...session, claudeSessionId: "c1" } as Session });
     setChatView(session.id, "prompts");
     useSessionEvents.setState({ buffers: { [session.id]: { loaded: true, lastSeq: 1, hasOlder: false, streaming: {}, usedAt: 0, events: [{ seq: 1, body: { type: "user.message", uuid: "u1", text: "Hallo" } }] } as never } });

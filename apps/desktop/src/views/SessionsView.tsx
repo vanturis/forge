@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { History, Power, Search, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, History, MessageSquare, Power, Search, Trash2 } from "lucide-react";
 import type { Session } from "@forge/protocol";
 import { call, keys, useLiveSessions, useSearch } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { EmptyState, ErrorBanner, SectionTitle, Spinner, Tooltip } from "@/components/ui/misc";
 import { DeleteSessionDialog } from "@/components/workspace/DeleteSessionDialog";
 import { DeleteAllSessionsDialog } from "@/components/workspace/DeleteAllSessionsDialog";
+import { archiveMenuItems, archiveSession, canArchive, unarchiveSession } from "@/components/workspace/session-archive";
+import { contextItems } from "@/lib/context-menu";
 import { Select } from "@/components/ui/select";
 import { SessionStatusBadge } from "@/components/workspace/SessionStatusBadge";
 import { ProfileBadge } from "@/components/projects/ProfileBadge";
@@ -23,6 +25,10 @@ import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
 import { t } from "@/i18n";
 
 const sv = t.views.sessions;
+const am = t.workspace.archive;
+
+/** Not a status of a session: this choice of the filter lists the archive instead. */
+const ARCHIVE = "archived";
 
 const STATUS = [
   { value: "all", label: sv.status.all },
@@ -32,6 +38,7 @@ const STATUS = [
   { value: "stopped", label: sv.status.stopped },
   { value: "interrupted", label: sv.status.interrupted },
   { value: "error", label: sv.status.error },
+  { value: ARCHIVE, label: sv.status.archived },
 ];
 
 export function SessionsView() {
@@ -45,7 +52,7 @@ export function SessionsView() {
   const query = useDebouncedValue(q, 250);
   const sessions = useQuery({
     queryKey: keys.allSessions(query, status),
-    queryFn: () => call("sessions.listAll", { query: query || undefined, status: status === "all" ? undefined : status }),
+    queryFn: () => call("sessions.listAll", status === ARCHIVE ? { query: query || undefined, archived: "only" } : { query: query || undefined, status: status === "all" ? undefined : status }),
     placeholderData: (prev) => prev,
   });
   const hits = useSearch(query);
@@ -92,7 +99,12 @@ export function SessionsView() {
       {sessions.isLoading && <SessionsTableSkeleton />}
       {sessions.isError && <ErrorBanner>{sv.loadFailed}</ErrorBanner>}
       {sessions.isSuccess && sessions.data.length === 0 && query && <div className="text-body text-muted">{sv.noMatch}</div>}
-      {sessions.isSuccess && sessions.data.length === 0 && !query && (
+      {sessions.isSuccess && sessions.data.length === 0 && !query && status === ARCHIVE && (
+        <EmptyState icon={<Archive className="h-10 w-10" />} title={sv.archiveEmpty}>
+          {sv.archiveEmptyHint}
+        </EmptyState>
+      )}
+      {sessions.isSuccess && sessions.data.length === 0 && !query && status !== ARCHIVE && (
         <EmptyState icon={<History className="h-10 w-10" />} title={sv.emptyTitle}>
           {sv.emptyHint}
         </EmptyState>
@@ -103,7 +115,16 @@ export function SessionsView() {
             <SessionsTableHead />
             <tbody className="divide-y divide-border">
               {sessions.data.map((s) => (
-                <tr key={s.id} className="cursor-pointer bg-surface hover:bg-surface-2" onClick={() => openProject(s.projectId, s.id)}>
+                <tr
+                  key={s.id}
+                  className="cursor-pointer bg-surface hover:bg-surface-2"
+                  onClick={() => openProject(s.projectId, s.id)}
+                  onContextMenu={contextItems(() => [
+                    { label: sv.openSession, icon: <MessageSquare className="h-3.5 w-3.5" />, onSelect: () => openProject(s.projectId, s.id) },
+                    ...archiveMenuItems(s),
+                    { label: sv.deleteSession, icon: <Trash2 className="h-3.5 w-3.5" />, danger: true, onSelect: () => setDeleting(s) },
+                  ])}
+                >
                   <td className="max-w-80 px-4 py-2">
                     <button className="block w-full truncate text-left" onClick={() => openProject(s.projectId, s.id)}>
                       {s.title ?? t.views.common.untitled}
@@ -130,6 +151,20 @@ export function SessionsView() {
                             onClick={() => call("sessions.close", { sessionId: s.id }).catch((e: unknown) => toast.error(sv.closeFailed, errorMessage(e)))}
                           >
                             <Power className="h-3.5 w-3.5" />
+                          </Button>
+                        </Tooltip>
+                      )}
+                      {s.archived && (
+                        <Tooltip content={am.restore}>
+                          <Button size="icon-sm" variant="ghost" aria-label={am.restore} onClick={() => void unarchiveSession(s)}>
+                            <ArchiveRestore className="h-3.5 w-3.5" />
+                          </Button>
+                        </Tooltip>
+                      )}
+                      {canArchive(s) && (
+                        <Tooltip content={am.archiveHint}>
+                          <Button size="icon-sm" variant="ghost" aria-label={am.archiveSession} onClick={() => void archiveSession(s)}>
+                            <Archive className="h-3.5 w-3.5" />
                           </Button>
                         </Tooltip>
                       )}

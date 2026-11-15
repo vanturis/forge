@@ -10,6 +10,11 @@ export const sessions = {
   cwdGone: (cwd: string) => `Arbeitsverzeichnis existiert nicht mehr: ${cwd}`,
   wontEnd: "Die Session ließ sich nicht beenden. Bitte erneut versuchen.",
 
+  // archive
+  archiveBusy: "Die Session arbeitet noch. Erst stoppen, dann archivieren.",
+  archivedDetail: "Archiviert, Prozess beendet.",
+  autoContinueArchived: "Session archiviert.",
+
   // live-session.ts
   remotePlaceholderTitle: "Remote-Session",
   authFailed: "Claude Code ist nicht angemeldet oder die Anmeldung ist ungültig. In den Einstellungen unter Claude Code mit „Mit Claude-Konto anmelden“ neu anmelden.",

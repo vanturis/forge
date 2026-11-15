@@ -386,6 +386,10 @@ export const MIGRATIONS: string[] = [
   `
   ALTER TABLE sessions DROP COLUMN team_models;
   `,
+  // Sessions in the archive: hidden from the lists, kept with their history.
+  `
+  ALTER TABLE sessions ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 /** user_version once the agents_enabled migration ran */
@@ -548,6 +552,7 @@ interface SessionRow {
   updated_at: string;
   last_error: string | null;
   crew_mirror: string | null;
+  archived: number;
 }
 
 export type ProjectRecord = Omit<Project, "exists">;
@@ -746,6 +751,7 @@ function toSession(r: SessionRow): SessionRecord {
     claudeSessionId: r.claude_session_id,
     cwd: r.cwd,
     title: r.title,
+    archived: r.archived === 1,
     model: r.model,
     effort: (r.effort as EffortLevel | null) ?? null,
     profile: r.profile as ProfileId,
@@ -1086,11 +1092,12 @@ export class Db {
 
   // ---- sessions
 
-  insertSession(s: SessionRecord) {
+  /** `archived` may be left out: a new session never starts in the archive. */
+  insertSession(s: Omit<SessionRecord, "archived"> & { archived?: boolean }) {
     this.sql
       .prepare(
-        `INSERT INTO sessions(id, project_id, claude_session_id, cwd, title, model, effort, profile, permission_mode, status, api_key_source, created_at, updated_at, last_error, crew_mirror)
-         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO sessions(id, project_id, claude_session_id, cwd, title, model, effort, profile, permission_mode, status, api_key_source, created_at, updated_at, last_error, crew_mirror, archived)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
         s.id,
@@ -1108,6 +1115,7 @@ export class Db {
         s.updatedAt,
         s.lastError,
         s.mirror ? JSON.stringify(s.mirror) : null,
+        s.archived ? 1 : 0,
       );
   }
 
@@ -1124,7 +1132,7 @@ export class Db {
       lastError: "last_error",
     };
     const sets: string[] = ["updated_at = ?"];
-    const vals: Array<string | null> = [now()];
+    const vals: Array<string | number | null> = [now()];
     for (const [k, col] of Object.entries(map)) {
       const v = (patch as Record<string, unknown>)[k];
       if (v !== undefined) {
@@ -1135,6 +1143,10 @@ export class Db {
     if (patch.mirror !== undefined) {
       sets.push("crew_mirror = ?");
       vals.push(patch.mirror ? JSON.stringify(patch.mirror) : null);
+    }
+    if (patch.archived !== undefined) {
+      sets.push("archived = ?");
+      vals.push(patch.archived ? 1 : 0);
     }
     this.stmt(`UPDATE sessions SET ${sets.join(", ")} WHERE id = ?`).run(...vals, id);
     return this.getSession(id);
@@ -1187,9 +1199,11 @@ export class Db {
     return rows.map(toSession);
   }
 
-  listAllSessions(query?: string, status?: string): Array<SessionRecord & { projectName: string }> {
+  /** `archived`: "no" leaves the archive out, "only" lists just it, "all" both. */
+  listAllSessions(query?: string, status?: string, archived: "no" | "only" | "all" = "no"): Array<SessionRecord & { projectName: string }> {
     const where: string[] = [];
     const vals: string[] = [];
+    if (archived !== "all") where.push(`s.archived = ${archived === "only" ? 1 : 0}`);
     if (query) {
       where.push("(s.title LIKE ? OR p.name LIKE ? OR s.claude_session_id LIKE ?)");
       const q = `%${query}%`;
@@ -1210,7 +1224,7 @@ export class Db {
 
   latestSession(projectId: string): SessionRecord | null {
     const r = this.sql
-      .prepare("SELECT * FROM sessions WHERE project_id = ? ORDER BY updated_at DESC LIMIT 1")
+      .prepare("SELECT * FROM sessions WHERE project_id = ? AND archived = 0 ORDER BY updated_at DESC LIMIT 1")
       .get(projectId) as SessionRow | undefined;
     return r ? toSession(r) : null;
   }
@@ -1534,7 +1548,7 @@ export class Db {
     const order = opts.order === "time" ? "e.ts DESC, e.seq DESC" : "e.type IN ('tool.use', 'tool.result'), f.rank, e.ts DESC";
     const rows = this.sql
       .prepare(
-        `SELECT e.session_id, e.seq, e.ts, e.type, s.project_id, s.title, p.name AS project_name,
+        `SELECT e.session_id, e.seq, e.ts, e.type, s.project_id, s.title, s.archived, p.name AS project_name,
                 snippet(events_fts, 0, '${SEARCH_MARK_START}', '${SEARCH_MARK_END}', '…', 16) AS snippet
          FROM events_fts f
          JOIN events e ON e.rowid = f.rowid
@@ -1544,12 +1558,13 @@ export class Db {
          ORDER BY ${order}
          LIMIT ?`,
       )
-      .all(...args, limit) as Array<{ session_id: string; seq: number; ts: string; type: string; project_id: string; title: string | null; project_name: string; snippet: string }>;
+      .all(...args, limit) as Array<{ session_id: string; seq: number; ts: string; type: string; project_id: string; title: string | null; archived: number; project_name: string; snippet: string }>;
     return rows.map((r) => ({
       sessionId: r.session_id,
       projectId: r.project_id,
       projectName: r.project_name,
       sessionTitle: r.title,
+      ...(r.archived === 1 ? { archived: true } : {}),
       seq: r.seq,
       ts: r.ts,
       role: r.type === "user.message" ? "user" : r.type === "assistant.text" ? "assistant" : "tool",

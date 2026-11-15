@@ -72,6 +72,22 @@ describe("server event routing", () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.liveSessions });
   });
 
+  it("moves an archived session out of the project list into its archive, and back", () => {
+    const f = fakeSource();
+    stop = startServerEvents(qc, f.source);
+    const s = (id: string, updatedAt: string, archived = false) => ({ id, projectId: "p1", status: "stopped", live: false, updatedAt, archived }) as Session;
+    qc.setQueryData(keys.sessions("p1"), { sessions: [s("s2", "2026-10-11T11:00:00Z"), s("s1", "2026-10-11T10:00:00Z")], external: [], archived: [] });
+    const lists = () => {
+      const l = qc.getQueryData<{ sessions: Session[]; archived: Session[] }>(keys.sessions("p1"))!;
+      return { sessions: l.sessions.map((x) => x.id), archived: l.archived.map((x) => x.id) };
+    };
+
+    f.emit({ event: "session.updated", payload: s("s1", "2026-10-11T12:00:00Z", true) } as ServerEvent);
+    expect(lists()).toEqual({ sessions: ["s2"], archived: ["s1"] });
+    f.emit({ event: "session.updated", payload: s("s1", "2026-10-11T12:05:00Z") } as ServerEvent);
+    expect(lists()).toEqual({ sessions: ["s1", "s2"], archived: [] });
+  });
+
   it("stops routing after unsubscribing", () => {
     const f = fakeSource();
     startServerEvents(qc, f.source)();

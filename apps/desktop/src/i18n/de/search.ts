@@ -3,5 +3,6 @@ export const search = {
   you: "Du",
   tool: "Werkzeug",
   untitled: "Ohne Titel",
+  archived: "Archiviert",
   loadingHits: "Lädt Treffer",
 };

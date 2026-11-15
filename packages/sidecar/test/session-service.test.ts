@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PlanUsage, ServerEvent, SessionEventBody } from "@forge/protocol";
+import type { ExternalSession, PlanUsage, ServerEvent, SessionEventBody } from "@forge/protocol";
 import { idleClosedDetail } from "@forge/protocol";
 import { IDLE_CHECK_MS } from "../src/sessions/idle-close.js";
 import type { ClaudeRuntime, RuntimeSession, SessionSink, StartOptions } from "../src/claude/runtime.js";
@@ -61,8 +61,16 @@ class FakeRuntime implements ClaudeRuntime {
   deferEnd = false;
   remoteError: Error | null = null;
   capabilities = new AgentSdkRuntime().capabilities;
+  /** what the transcript scan finds: sessions from the terminal */
+  external: ExternalSession[] = [];
   async listSessions() {
-    return [];
+    return this.external;
+  }
+  archiveError: Error | null = null;
+  transcriptArchives: Array<{ claudeSessionId: string; archived: boolean; dir: string }> = [];
+  async archiveTranscript(claudeSessionId: string, archived: boolean, dir: string) {
+    if (this.archiveError) throw this.archiveError;
+    this.transcriptArchives.push({ claudeSessionId, archived, dir });
   }
   async commands() {
     return [];
@@ -2394,5 +2402,138 @@ describe("copies of crew members' sessions", () => {
     const own = svc.importCopy({ projectId, cwd: projects.get(projectId).path, title: "Login (von Ben)", model: "opus", effort: null, claudeSessionId: "c-1", events: [{ type: "user.message", text: "a" }] });
     await svc.resume(own.id, "weiter");
     expect(rt.started[0]).toMatchObject({ resume: "c-1", model: "opus" });
+  });
+});
+
+describe("session archive", () => {
+  const CLAUDE_ID = "d69118dc-ef0c-4925-9945-3091ab75cb15";
+  const ids = (list: Array<{ id: string }>) => list.map((s) => s.id);
+
+  /** A session whose first turn is done; its process waits for the next message. */
+  async function idleSession(prompt = "Lies a.txt") {
+    const s = await svc.start({ projectId, prompt });
+    rt.replay();
+    await svc.drain();
+    expect(svc.get(s.id)).toMatchObject({ live: true, status: "idle", archived: false });
+    return s;
+  }
+
+  it("puts an idle session aside: its process ends, the lists leave it out, the archive and Claude Code keep it", async () => {
+    const s = await idleSession();
+    const other = await svc.start({ projectId, prompt: "zweite" });
+
+    const archived = await svc.archive(s.id, true);
+    expect(archived).toMatchObject({ archived: true, live: false, status: "stopped" });
+    expect(rt.closed).toBe(1);
+    expect(db.listEvents(s.id).filter((e) => e.body.type === "status").at(-1)?.body).toMatchObject({ status: "stopped", detail: "Archiviert, Prozess beendet." });
+    expect(rt.transcriptArchives).toEqual([{ claudeSessionId: CLAUDE_ID, archived: true, dir: projects.get(projectId).path }]);
+    expect(emitted.some((e) => e.event === "session.updated" && e.payload.id === s.id && e.payload.archived)).toBe(true);
+
+    const list = await svc.list(projectId);
+    expect(ids(list.sessions)).toEqual([other.id]);
+    expect(ids(list.archived)).toEqual([s.id]);
+    expect(ids(svc.listAll())).toEqual([other.id]);
+    expect(ids(svc.listAll(undefined, undefined, "only"))).toEqual([s.id]);
+    expect(ids(svc.listAll(undefined, undefined, "all")).sort()).toEqual([s.id, other.id].sort());
+    expect(ids(svc.listLive())).toEqual([other.id]);
+    expect((await projects.withStatus(projects.get(projectId))).lastSession?.id).toBe(other.id);
+    // The history stays, and the full-text search still finds it, marked as archived.
+    expect(userTexts(s.id)).toEqual(["Lies a.txt"]);
+    expect(db.searchEvents("Lies", 10).find((h) => h.sessionId === s.id)).toMatchObject({ archived: true });
+    expect(db.searchEvents("zweite", 10)[0]).not.toHaveProperty("archived");
+
+    // Archiving again changes nothing.
+    await svc.archive(s.id, true);
+    expect(rt.transcriptArchives).toHaveLength(1);
+
+    const back = await svc.archive(s.id, false);
+    expect(back.archived).toBe(false);
+    expect(rt.transcriptArchives.at(-1)).toEqual({ claudeSessionId: CLAUDE_ID, archived: false, dir: projects.get(projectId).path });
+    const after = await svc.list(projectId);
+    expect(after.archived).toEqual([]);
+    expect(ids(after.sessions).sort()).toEqual([s.id, other.id].sort());
+  });
+
+  it("refuses a session that works, starts, stops or waits for an approval", async () => {
+    const s = await svc.start({ projectId, prompt: "x" });
+    for (const status of ["running", "waiting_approval", "starting", "stopping"] as const) {
+      db.updateSession(s.id, { status });
+      await expect(svc.archive(s.id, true)).rejects.toMatchObject({ code: "SESSION_BUSY", message: "Die Session arbeitet noch. Erst stoppen, dann archivieren." });
+    }
+    expect(svc.get(s.id)).toMatchObject({ archived: false, live: true });
+    expect(rt.closed).toBe(0);
+    expect(rt.transcriptArchives).toEqual([]);
+    await expect(svc.archive("gibt-es-nicht", true)).rejects.toMatchObject({ code: "SESSION_NOT_FOUND" });
+  });
+
+  it("archives in FORGE also when Claude Code cannot set its mark, and without a Claude session", async () => {
+    const s = await idleSession();
+    rt.archiveError = new Error("Session not found");
+    expect((await svc.archive(s.id, true)).archived).toBe(true);
+    expect((await svc.archive(s.id, false)).archived).toBe(false);
+
+    rt.archiveError = null;
+    const copy = svc.importCopy({ projectId, cwd: projects.get(projectId).path, title: "Kopie", model: null, effort: null, claudeSessionId: null, events: [] });
+    expect((await svc.archive(copy.id, true)).archived).toBe(true);
+    expect(rt.transcriptArchives).toEqual([]);
+  });
+
+  it("brings an archived session back with the next message", async () => {
+    const s = await idleSession();
+    await svc.archive(s.id, true);
+
+    await svc.send(s.id, "weiter");
+    expect(svc.get(s.id)).toMatchObject({ archived: false, live: true, status: "running" });
+    expect(rt.transcriptArchives.map((x) => x.archived)).toEqual([true, false]);
+    expect(rt.started[1]).toMatchObject({ resume: CLAUDE_ID, firstMessage: expect.objectContaining({ text: "weiter" }) });
+    expect(ids((await svc.list(projectId)).sessions)).toEqual([s.id]);
+
+    rt.replay();
+    await svc.drain();
+    await svc.archive(s.id, true);
+    await svc.resume(s.id, "und nochmal");
+    expect(svc.get(s.id)).toMatchObject({ archived: false, live: true });
+  });
+
+  it("brings it back as well when the message takes another way than send", async () => {
+    const s = await idleSession();
+    const prompt = db.listEvents(s.id).find((e) => e.body.type === "user.message")!;
+    rt.history = [{ uuid: prompt.body.type === "user.message" ? prompt.body.uuid! : "" }];
+    await svc.archive(s.id, true);
+
+    await svc.edit(s.id, prompt.seq, "Lies b.txt");
+    expect(svc.get(s.id)).toMatchObject({ archived: false, live: true });
+    // Claude Code drops its own mark with the prompt; FORGE does not write it a second time.
+    expect(rt.transcriptArchives.map((x) => x.archived)).toEqual([true]);
+  });
+
+  it("drops a planned continuation, which would bring the session back by itself", async () => {
+    const s = await idleSession();
+    db.setAutoContinue({ sessionId: s.id, dueAt: new Date(Date.now() + 3_600_000).toISOString(), resetsAt: null, afterSeq: db.lastEventSeq(s.id), attempts: 0, probes: 0 });
+    const archived = await svc.archive(s.id, true);
+    expect(archived.autoContinueAt).toBeNull();
+    expect(db.getAutoContinue(s.id)?.dueAt ?? null).toBeNull();
+  });
+
+  it("hides what the terminal archived, and keeps the archive when all sessions are deleted", async () => {
+    const terminal = (claudeSessionId: string, archived?: boolean): ExternalSession => ({ claudeSessionId, summary: claudeSessionId, lastModified: new Date().toISOString(), gitBranch: null, cwd: null, ...(archived ? { archived } : {}) });
+    rt.external = [terminal("t-offen"), terminal("t-archiviert", true)];
+    const keep = await idleSession("behalten");
+    const gone = await svc.start({ projectId, prompt: "weg" });
+    await svc.archive(keep.id, true);
+    expect((await svc.list(projectId)).external.map((e) => e.claudeSessionId)).toEqual(["t-offen"]);
+
+    const r = await svc.deleteAll(false);
+    expect(r).toMatchObject({ deleted: [gone.id], failed: 0 });
+    expect(svc.get(keep.id).archived).toBe(true);
+    expect(ids((await svc.list(projectId)).archived)).toEqual([keep.id]);
+  });
+
+  it("starts a branch of an archived session outside the archive", async () => {
+    const s = await idleSession();
+    await svc.archive(s.id, true);
+    const r = await svc.fork(s.id, {});
+    expect(r.session).toMatchObject({ archived: false, claudeSessionId: "fork-1" });
+    expect(svc.get(s.id).archived).toBe(true);
   });
 });

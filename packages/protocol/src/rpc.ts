@@ -422,12 +422,14 @@ export const methods = {
     result: z.object({ size: z.number(), base64: z.string() }),
   },
 
+  /** `sessions` and `external` leave out what is archived; `archived` holds the project's archive */
   "sessions.list": {
     params: projectRef,
-    result: z.object({ sessions: z.array(Session), external: z.array(ExternalSession) }),
+    result: z.object({ sessions: z.array(Session), external: z.array(ExternalSession), archived: z.array(Session) }),
   },
+  /** archived: "only" lists the archive, "all" both; without it archived sessions are left out */
   "sessions.listAll": {
-    params: z.object({ query: z.string().max(200).optional(), status: z.string().max(40).optional() }),
+    params: z.object({ query: z.string().max(200).optional(), status: z.string().max(40).optional(), archived: z.enum(["only", "all"]).optional() }),
     result: z.array(Session.extend({ projectName: z.string() })),
   },
   "sessions.listLive": { params: z.object({}), result: z.array(Session.extend({ projectName: z.string() })) },
@@ -440,6 +442,11 @@ export const methods = {
     params: z.object({ deleteTranscript: z.boolean().default(true) }),
     result: z.object({ deleted: z.array(z.string()), failed: z.number().int(), error: z.string().nullable() }),
   },
+  /**
+   * Moves a session into the archive or back. A working session is refused; an idle process ends.
+   * A message to an archived session brings it back by itself.
+   */
+  "sessions.archive": { params: sessionRef.extend({ archived: z.boolean() }), result: Session },
   "sessions.get": { params: sessionRef, result: Session },
   /** stops one background task or subagent; the turn and other tasks go on */
   "sessions.stopTask": { params: sessionRef.extend({ taskId: z.string().min(1) }), result: z.object({ ok: z.boolean() }) },

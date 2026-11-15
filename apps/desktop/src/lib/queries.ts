@@ -276,6 +276,10 @@ export const useSessions = (projectId: string | null) =>
     refetchOnWindowFocus: true,
   });
 
+/** The archive of all projects; under the allSessions prefix, so every session.updated marks it stale. */
+export const useArchivedSessions = (enabled = true) =>
+  useQuery({ queryKey: keys.allSessions("", "archived"), queryFn: () => call("sessions.listAll", { archived: "only" }), enabled, staleTime: 10_000 });
+
 /** Sessions with a running Claude process, across projects; refreshed on every session.updated. */
 export const useLiveSessions = () => useQuery({ queryKey: keys.liveSessions, queryFn: () => call("sessions.listLive", {}), staleTime: Infinity });
 

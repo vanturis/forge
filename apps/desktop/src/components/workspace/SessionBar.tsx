@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { ChevronDown, History, Hourglass, MessageSquarePlus, Pin, PinOff, Power, ShieldAlert, SquareArrowOutDownLeft, SquareArrowOutUpRight, Terminal, Trash2 } from "lucide-react";
+import { Archive, ArchiveRestore, ChevronDown, History, Hourglass, MessageSquarePlus, Pin, PinOff, Power, ShieldAlert, SquareArrowOutDownLeft, SquareArrowOutUpRight, Terminal, Trash2 } from "lucide-react";
 import { isTmpChat, type ExternalSession, type Project, type Session } from "@forge/protocol";
 import { TempChatBadge } from "./TempChat";
 import { openChatWindow, reattachChatWindow } from "@/lib/chat-windows";
 import { contextItems } from "@/lib/context-menu";
 import { setChatWindowPin, useChatWindowPin } from "@/lib/window-options";
-import { call } from "@/lib/queries";
+import { call, useSessions } from "@/lib/queries";
+import { useSessionArchiveDialog } from "@/stores/session-archive";
+import { archiveMenuItems, archiveSession, canArchive, unarchiveSession } from "./session-archive";
 import { errorMessage } from "@/lib/rpc";
 import { cn, relativeTime } from "@/lib/utils";
 import { EXTERNAL_PREFIX, type SplitPane } from "@/stores/ui";
@@ -51,6 +53,9 @@ export function SessionBar({
   shownElsewhere?: ReadonlySet<string>;
 }) {
   const m = t.workspace.sessionBar;
+  const am = t.workspace.archive;
+  // Same query as the chat's session list; the archive of the project comes along with it.
+  const archivedCount = useSessions(detached ? null : project.id).data?.archived?.length ?? 0;
   const title = session?.title ?? (external ? external.summary : m.newSession);
   // Captured when the dialog opens: the shown session may change behind it (Strg+Tab, a notification).
   const [deleting, setDeleting] = useState<Session | null>(null);
@@ -72,8 +77,14 @@ export function SessionBar({
       { label: m.recallToMain, icon: <SquareArrowOutDownLeft className="h-3.5 w-3.5" />, onSelect: () => void reattachChatWindow() },
     ];
   });
+  // The main window's bar offers what its buttons do: archive or bring back, and delete.
+  const sessionItems = contextItems(() =>
+    session
+      ? [...archiveMenuItems(session), { label: m.deleteSession, icon: <Trash2 className="h-3.5 w-3.5" />, danger: true, onSelect: () => setDeleting(session) }]
+      : [],
+  );
   return (
-    <div className="@container/sessionbar flex h-11 shrink-0 items-center gap-2 border-b border-border px-4" onContextMenu={detached ? windowItems : undefined}>
+    <div className="@container/sessionbar flex h-11 shrink-0 items-center gap-2 border-b border-border px-4" onContextMenu={detached ? windowItems : sessionItems}>
       {detached ? (
         // Shrinks before the badges next to it; the title gives way first, then the project name.
         <div className="flex min-w-8 items-center gap-2 overflow-hidden text-body" title={`${project.name} · ${title}`}>
@@ -108,10 +119,19 @@ export function SessionBar({
               icon: <Terminal className="h-3.5 w-3.5 text-muted" />,
               onSelect: () => onSelect(EXTERNAL_PREFIX + e.claudeSessionId),
             })),
+            // The archive stays folded: one entry with the count, the list opens in its own dialog.
+            ...(archivedCount > 0
+              ? [{ label: am.entry, hint: am.count(archivedCount), icon: <Archive className="h-3.5 w-3.5 text-muted" />, onSelect: () => useSessionArchiveDialog.getState().open(project.id) }]
+              : []),
           ]}
         />
       )}
       {session && <SessionStatusBadge status={session.status} live={session.live} autoContinueAt={session.autoContinueAt} />}
+      {session?.archived && (
+        <Badge>
+          <Archive className="h-3 w-3" /> {am.badge}
+        </Badge>
+      )}
       {!!session?.background.length && (
         <Tooltip content={session.background.map((t) => t.description).join(", ")}>
           <span>
@@ -171,6 +191,20 @@ export function SessionBar({
             <Tooltip content={m.openWindow}>
               <Button size="icon-sm" variant="ghost" aria-label={m.openWindow} onClick={() => void openChatWindow(project.id, session.id, session.title)}>
                 <SquareArrowOutUpRight className="h-3.5 w-3.5" />
+              </Button>
+            </Tooltip>
+          )}
+          {session?.archived && (
+            <Tooltip content={am.restore}>
+              <Button size="icon-sm" variant="ghost" aria-label={am.restore} onClick={() => void unarchiveSession(session)}>
+                <ArchiveRestore className="h-3.5 w-3.5" />
+              </Button>
+            </Tooltip>
+          )}
+          {session && canArchive(session) && (
+            <Tooltip content={am.archiveHint}>
+              <Button size="icon-sm" variant="ghost" aria-label={am.archiveSession} onClick={() => void archiveSession(session)}>
+                <Archive className="h-3.5 w-3.5" />
               </Button>
             </Tooltip>
           )}

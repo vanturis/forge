@@ -10,6 +10,7 @@ import { CrewBubble } from "@/components/crew/CrewBubble";
 import { ContextMenuHost } from "@/components/layout/ContextMenuHost";
 import { TemplateHost } from "@/components/templates/TemplateHost";
 import { SessionUsageDialogHost } from "@/components/usage/SessionUsage";
+import { SessionArchiveDialogHost } from "@/components/workspace/SessionArchive";
 import { TitleTooltips } from "@/components/ui/title-tooltips";
 import { ErrorBoundary } from "@/components/layout/ErrorBoundary";
 import { NewProjectDialog } from "@/components/projects/NewProjectDialog";
@@ -190,6 +191,7 @@ function Shell() {
       <ContextMenuHost />
       <TemplateHost />
       <SessionUsageDialogHost />
+      <SessionArchiveDialogHost />
       <ProjectGroupDialogs />
       <AgentsOffDialog />
       <RemoteCheckDialog />

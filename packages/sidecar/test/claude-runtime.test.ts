@@ -7,6 +7,9 @@ const sdk = vi.hoisted(() => ({
   calls: [] as Array<{ options: Options; q: FakeQuery }>,
   extra: {} as Record<string, unknown>,
   renameSession: vi.fn(async () => {}),
+  archiveSession: vi.fn(async () => {}),
+  unarchiveSession: vi.fn(async () => {}),
+  listSessions: vi.fn(async () => [] as unknown[]),
 }));
 
 interface FakeQuery {
@@ -31,9 +34,11 @@ vi.mock("@anthropic-ai/claude-agent-sdk", () => ({
     sdk.calls.push({ options, q });
     return q;
   },
-  listSessions: vi.fn(),
+  listSessions: sdk.listSessions,
   deleteSession: vi.fn(),
   renameSession: sdk.renameSession,
+  archiveSession: sdk.archiveSession,
+  unarchiveSession: sdk.unarchiveSession,
   getSessionMessages: vi.fn(),
 }));
 
@@ -160,6 +165,22 @@ describe("session hooks", () => {
   it("writes a title into the transcript of a session without a process", async () => {
     await new AgentSdkRuntime().renameTranscript("c1", "Login-Seite bauen", "C:/proj");
     expect(sdk.renameSession).toHaveBeenCalledWith("c1", "Login-Seite bauen", { dir: "C:/proj" });
+  });
+
+  it("sets and removes the archive mark of a transcript, and passes the mark of terminal sessions on", async () => {
+    const rt = new AgentSdkRuntime();
+    await rt.archiveTranscript("c1", true, "C:/proj");
+    expect(sdk.archiveSession).toHaveBeenCalledWith("c1", { dir: "C:/proj" });
+    expect(sdk.unarchiveSession).not.toHaveBeenCalled();
+    await rt.archiveTranscript("c1", false, "C:/proj");
+    expect(sdk.unarchiveSession).toHaveBeenCalledWith("c1", { dir: "C:/proj" });
+
+    sdk.listSessions.mockResolvedValueOnce([
+      { sessionId: "a", summary: "Alt", lastModified: 0, archived: true },
+      { sessionId: "b", summary: "Zurück", lastModified: 0, archived: false },
+      { sessionId: "c", summary: "Nie", lastModified: 0 },
+    ]);
+    expect((await rt.listSessions("C:/proj")).map((s) => [s.claudeSessionId, s.archived])).toEqual([["a", true], ["b", undefined], ["c", undefined]]);
   });
 
   it("asks the CLI to echo user messages for Remote Control", () => {

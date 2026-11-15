@@ -11,6 +11,11 @@ export const sessions: typeof De = {
   cwdGone: (cwd: string) => `Working directory no longer exists: ${cwd}`,
   wontEnd: "The session could not be ended. Please try again.",
 
+  // archive
+  archiveBusy: "The session is still working. Stop it first, then archive it.",
+  archivedDetail: "Archived, process ended.",
+  autoContinueArchived: "Session archived.",
+
   // live-session.ts
   remotePlaceholderTitle: "Remote session",
   authFailed: "Claude Code is not signed in or the sign-in is invalid. Sign in again in the settings under Claude Code with \"Sign in with Claude account\".",

@@ -85,9 +85,11 @@ export async function refreshProjectInList(qc: QueryClient, projectId: string) {
  */
 export function patchSessionLists(qc: QueryClient, s: Session) {
   const list = qc.getQueryData<ResultOf<"sessions.list">>(keys.sessions(s.projectId));
-  if (list && list.sessions.some((x) => x.id === s.id)) {
-    const sessions = list.sessions.map((x) => (x.id === s.id ? s : x)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-    qc.setQueryData(keys.sessions(s.projectId), { ...list, sessions });
+  const archive = list?.archived ?? [];
+  if (list && [...list.sessions, ...archive].some((x) => x.id === s.id)) {
+    // An archived session changes sides: out of the picker, into the project's archive, and back.
+    const put = (side: Session[], here: boolean) => [...side.filter((x) => x.id !== s.id), ...(here ? [s] : [])].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    qc.setQueryData(keys.sessions(s.projectId), { ...list, sessions: put(list.sessions, !s.archived), archived: put(archive, s.archived) });
   } else void qc.invalidateQueries({ queryKey: keys.sessions(s.projectId) });
 
   const live = qc.getQueryData<ResultOf<"sessions.listLive">>(keys.liveSessions);
