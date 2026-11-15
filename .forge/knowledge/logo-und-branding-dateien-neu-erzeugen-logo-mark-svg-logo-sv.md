@@ -2,12 +2,12 @@
 title: "Logo und Branding neu erzeugen (logo.svg, Wortmarke, Icons, Banner, Social Preview, Screenshots, demo.gif)"
 summary: "Wo das FORGE-Logo überall steckt und wie man alle Varianten (App-Icons, Wortmarke, Installer-Bilder, Banner, Social Preview, README-Screenshots, Landingpage-Bilder, OG-Bilder, demo.gif) aus den Quellen neu erzeugt."
 tags: ["branding","release","installer","tauri","stolperfalle","preview"]
-updated: "2026-11-14T18:40:37.700Z"
+updated: "2026-11-15T09:18:43.166Z"
 ---
 
 # Logo und Branding-Dateien neu erzeugen
 
-Stand 2026-11-14 (nach dem Redesign: neutrale Grautöne, eigene Titelleiste). Logo seit 2026-10-19: oranger Funke oben, heller Amboss, auf dunkler Kachel mit orangem Leuchtrand; die Formen sind von Hand als Vektor nachgebaut.
+Stand 2026-11-15. Logo seit 2026-10-19: oranger Funke oben, heller Amboss, auf dunkler Kachel mit orangem Leuchtrand; die Formen sind von Hand als Vektor nachgebaut.
 
 ## Quellen
 - `apps/desktop/src/assets/logo-mark.svg`: nur die Bildmarke (ohne Kachel).
@@ -16,15 +16,18 @@ Stand 2026-11-14 (nach dem Redesign: neutrale Grautöne, eigene Titelleiste). Lo
 - Website: `services/stats/src/assets/forge-wordmark.png` (944 x 184). Ändert sich forge-logo.png, neu erzeugen.
 
 ## Erzeugen
-- Rendern geht mit sharp aus `services/stats/node_modules/.pnpm/sharp@*/node_modules/sharp` (Einstieg `dist/index.cjs`, `sharp.cache(false)`). Kein PIL auf dem Rechner. ffmpeg ist per WinGet installiert (`Gyan.FFmpeg`), Chrome unter `C:/Program Files/Google/Chrome/Application/chrome.exe`.
+- Rendern geht mit sharp, das `next` in `services/stats` mitbringt: `createRequire(require.resolve("next/package.json"))("sharp")`, `sharp.cache(false)`. Kein PIL auf dem Rechner. ffmpeg ist per WinGet installiert (`Gyan.FFmpeg`), Chrome unter `C:/Program Files/Google/Chrome/Application/chrome.exe`.
 - App-Icons: in `apps/desktop` `pnpm tauri icon src/assets/logo.svg`; danach die erzeugten Ordner für Android und iOS unter `src-tauri/icons/` löschen. Der Installer nutzt `../desktop/src-tauri/icons/icon.ico`.
 - NSIS-Bilder: `powershell -File apps/desktop/src-tauri/installer/render.ps1`.
 - Stats-Favicons: `icon.svg` = logo.svg, `apple-icon.png` 256x256 aus logo.svg.
 
-## Banner und Social Preview
-- Quellen: `.github/assets/banner/banner.{de,en}.html` + `banner.css`. Aufbau fest (Wunsch des Besitzers): links Wortmarke, Titel mit „Claude Code“ in Orange, Lead, unten drei Chips mit orangen Stichwörtern, rechts unten „ein Produkt von Vanturis“, rechts das leicht gedrehte App-Icon `logo.svg` mit dezentem warmem Licht dahinter. Farben neutral (Hintergrund `#161617` nach `#0b0b0c`, Chips `#19191a` mit Rahmen `#2c2c2f`), kein Blau.
-- **Nicht umbauen:** Ein Versuch am 2026-11-14 mit App-Screenshot statt Icon wurde vom Besitzer klar abgelehnt („soll so aussehen wie die alte, nur mit der neuen Farbe und dem Design“).
-- Rendern mit Chrome: `--headless=new --window-size=1280,640 --force-device-scale-factor=2 --virtual-time-budget=5000 --screenshot=…` → `banner.png` (deutsch) und `banner-en.png`. `social-preview.png` ist das **englische** Banner bei Faktor 1 (1280x640). Die Social Preview muss in den GitHub-Repo-Einstellungen von Hand hochgeladen werden (Settings → General → Social preview).
+## Banner und Social Preview (seit 2026-11-15 ein Bild des Besitzers)
+- Der Besitzer hat am 2026-11-15 ein fertiges Pixel-Art-Banner geliefert (Schmiede wie auf der Website, Wortmarke, „A desktop app for Claude Code“, drei Chips, „a product by Vanturis“, rechts das App-Icon). Es ersetzt das frühere, aus HTML gerenderte Banner; dessen Quellen (`.github/assets/banner/*.html`, `banner.css`) und `banner.png` / `banner-en.png` sind gelöscht.
+- `.github/assets/banner.webp` (1774 x 887, unverändert die gelieferte Datei): README.md **und** README.de.md nutzen dieselbe Datei. Eine deutsche Fassung gibt es nicht, der Text im Bild ist englisch.
+- `.github/assets/social-preview.png`: dasselbe Bild auf 1280 x 640 (lanczos3). Die Social Preview lädt der Besitzer selbst in den Repo-Einstellungen hoch (Settings → General → Social preview, höchstens 1 MB).
+- Lokales Launch-Kit (nicht im Repo): `.forge-demo/launch-kit/banner-1270x760.png`, das Bild auf 1270 x 635 mittig vor einer abgedunkelten, weichgezeichneten Kopie (das Format 5:3 würde sonst „Vanturis“ abschneiden).
+- Die OG-Bilder der Website (`services/stats/src/assets/og-{de,en}.png`) sind ein eigenes Motiv aus `scripts/og-images.mjs` und wurden nicht ersetzt.
+- Neues Banner vom Besitzer: Datei nach `.github/assets/banner.webp`, Social Preview und Launch-Kit daraus neu rechnen. Nichts selbst umgestalten.
 
 ## Screenshots der App
 Aufnahme über die Browser-Brücke aus dem Eintrag zur Formensprache (Port 1430) mit Chrome headless per CDP bei Pixeldichte 2 (`Emulation.setDeviceMetricsOverride`, `Page.captureScreenshot`):

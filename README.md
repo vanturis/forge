@@ -1,7 +1,7 @@
 <img src=".github/assets/flags/gb.svg" height="14" alt=""> English · <a href="README.de.md"><img src=".github/assets/flags/de.svg" height="14" alt=""> Deutsch</a>
 
 <p align="center">
-  <img src=".github/assets/banner-en.png" alt="FORGE: a desktop app for Claude Code" width="100%">
+  <img src=".github/assets/banner.webp" alt="FORGE: a desktop app for Claude Code" width="100%">
 </p>
 
 <p align="center">
