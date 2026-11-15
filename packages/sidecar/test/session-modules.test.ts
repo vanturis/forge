@@ -70,6 +70,8 @@ function liveSession(rt: Partial<RuntimeSession> = {}): LiveSession {
     subagents: new Map(),
     taskToolUse: new Map(),
     context: null,
+    suggestion: null,
+    reloadPending: false,
   };
   core.live.set(SID, live);
   return live;

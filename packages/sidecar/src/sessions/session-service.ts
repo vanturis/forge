@@ -996,7 +996,11 @@ ${crew.context}` } : own;
     for (const live of this.core.live.values()) {
       if (live.closing) continue;
       void live.rt.reloadPlugins(apply).then(
-        (servers) => this.catalog.extensionsChanged(servers),
+        (servers) => {
+          // The stream loads it when the session's turn has ended.
+          if (servers === "busy") live.reloadPending = true;
+          else this.catalog.extensionsChanged(servers);
+        },
         () => {},
       );
     }

@@ -11,6 +11,9 @@ import { toolActivity } from "./task-activity.js";
 import type { TurnAutomation } from "./turn-automation.js";
 import type { TurnDispatch } from "./turns.js";
 
+/** A suggestion is one short message; anything longer is not worth showing in the composer. */
+const MAX_SUGGESTION = 300;
+
 export interface StreamParts {
   automation: TurnAutomation;
   remote: RemoteBridge;
@@ -61,6 +64,16 @@ export class SessionStream {
       return;
     }
     if (m.type === "system" && (m.subtype === "task_started" || m.subtype === "task_progress" || m.subtype === "task_notification")) this.trackTask(id, live, m);
+    // Arrives after the turn's result. One that comes late, into the next turn, is already out of date.
+    if (m.type === "prompt_suggestion") {
+      const text = typeof m.suggestion === "string" ? m.suggestion.trim() : "";
+      if (text && !live.turnActive && this.core.db.getSettings().promptSuggestions) {
+        live.suggestion = text.slice(0, MAX_SUGGESTION);
+        this.core.publish(this.core.db.getSession(id));
+      }
+      return;
+    }
+    if (m.type === "result") this.catalog.noteLoginExpiry(m.credential_expires_at);
     // A finished background task makes the CLI start a turn on its own, without a user message.
     // A subagent in the background goes on talking after its starter's turn ended; that is not a turn.
     const turnOutput = !m.parent_tool_use_id && (m.type === "assistant" || (m.type === "stream_event" && (m.event as Record<string, unknown> | undefined)?.type === "message_start"));
@@ -102,8 +115,25 @@ export class SessionStream {
         if (!wasInterrupt && !body.isError) this.automation.schedule(id);
         this.autoContinue.onTurnResult(id, body, wasInterrupt);
         this.recovery.onTurnResult(id, body, wasInterrupt);
+        if (live.reloadPending) this.reloadWhenIdle(live);
       }
     }
+  }
+
+  /**
+   * Loads plugins, skills and MCP servers that changed while the session worked (extensionsChanged without
+   * `apply`). Still busy, e.g. a background agent runs on: it stays pending for the next turn end.
+   */
+  reloadWhenIdle(live: LiveSession) {
+    if (live.closing) return;
+    live.reloadPending = false;
+    void live.rt.reloadPlugins(false).then(
+      (servers) => {
+        if (servers === "busy") live.reloadPending = true;
+        else this.catalog.extensionsChanged(servers);
+      },
+      () => {},
+    );
   }
 
   private refreshContext(id: string, live: LiveSession) {

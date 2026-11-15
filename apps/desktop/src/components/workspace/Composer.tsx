@@ -427,7 +427,17 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
   // Unknown models keep the picker; listed ones only when Claude Code reports effort support.
   const showEffort = !modelInfo || modelInfo.supportsEffort === true;
 
-  const placeholder = dictation.state === "recording" || dictation.state === "starting"
+  // Claude Code's guess at the next message: shown in place of the placeholder while the field is empty.
+  const suggestion = !text && !dictating && session?.status === "idle" ? (session.suggestion ?? null) : null;
+  const takeSuggestion = () => {
+    if (!suggestion) return;
+    setText(suggestion);
+    requestAnimationFrame(() => ref.current?.focus());
+  };
+
+  const placeholder = suggestion
+    ? suggestion
+    : dictation.state === "recording" || dictation.state === "starting"
     ? held
       ? t.chat.composer.placeholder.speakHeld
       : t.chat.composer.placeholder.speakToggle
@@ -617,6 +627,11 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
                 return;
               }
             }
+            if (suggestion && e.key === "Tab" && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+              e.preventDefault();
+              takeSuggestion();
+              return;
+            }
             if (e.key === "Escape" && working) {
               e.preventDefault();
               stop();
@@ -651,6 +666,19 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
             }
           }}
         />
+        {suggestion && (
+          <Tooltip content={t.chat.composer.suggestionTooltip}>
+            <button
+              type="button"
+              onClick={takeSuggestion}
+              aria-label={t.chat.composer.takeSuggestion}
+              className="absolute bottom-0 right-4 flex animate-fade-in items-center gap-1.5 rounded-md px-1.5 py-0.5 text-small text-subtle transition-colors hover:text-fg focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+            >
+              <Kbd>Tab</Kbd>
+              {t.chat.composer.takeSuggestionShort}
+            </button>
+          </Tooltip>
+        )}
         </div>
         <div className="flex items-center gap-2 px-4 pb-3.5 pt-2">
           <Tooltip content={t.chat.composer.attachTooltip}>

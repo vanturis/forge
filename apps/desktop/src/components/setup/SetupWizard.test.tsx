@@ -70,6 +70,8 @@ beforeEach(() => {
     limitWarnings: true,
     subagentEffort: null,
     idleCompaction: true,
+    promptSuggestions: true,
+    autoBackgroundTasks: false,
     disabledPolicyRules: [],
     setupDone: false,
     syncEnabled: false,

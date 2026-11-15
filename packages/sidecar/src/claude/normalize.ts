@@ -2,6 +2,9 @@ import type { ModelTokens, SessionEventBody } from "@forge/protocol";
 import { tr } from "../i18n/index.js";
 
 const MAX_TOOL_RESULT = 20_000;
+const MAX_NOTICE = 2_000;
+/** messages kept for `supersedes`; a retraction names messages of the running turn */
+const MAX_EMITTED = 400;
 /** per string field of a tool input; a Write of a large file would otherwise land in the DB in full */
 export const MAX_INPUT_STRING = 20_000;
 
@@ -37,6 +40,8 @@ export class Normalizer {
   private backgroundTasks = new Map<string, string>();
   /** subagent task id -> the Agent call that first started it */
   private agentCalls = new Map<string, string>();
+  /** SDK message uuid -> what the message put into the timeline, so a later message can take it back */
+  private emitted = new Map<string, { texts: string[]; toolUseIds: string[] }>();
 
   /**
    * The call a task belongs to. SendMessage resumes a finished subagent as a task with the same id,
@@ -80,9 +85,33 @@ export class Normalizer {
           },
         ];
       }
+      case "active_goal": {
+        const v = (m.value ?? null) as Record<string, unknown> | null;
+        return [{ type: "goal", condition: v ? (str(v.condition) ?? "") : null, iterations: v ? (num(v.iterations) ?? 0) : 0, reason: v ? str(v.last_reason) : null }];
+      }
       default:
         return [];
     }
+  }
+
+  private remember(uuid: string | null, texts: string[], toolUseIds: string[]) {
+    if (!uuid || (!texts.length && !toolUseIds.length)) return;
+    this.emitted.set(uuid, { texts, toolUseIds });
+    if (this.emitted.size > MAX_EMITTED) this.emitted.delete(this.emitted.keys().next().value!);
+  }
+
+  /** The event that takes back what the messages with these uuids showed; nothing when none of them showed anything. */
+  private retract(uuids: unknown): SessionEventBody[] {
+    const texts: string[] = [];
+    const toolUseIds: string[] = [];
+    for (const u of Array.isArray(uuids) ? uuids : []) {
+      const e = typeof u === "string" ? this.emitted.get(u) : undefined;
+      if (!e) continue;
+      this.emitted.delete(u as string);
+      texts.push(...e.texts);
+      toolUseIds.push(...e.toolUseIds);
+    }
+    return texts.length || toolUseIds.length ? [{ type: "messages.superseded", texts, toolUseIds }] : [];
   }
 
   /** Per-message bookkeeping is only needed within a turn; a long session would otherwise grow it forever. */
@@ -123,6 +152,51 @@ export class Normalizer {
     if (m.subtype === "compact_boundary") {
       const meta = (m.compact_metadata ?? {}) as Record<string, unknown>;
       return [{ type: "context.compacted", trigger: meta.trigger === "auto" ? "auto" : "manual", preTokens: num(meta.pre_tokens), postTokens: num(meta.post_tokens) }];
+    }
+    if (m.subtype === "informational") {
+      const level = m.level === "warning" || m.level === "suggestion" ? m.level : m.level === "notice" ? "notice" : null;
+      const text = str(m.content)?.trim();
+      // "info" is for the CLI's transcript view; a notice bound to a tool call is its progress line.
+      if (!level || !text || (level === "notice" && m.tool_use_id)) return [];
+      return [{ type: "cli.notice", level, text: text.slice(0, MAX_NOTICE) }];
+    }
+    if (m.subtype === "model_refusal_fallback") {
+      const gone = this.retract(m.retracted_message_uuids);
+      // "revert" and "sticky" only come from older CLIs and say nothing the retry did not.
+      if (m.direction !== "retry") return gone;
+      return [
+        ...gone,
+        {
+          type: "model.refusal",
+          model: str(m.original_model) ?? "",
+          fallbackModel: str(m.fallback_model),
+          scope: m.scope === "local" ? "local" : "session",
+          category: str(m.api_refusal_category),
+          explanation: str(m.api_refusal_explanation)?.slice(0, MAX_NOTICE) ?? null,
+        },
+      ];
+    }
+    if (m.subtype === "model_refusal_no_fallback") {
+      return [
+        {
+          type: "model.refusal",
+          model: str(m.original_model) ?? "",
+          fallbackModel: null,
+          scope: "session",
+          category: str(m.api_refusal_category),
+          explanation: str(m.api_refusal_explanation)?.slice(0, MAX_NOTICE) ?? null,
+        },
+      ];
+    }
+    if (m.subtype === "session_writes_lost") {
+      return [{ type: "writes.lost", errorCode: str(m.error_code) ?? "unknown", lost: Array.isArray(m.lost) ? m.lost.filter((l): l is string => typeof l === "string") : [] }];
+    }
+    if (m.subtype === "memory_recall") {
+      const memories = (Array.isArray(m.memories) ? m.memories : []).flatMap((x) => {
+        const e = (x ?? {}) as Record<string, unknown>;
+        return typeof e.path === "string" ? [{ path: e.path, scope: str(e.scope) ?? "personal" }] : [];
+      });
+      return memories.length ? [{ type: "memory.recall", mode: m.mode === "synthesize" ? "synthesize" : "select", memories: memories.slice(0, 50) }] : [];
     }
     if (m.subtype !== "init") return [];
     return [
@@ -179,7 +253,9 @@ export class Normalizer {
     const msg = (m.message ?? {}) as Record<string, unknown>;
     const id = str(msg.id) ?? str(m.uuid) ?? "unknown";
     const parent = str(m.parent_tool_use_id);
-    const out: SessionEventBody[] = [];
+    const out: SessionEventBody[] = this.retract(m.supersedes);
+    const texts: string[] = [];
+    const toolUseIds: string[] = [];
     const content = Array.isArray(msg.content) ? msg.content : [];
     for (const b of content) {
       const block = (b ?? {}) as Record<string, unknown>;
@@ -189,7 +265,9 @@ export class Normalizer {
         const index = this.streamedTextIdx.get(id)?.[n] ?? n;
         // Subagent texts belong to the thread of their Agent call, not to the main chat.
         out.push({ type: "assistant.text", messageId: id, index, text: block.text, ...(parent ? { parentToolUseId: parent } : {}) });
+        texts.push(`${id}:${index}`);
       } else if (block.type === "tool_use") {
+        if (typeof block.id === "string") toolUseIds.push(block.id);
         const { input, truncated } = truncateInput((block.input && typeof block.input === "object" ? block.input : {}) as Record<string, unknown>);
         out.push({
           type: "tool.use",
@@ -201,6 +279,7 @@ export class Normalizer {
         });
       }
     }
+    this.remember(str(m.uuid), texts, toolUseIds);
     return out;
   }
 
@@ -220,6 +299,12 @@ export class Normalizer {
         content: { text: text.slice(0, MAX_TOOL_RESULT), truncated: text.length > MAX_TOOL_RESULT },
       });
     }
+    // Taking back a tool result takes back its call: the card shows both.
+    this.remember(
+      str(m.uuid),
+      [],
+      out.flatMap((o) => (o.type === "tool.result" && o.toolUseId ? [o.toolUseId] : [])),
+    );
     return out;
   }
 

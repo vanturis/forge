@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlanUsage } from "@forge/protocol";
-import { settleUsage } from "../src/claude/usage.js";
+import { describeUsage, settleUsage } from "../src/claude/usage.js";
 import type { UsageSample } from "../src/claude/usage-forecast.js";
 import type { ClaudeRuntime } from "../src/claude/runtime.js";
 import type { ProjectManager } from "../src/projects/project-manager.js";
@@ -41,6 +41,7 @@ describe("RuntimeCatalog.planUsage", () => {
   let calls: number;
   let catalog: RuntimeCatalog;
   let samples: UsageSample[];
+  let loginExpiry: string | null;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -48,11 +49,16 @@ describe("RuntimeCatalog.planUsage", () => {
     answers = [];
     calls = 0;
     samples = [];
+    loginExpiry = null;
     const core = {
       db: {
         getSettings: () => ({ claudePath: process.execPath, stripApiKey: true }),
         addUsageSamples: (s: UsageSample[]) => samples.push(...s),
         listUsageSamples: () => samples,
+        getLoginExpiry: () => loginExpiry,
+        setLoginExpiry: (iso: string) => {
+          loginExpiry = iso;
+        },
       },
     } as unknown as SessionCore;
     const runtime = {
@@ -113,5 +119,21 @@ describe("RuntimeCatalog.planUsage", () => {
     // The stale answer does not make every following call spawn a CLI.
     await catalog.planUsage(false);
     expect(calls).toBe(1);
+  });
+
+  it("adds the end of the Claude sign-in to the usage without reading it again", async () => {
+    answers.push(usage(at(180)));
+    await catalog.planUsage(true);
+    catalog.noteLoginExpiry("kein Datum");
+    catalog.noteLoginExpiry(undefined);
+    expect((await catalog.planUsage(false)).loginExpiresAt).toBeUndefined();
+    catalog.noteLoginExpiry(at(3 * 24 * 60));
+    const u = await catalog.planUsage(false);
+    expect(u.loginExpiresAt).toBe(at(3 * 24 * 60));
+    expect(calls).toBe(1);
+    expect(describeUsage(u, { status: "ok", resetsAt: null, limitType: null, utilization: null, updatedAt: null }, T0)).toContain("Die Anmeldung bei Claude endet in 3 Tagen");
+    // more than ten days ahead nobody needs to hear of it
+    catalog.noteLoginExpiry(at(30 * 24 * 60));
+    expect(describeUsage(await catalog.planUsage(false), { status: "ok", resetsAt: null, limitType: null, utilization: null, updatedAt: null }, T0)).not.toContain("Anmeldung");
   });
 });

@@ -487,6 +487,8 @@ export const DEFAULT_SETTINGS: Settings = {
   idleCloseMinutes: 60,
   subagentEffort: null,
   idleCompaction: true,
+  promptSuggestions: true,
+  autoBackgroundTasks: false,
   longSessionTokens: 600_000,
   updateChecks: true,
   updateChannel: "stable",
@@ -850,6 +852,17 @@ export class Db {
 
   setKnownModels(values: string[]) {
     this.stmt("INSERT INTO settings(key, value) VALUES('knownModels', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(values));
+  }
+
+  /** When the stored claude.ai sign-in ends (ISO), as the CLI last reported it; null when it never did. Not a setting. */
+  getLoginExpiry(): string | null {
+    const r = this.stmt("SELECT value FROM settings WHERE key = 'loginExpiry'").get() as { value: string } | undefined;
+    const v = r ? (JSON.parse(r.value) as unknown) : null;
+    return typeof v === "string" ? v : null;
+  }
+
+  setLoginExpiry(iso: string) {
+    this.stmt("INSERT INTO settings(key, value) VALUES('loginExpiry', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(JSON.stringify(iso));
   }
 
   /** State of the template learning (TemplateLearner); not a setting, so not in getSettings. */

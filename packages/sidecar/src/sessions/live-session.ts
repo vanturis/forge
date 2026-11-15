@@ -42,6 +42,10 @@ export interface LiveSession {
   taskToolUse: Map<string, string>;
   /** context window usage after the last turn */
   context: ContextUsage | null;
+  /** Claude Code's guess at the next message, from after the last turn until the next one starts */
+  suggestion: string | null;
+  /** plugins changed while the session worked; they are loaded once its turn has ended */
+  reloadPending: boolean;
 }
 
 /** Statuses in which the CLI may be touching files. */
@@ -118,7 +122,8 @@ export function describeRuntimeError(e: unknown): string {
   if (isAuthFailure(msg)) {
     return tr().core.sessions.authFailed;
   }
-  if (new RegExp(`unknown option.*${REPLAY_FLAG}`, "i").test(msg)) {
+  // The second text is the SDK's, for a CLI from before hooks could block on failure (2.1.317).
+  if (new RegExp(`unknown option.*${REPLAY_FLAG}`, "i").test(msg) || /does not honor onFailure/i.test(msg)) {
     return tr().core.sessions.cliTooOld;
   }
   if (/ENOENT|failed to launch/i.test(msg)) return tr().core.sessions.cliNotStarted;

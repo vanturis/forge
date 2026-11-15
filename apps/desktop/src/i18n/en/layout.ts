@@ -399,6 +399,8 @@ export const layout: typeof De = {
       learnTemplates: "Learn templates automatically",
       limitWarnings: "Warn before the usage limit",
       idleCompaction: "Compact long idle sessions",
+      promptSuggestions: "Suggest the next message",
+      autoBackgroundTasks: "Move long tasks to the background",
       askPushOnClose: "Ask about unpushed work when closing",
       uiCompare: "Before and after images for UI changes",
       stripApiKey: "Hide ANTHROPIC_API_KEY",

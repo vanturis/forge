@@ -1,6 +1,7 @@
 import { Download, MessageSquareDashed, Plus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { UsageWindow } from "@forge/protocol";
+import { useEffect } from "react";
+import { loginDaysLeft, type UsageWindow } from "@forge/protocol";
 import { usageItems } from "@/components/usage/UsageWindows";
 import { forecastLabel, forecastSentence } from "@/lib/usage-forecast";
 import { call,useClaudeSetup, useClaudeUpdate, useDiagnostics, useGitHubAccount, useLiveSessions, useProjects, useSettings, useUsage } from "@/lib/queries";
@@ -133,6 +134,9 @@ export function Sidebar() {
   );
 }
 
+/** the notice that the Claude sign-in ends soon was shown in this window */
+let loginWarned = false;
+
 function ClaudeStatusCard() {
   const diag = useDiagnostics();
   const setup = useClaudeSetup().data;
@@ -158,6 +162,18 @@ function ClaudeStatusCard() {
     }
   }
   const windows = usage.data?.available ? usage.data.windows.slice(0, 3) : [];
+  const loginDays = d?.auth.loggedIn ? loginDaysLeft(usage.data) : null;
+  // Said once per start; the card and the usage views keep showing it.
+  useEffect(() => {
+    if (loginDays === null || loginWarned) return;
+    loginWarned = true;
+    toast.notify({
+      tone: "warning",
+      title: t.usage.loginEnds.title(loginDays),
+      duration: 12_000,
+      action: { label: t.usage.loginEnds.action, onClick: () => useUi.getState().openClaudeLogin("switch") },
+    });
+  }, [loginDays]);
   const items = () => [...(d?.auth.loggedIn ? usageItems(qc, () => openSettings("claude")) : []), ...claudeAccountItems(d, () => openSettings("claude"))];
   const summary = (
     // The menu hands focus back to the button when it closes; the global focus outline would frame the card.
@@ -199,6 +215,7 @@ function ClaudeStatusCard() {
           </div>
         )
       )}
+      {loginDays !== null && <div className="text-caption text-warning">{t.usage.loginEnds.short(loginDays)}</div>}
       <TokenRate />
     </button>
   );

@@ -5,7 +5,7 @@ import { t } from "@/i18n";
 
 type Body<T extends SessionEventBody["type"]> = Extract<SessionEventBody, { type: T }>;
 
-export type NoticeIcon = "commit" | "push" | "merge" | "skip" | "rewind" | "compact" | "background" | "limit" | "notify" | "update";
+export type NoticeIcon = "commit" | "push" | "merge" | "skip" | "rewind" | "compact" | "background" | "limit" | "notify" | "update" | "cli" | "refusal" | "disk" | "memory" | "goal";
 
 export interface TodoEntry {
   content: string;
@@ -168,6 +168,18 @@ function itemFolder(thread: string | null = null) {
   function fold(ev: SessionEvent) {
     const b = ev.body;
     if (b.type === "tool.use") threadOf.set(b.toolUseId, b.parentToolUseId ?? null);
+    // Claude Code took output back (a refused answer, a tool call it could not read): gone from every thread.
+    if (b.type === "messages.superseded") {
+      for (const key of b.texts) {
+        const i = textIdx.get(key);
+        if (i !== undefined) dropped.add(i);
+      }
+      for (const id of b.toolUseIds) {
+        const i = toolIdx.get(id);
+        if (i !== undefined) dropped.add(i);
+      }
+      return;
+    }
     // A resolution only touches an approval this thread registered.
     // A message written to a subagent shows in the main chat and in the subagent's own history.
     const toThisAgent = thread !== null && b.type === "user.message" && b.task?.kind === "agent" && b.task.toolUseId === thread;
@@ -399,6 +411,41 @@ function itemFolder(thread: string | null = null) {
         if (b.state === "scheduled") openPlan = items.length;
         items.push({ kind: "autoContinue", key: `l${ev.seq}`, ts: ev.ts, body: b, open: b.state === "scheduled" });
         break;
+      case "cli.notice":
+        items.push({
+          kind: "notice",
+          key: `i${ev.seq}`,
+          ts: ev.ts,
+          text: b.text,
+          tone: b.level === "warning" ? "warning" : "info",
+          card: { title: b.level === "warning" ? t.chat.events.cliWarning : t.chat.events.cliNotice, ref: null, detail: b.text, icon: "cli" },
+        });
+        break;
+      case "model.refusal": {
+        const why = b.explanation ?? b.category;
+        const title = !b.fallbackModel ? t.chat.events.refused : b.scope === "local" ? t.chat.events.refusalRetriedLocal : t.chat.events.refusalRetried;
+        const detail = b.fallbackModel ? t.chat.events.refusalRetriedDetail(b.model, b.fallbackModel, why, b.scope === "session") : t.chat.events.refusedDetail(b.model, why);
+        items.push({ kind: "notice", key: `f${ev.seq}`, ts: ev.ts, text: `${title}: ${detail}`, tone: "warning", card: { title, ref: null, detail, icon: "refusal" } });
+        break;
+      }
+      case "writes.lost": {
+        const detail = t.chat.events.writesLostDetail(b.errorCode !== "EDQUOT", b.lost.includes("transcript"), b.lost.includes("global_config"));
+        items.push({ kind: "notice", key: `d${ev.seq}`, ts: ev.ts, text: `${t.chat.events.writesLost}: ${detail}`, tone: "danger", card: { title: t.chat.events.writesLost, ref: null, detail, icon: "disk" } });
+        break;
+      }
+      case "memory.recall": {
+        const names = b.mode === "synthesize" ? t.chat.events.memorySynthesized : b.memories.map((m) => m.path.split(/[\\/]/).pop() ?? m.path).slice(0, 4).join(", ");
+        const detail = t.chat.events.memoryRecalledDetail(b.memories.length, names);
+        items.push({ kind: "notice", key: `o${ev.seq}`, ts: ev.ts, text: `${t.chat.events.memoryRecalled}: ${detail}`, tone: "info", card: { title: t.chat.events.memoryRecalled, ref: null, detail, icon: "memory" } });
+        break;
+      }
+      case "goal": {
+        const met = b.condition === null;
+        const title = met ? t.chat.events.goalMet : b.iterations > 0 ? t.chat.events.goalOpen : t.chat.events.goalSet;
+        const detail = met ? t.chat.events.goalMetDetail : t.chat.events.goalDetail(b.condition ?? "", b.iterations, b.reason);
+        items.push({ kind: "notice", key: `g${ev.seq}`, ts: ev.ts, text: `${title}: ${detail}`, tone: met ? "success" : "info", card: { title, ref: null, detail, icon: "goal" } });
+        break;
+      }
       case "message.edited": {
         // Claude no longer sees the old prompt and what followed it; the edited one takes its place.
         const from = startSeq.findIndex((s) => s >= b.fromSeq);

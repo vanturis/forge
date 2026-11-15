@@ -296,6 +296,18 @@ function ClaudeSection({ s, save }: { s: Settings; save: Save }) {
           checked={s.idleCompaction}
           onChange={(v) => void save({ idleCompaction: v })}
         />
+        <SwitchRow
+          label={sv.promptSuggestionsLabel}
+          description={sv.promptSuggestionsDescription}
+          checked={s.promptSuggestions}
+          onChange={(v) => void save({ promptSuggestions: v })}
+        />
+        <SwitchRow
+          label={sv.autoBackgroundTasksLabel}
+          description={sv.autoBackgroundTasksDescription}
+          checked={s.autoBackgroundTasks}
+          onChange={(v) => void save({ autoBackgroundTasks: v })}
+        />
         <Row label={sv.idleCloseLabel} description={sv.idleCloseDescription}>
           <Select
             value={String(s.idleCloseMinutes)}

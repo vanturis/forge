@@ -67,6 +67,10 @@ export interface StartOptions {
   confineFiles?: { allow: string[] };
   /** false turns off Claude Code's compaction of long idle conversations */
   idleCompaction?: boolean;
+  /** Claude Code sends its guess at the user's next message after a turn (prompt_suggestion) */
+  promptSuggestions?: boolean;
+  /** a call that would wait for an approval is denied at once; Claude gets no questions and no plan tools */
+  denyPrompts?: boolean;
   /** subagents the session can start besides Claude Code's own */
   agents?: Record<string, AgentDefinition>;
 }
@@ -168,7 +172,8 @@ export interface RuntimeSession {
    * Loads changed plugins and MCP servers into the running session and returns its servers. Without
    * `apply` it holds back when that would invalidate the prompt cache; the next start picks it up then.
    */
-  reloadPlugins(apply: boolean): Promise<Array<{ name: string; status: string }>>;
+  /** "busy": the session works and nothing was reloaded (only without `apply`); ask again once it is idle */
+  reloadPlugins(apply: boolean): Promise<Array<{ name: string; status: string }> | "busy">;
   /** connects an MCP server again, e.g. after a sign-in */
   reconnectMcp(name: string): Promise<void>;
   /** context window usage estimated from the last response (cheap, no token-count calls) */
@@ -484,11 +489,20 @@ export class AgentSdkRuntime implements ClaudeRuntime {
         settingSources: ["user", "project", "local"],
         pathToClaudeCodeExecutable: opts.claudePath,
         canUseTool,
-        ...(opts.idleCompaction === false || opts.confineFiles
+        ...(opts.promptSuggestions ? { promptSuggestions: true } : {}),
+        ...(opts.idleCompaction === false || opts.confineFiles || opts.denyPrompts
           ? {
               settings: {
                 ...(opts.idleCompaction === false ? { idleCompaction: false } : {}),
-                ...(opts.confineFiles ? { permissions: { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true } } : {}),
+                ...(opts.confineFiles || opts.denyPrompts
+                  ? {
+                      permissions: {
+                        ...(opts.confineFiles ? { blockWritesOutsideWorkingDirectories: true, blockReadsOutsideWorkingDirectories: true } : {}),
+                        // canUseTool is not asked either: what would prompt is denied by the CLI itself.
+                        ...(opts.denyPrompts ? { denyInsteadOfPrompting: true } : {}),
+                      },
+                    }
+                  : {}),
               },
             }
           : {}),
@@ -505,7 +519,9 @@ export class AgentSdkRuntime implements ClaudeRuntime {
           : {}),
         ...(opts.agents ? { agents: opts.agents } : {}),
         ...(opts.context ? { systemPrompt: { type: "preset", preset: "claude_code", append: opts.context } } : {}),
-        hooks: { PreToolUse: [{ hooks: [guard] }], ...(sink.toolContext ? { PostToolUse: [{ hooks: [after] }] } : {}) },
+        // The guard fails closed by itself; "block" also covers an answer that never reaches the CLI.
+        // The SDK refuses a CLI that does not know the option (before 2.1.317), reported as "please update".
+        hooks: { PreToolUse: [{ onFailure: "block", hooks: [guard] }], ...(sink.toolContext ? { PostToolUse: [{ hooks: [after] }] } : {}) },
         ...(opts.tools?.length
           ? {
               mcpServers: { [FORGE_MCP]: forgeServer(opts.tools) },
@@ -581,8 +597,14 @@ export class AgentSdkRuntime implements ClaudeRuntime {
       setPermissionMode: (mode) => q.setPermissionMode(mode),
       setEffort: (effort) => q.applyFlagSettings({ effortLevel: effort }),
       reloadPlugins: async (apply) => {
-        const r = await q.reloadPlugins(apply ? {} : { holdOnCacheImpact: true });
-        return (r.mcpServers ?? []).map((s) => ({ name: s.name, status: s.status }));
+        try {
+          // Noticed in the background, a reload waits for the session to be idle instead of changing the tools of a running turn.
+          const r = await q.reloadPlugins(apply ? {} : { holdOnCacheImpact: true, refuseIfBusy: true });
+          return (r.mcpServers ?? []).map((s) => ({ name: s.name, status: s.status }));
+        } catch (e) {
+          if ((e as { errorCode?: unknown } | null)?.errorCode === "reload_plugins_busy") return "busy";
+          throw e;
+        }
       },
       reconnectMcp: (name) => q.reconnectMcpServer(name),
       contextUsage: async () => {
