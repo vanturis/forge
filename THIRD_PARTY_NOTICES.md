@@ -7,7 +7,7 @@ FORGE contains the following npm packages: in the sidecar (`sidecar.mjs`) and in
 
 | Package | Version | License | Part | Copyright |
 |---|---|---|---|---|
-| @anthropic-ai/claude-agent-sdk | 0.3.316 | SEE LICENSE IN README.md | Sidecar | © Anthropic PBC. All rights reserved. Use is subject to the Legal Agreements outlined here: https://code.claude.com/docs/en/legal-and-compliance. |
+| @anthropic-ai/claude-agent-sdk | 0.3.325 | SEE LICENSE IN README.md | Sidecar | © Anthropic PBC. All rights reserved. Use is subject to the Legal Agreements outlined here: https://code.claude.com/docs/en/legal-and-compliance. |
 | @babel/runtime | 7.29.10 | MIT | Interface | Copyright (c) 2014-present Sebastian McKenzie and other contributors |
 | @codemirror/autocomplete | 6.20.3 | MIT | Interface | Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others |
 | @codemirror/commands | 6.11.1 | MIT | Interface | Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others |
@@ -80,6 +80,7 @@ FORGE contains the following npm packages: in the sidecar (`sidecar.mjs`) and in
 | @radix-ui/react-focus-scope | 1.2.0 | MIT | Interface | Copyright (c) 2022 WorkOS |
 | @radix-ui/react-id | 1.1.4 | MIT | Interface | Copyright (c) 2022 WorkOS |
 | @radix-ui/react-menu | 2.1.25 | MIT | Interface | Copyright (c) 2022 WorkOS |
+| @radix-ui/react-popover | 1.2.0 | MIT | Interface | Copyright (c) 2022 WorkOS |
 | @radix-ui/react-popper | 1.3.8 | MIT | Interface | Copyright (c) 2022 WorkOS |
 | @radix-ui/react-portal | 1.1.18 | MIT | Interface | Copyright (c) 2022 WorkOS |
 | @radix-ui/react-presence | 1.1.11 | MIT | Interface | Copyright (c) 2022 WorkOS |
@@ -270,7 +271,7 @@ FORGE contains the following npm packages: in the sidecar (`sidecar.mjs`) and in
 
 ## License texts
 
-### @anthropic-ai/claude-agent-sdk 0.3.316
+### @anthropic-ai/claude-agent-sdk 0.3.325
 
 License: SEE LICENSE IN README.md
 Source: https://github.com/anthropics/claude-agent-sdk-typescript
@@ -2624,6 +2625,37 @@ SOFTWARE.
 ```
 
 ### @radix-ui/react-menu 2.1.25
+
+License: MIT
+Source: https://radix-ui.com/primitives
+
+`LICENSE`:
+
+```text
+MIT License
+
+Copyright (c) 2022 WorkOS
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+### @radix-ui/react-popover 1.2.0
 
 License: MIT
 Source: https://radix-ui.com/primitives

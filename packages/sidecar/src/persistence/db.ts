@@ -483,6 +483,8 @@ export const DEFAULT_SETTINGS: Settings = {
   idleCloseMinutes: 60,
   subagentEffort: null,
   idleCompaction: true,
+  promptSuggestions: true,
+  autoBackgroundTasks: false,
   longSessionTokens: 600_000,
   updateChecks: true,
   updateChannel: "stable",

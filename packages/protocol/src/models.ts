@@ -223,6 +223,8 @@ export const Session = z.object({
   context: ContextUsage.nullable(),
   /** when FORGE continues the session on its own after a usage limit (ISO); null when nothing is planned */
   autoContinueAt: z.string().nullable(),
+  /** Claude Code's guess at the user's next message after the last turn (not persisted); gone once a turn starts */
+  suggestion: z.string().nullable().optional(),
   /** a crew member's session shown here read-only (crew.shareAsk view); missing for own sessions */
   mirror: CrewMirror.optional(),
 });
@@ -364,6 +366,51 @@ export const SessionEventBody = z.discriminatedUnion("type", [
     trigger: z.enum(["manual", "auto"]),
     preTokens: z.number().nullable(),
     postTokens: z.number().nullable(),
+  }),
+  /**
+   * Claude Code took earlier output back (a refused answer retried on another model, a tool call that could
+   * not be parsed): the named texts and tool calls are no longer part of the conversation.
+   */
+  z.object({
+    type: z.literal("messages.superseded"),
+    /** assistant texts as "<messageId>:<index>" */
+    texts: z.array(z.string()),
+    toolUseIds: z.array(z.string()),
+  }),
+  /** A line Claude Code shows the user outside the conversation: hook feedback, warnings; in the CLI's wording. */
+  z.object({
+    type: z.literal("cli.notice"),
+    level: z.enum(["notice", "suggestion", "warning"]),
+    text: z.string(),
+  }),
+  /** The model refused to answer. With `fallbackModel` the turn was retried on that model. */
+  z.object({
+    type: z.literal("model.refusal"),
+    model: z.string(),
+    fallbackModel: z.string().nullable(),
+    /** session: the session goes on with the fallback model; local: only a subagent or side question used it */
+    scope: z.enum(["session", "local"]),
+    category: z.string().nullable(),
+    explanation: z.string().nullable(),
+  }),
+  /** Claude Code could not save the conversation or its configuration: disk full (ENOSPC) or quota used up (EDQUOT). */
+  z.object({
+    type: z.literal("writes.lost"),
+    errorCode: z.string(),
+    lost: z.array(z.string()),
+  }),
+  /** Claude Code put stored memories into the turn. */
+  z.object({
+    type: z.literal("memory.recall"),
+    mode: z.enum(["select", "synthesize"]),
+    memories: z.array(z.object({ path: z.string(), scope: z.string() })),
+  }),
+  /** State of a /goal: set or checked again (`condition`), or met and cleared (null). */
+  z.object({
+    type: z.literal("goal"),
+    condition: z.string().nullable(),
+    iterations: z.number().int(),
+    reason: z.string().nullable(),
   }),
   z.object({
     type: z.literal("policy.blocked"),
@@ -597,6 +644,10 @@ export const Settings = z.object({
   subagentEffort: EffortLevel.nullable(),
   /** Claude Code compacts a long conversation left idle, before its prompt cache expires (next process start) */
   idleCompaction: z.boolean(),
+  /** Claude Code suggests the next message after a turn; the composer shows it, Tab takes it over */
+  promptSuggestions: z.boolean(),
+  /** subagents and MCP calls that run longer than about two minutes move to the background (CLAUDE_AUTO_BACKGROUND_TASKS) */
+  autoBackgroundTasks: z.boolean(),
   /** context size (tokens) from which the composer suggests going on in a new session; 0 never */
   longSessionTokens: z.number().int().min(0).max(2_000_000),
   /** look for new FORGE releases on GitHub (start and every 30 minutes) */
@@ -809,6 +860,8 @@ export const PlanUsage = z.object({
   windows: z.array(UsageWindow),
   fetchedAt: z.string(),
   error: z.string().nullable(),
+  /** when the stored claude.ai sign-in ends for good (ISO), as the last turn result reported it; null when unknown */
+  loginExpiresAt: z.string().nullable().optional(),
   /** what drives the usage, from Claude Code's scan of local transcripts; largest share first, the CLI's wording */
   advice: z.array(z.object({ key: z.string(), pct: z.number(), title: z.string(), detail: z.string().nullable() })).optional(),
 });
