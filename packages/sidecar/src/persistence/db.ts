@@ -361,21 +361,30 @@ export const MIGRATIONS: string[] = [
   `
   ALTER TABLE projects ADD COLUMN agents_enabled INTEGER NOT NULL DEFAULT 1;
   `,
-  // Projects without Claude Code agent teams (the feature lives in branch experimental; unused on dev).
+  // The next three belonged to Claude Code agent teams. The feature is gone (the migrations after
+  // crew_mirror drop the columns again); they stay because the list is append only.
   `
   ALTER TABLE projects ADD COLUMN teams_enabled INTEGER NOT NULL DEFAULT 1;
   `,
-  // Agent team sessions (branch experimental; unused on dev).
   `
   ALTER TABLE sessions ADD COLUMN team INTEGER NOT NULL DEFAULT 0;
   `,
-  // Models of an agent team's roles (branch experimental; unused on dev).
   `
   ALTER TABLE sessions ADD COLUMN team_models TEXT;
   `,
   // A crew member's session shown here read-only (JSON CrewMirror); NULL for own sessions.
   `
   ALTER TABLE sessions ADD COLUMN crew_mirror TEXT;
+  `,
+  // Agent teams were removed for good on 2026-11-15; the last state with them is commit f755a8d.
+  `
+  ALTER TABLE projects DROP COLUMN teams_enabled;
+  `,
+  `
+  ALTER TABLE sessions DROP COLUMN team;
+  `,
+  `
+  ALTER TABLE sessions DROP COLUMN team_models;
   `,
 ];
 
