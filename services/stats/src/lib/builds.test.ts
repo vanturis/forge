@@ -17,8 +17,8 @@ describe("download builds", () => {
       },
       { tag_name: "v0.1.128", assets: [{ name: "FORGE_0.1.128_linux-x64.AppImage", browser_download_url: url("old.AppImage") }] },
     ]);
-    expect(builds.macos).toEqual({ version: "0.1.129", files: [{ label: "Apple silicon (.dmg)", url: url("arm.dmg") }] });
-    expect(builds.linux).toEqual({ version: "0.1.129", files: [{ label: "Debian, Ubuntu (.deb)", url: url("x.deb") }] });
+    expect(builds.macos).toEqual({ version: "0.1.129", files: [{ key: "macos-arm64", label: "Apple silicon (.dmg)", url: url("arm.dmg") }] });
+    expect(builds.linux).toEqual({ version: "0.1.129", files: [{ key: "linux-deb", label: "Debian, Ubuntu (.deb)", url: url("x.deb") }] });
     expect(findBuilds([{ tag_name: "v1", assets: [{ name: "FORGE_1_x64-setup.exe" }] }])).toEqual({ macos: null, linux: null });
   });
 
@@ -27,7 +27,7 @@ describe("download builds", () => {
       { tag_name: "v0.1.131", prerelease: true, assets: [{ name: "FORGE_0.1.131_darwin-arm64.dmg", browser_download_url: url("dev.dmg") }] },
       { tag_name: "v0.1.130", assets: [{ name: "FORGE_0.1.130_darwin-arm64.dmg", browser_download_url: url("stable.dmg") }] },
     ]);
-    expect(builds.macos).toEqual({ version: "0.1.130", files: [{ label: "Apple silicon (.dmg)", url: url("stable.dmg") }] });
+    expect(builds.macos).toEqual({ version: "0.1.130", files: [{ key: "macos-arm64", label: "Apple silicon (.dmg)", url: url("stable.dmg") }] });
   });
 
   it("recognises the system from the client hint or the user agent", () => {

@@ -67,8 +67,8 @@ function Panel({ locale, os, builds }: { locale: Locale; os: Os; builds: Builds 
           <span>{d.manual(build.version)}</span>
           <ul>
             {build.files.map((f) => (
-              <li key={f.url}>
-                <a href={f.url}>
+              <li key={f.key}>
+                <a href={`/dl/${f.key}`} rel="nofollow">
                   <Download aria-hidden />
                   {f.label}
                 </a>

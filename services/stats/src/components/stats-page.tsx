@@ -16,7 +16,7 @@ const PRIVACY = [
   { key: "delete", icon: Trash2 },
 ] as const;
 
-/** Live stats: head, six cards, the chart cards and what is collected. */
+/** Live stats: head, nine cards, the chart cards and what is collected. */
 export function StatsPage({ state, locale }: { state: PageState; locale: Locale }) {
   const { t } = i18n(locale);
   const s = t.stats;

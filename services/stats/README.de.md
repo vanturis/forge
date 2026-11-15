@@ -16,7 +16,9 @@ Die Seite übernimmt das Design der Desktop-App: Die Farb-, Schrift- und Radius-
 
 Eine Zeile pro Installation in der Tabelle `installs`: zufällige Installations-ID, erste und letzte Meldung, FORGE-Version, Betriebssystem, die kumulativen Zähler als JSON, die Tokens und Kosten je Claude-Modell (`models`, JSON) und die Art des Claude-Abos (`plan`). Die App schickt immer den Gesamtstand seit dem 17.10.2026 (Start der Statistik, `USAGE_STATS_SINCE` in `packages/sidecar/src/persistence/db.ts`), der Dienst überschreibt den letzten Stand. App-Versionen vor diesem Stichtag schicken den Stand seit Installation; mit dem Update sinken ihre Zähler einmal.
 
-Dazu in `install_days` der Stand jeder Installation am Ende jedes UTC-Tages (eine Zeile pro Installation und Tag, jede Meldung überschreibt die des laufenden Tages). Daraus entsteht der Verlauf: Der Zuwachs eines Tages ist der Stand minus dem letzten früheren Stand derselben Installation. Der erste Stand einer Installation zählt nicht als Zuwachs, ebenso ein Zähler, der im früheren Stand fehlt (neue App-Version, die ihren Gesamtstand seit Installation schickt). Negative Differenzen (Neuinstallation mit leerer Datenbank, Update auf den Stichtag) zählen als 0. Aktive Installationen eines Tages sind die mit einem Stand an diesem Tag. Wer die Statistik abschaltet, löscht mit der Installation auch ihre Tagesstände (`ON DELETE CASCADE`).
+Dazu in `install_days` der Stand jeder Installation am Ende jedes UTC-Tages (eine Zeile pro Installation und Tag, jede Meldung überschreibt die des laufenden Tages). Daraus entsteht der Verlauf: Der Zuwachs eines Tages ist der Stand minus dem letzten früheren Stand derselben Installation. Am ersten Tag einer Installation ist der frühere Stand ihre allererste Meldung (`installs.first_counters`): Eine neue Installation meldet eine Minute nach dem Start, ihr erster Tag zählt also ab dort. Installationen von vor dieser Spalte haben keine; ihr erster Stand zählt nicht als Zuwachs. Ebenso wenig ein Zähler, der im früheren Stand fehlt (neue App-Version, die ihren Gesamtstand seit Installation schickt). Negative Differenzen (Neuinstallation mit leerer Datenbank, Update auf den Stichtag) zählen als 0. Aktive Installationen eines Tages sind die mit einem Stand an diesem Tag. Wer die Statistik abschaltet, löscht mit der Installation auch ihre Tagesstände (`ON DELETE CASCADE`).
+
+`activity_hours` hält je UTC-Tag und Stunde die Tokens und Durchläufe, die alle Installationen in dieser Stunde dazubekommen haben (Differenz zweier Meldungen einer Installation, summiert; nichts je Installation). `download_assets` merkt sich den Download-Zähler jeder `FORGE-Setup.exe`, die GitHub je gelistet hat, `download_days` die gezählten Downloads je Tag und Weg (siehe Downloads).
 
 Keine IP-Adressen in der Datenbank oder in Logs. Für die Sperre gegen massenhaft neue IDs hält der Prozess gesalzene Hashes der IP-Adressen im Speicher, nur für den laufenden Tag.
 
@@ -30,7 +32,9 @@ Die Tabellen legt der Dienst beim ersten Zugriff selbst an (`CREATE TABLE IF NOT
 | `DELETE /api/v1/report/<installId>` | Datensatz löschen (Statistik in FORGE abgeschaltet) | 204, auch wenn es ihn nicht gab; 400 keine UUID v4 |
 | `GET /api/v1/totals` | Summen, Modelle, Versionen und Verlauf als JSON (siehe unten), `Cache-Control: public, max-age=300` | 200; 503 |
 | `GET /api/v1/live` | Installationen gerade online, gesamt und je Abo (`{ onlineInstalls, plans: [{ plan, online }], updatedAt }`); die Seite fragt alle 30 Sekunden, höchstens 15 Sekunden zwischengespeichert | 200; 503 |
-| `GET /api/v1/downloads` | Downloads des Installers (`*-setup.exe`) über alle Releases, ohne Updates, Signaturen und Marker; für das README-Badge, höchstens alle 30 Minuten von GitHub | 200; 503 |
+| `GET /api/v1/downloads` | Installer-Downloads von Menschen, ohne Updates (`{ downloads, windows, macos, linux, script }`, siehe Downloads); `downloads` zeigt das README-Badge | 200; 503 |
+| `GET /dl/<datei>` | Gezählter Download-Link der Download-Seite (`macos-arm64`, `macos-x64`, `linux-appimage`, `linux-deb`): leitet zur Datei des neuesten Release auf GitHub weiter | 302; 404 unbekannte Datei |
+| `GET /install.sh` | Leitet zu `scripts/install.sh` im Repository weiter; ein Abruf mit curl oder wget zählt als Download des Installationsbefehls | 302 |
 | `GET /api/v1/donations` | Bisher gespendet (`{ donations: { cents, count } }`, Euro-Cent; `donations: null` ohne `STRIPE_SECRET_KEY`); für das Herz in der App, höchstens alle 10 Minuten von Stripe | 200; 503 |
 | `GET /api/health` | Healthcheck mit DB-Abfrage | 200 `ok`; 503 |
 | `GET /` | Öffentliche Seite | 200, bei DB-Ausfall mit Hinweis statt Zahlen |
@@ -50,7 +54,8 @@ Body der Meldung:
     "tokensInput": 0, "tokensOutput": 0, "tokensCacheRead": 0, "tokensCacheWrite": 0,
     "claudeTurns": 0, "claudeWorkMs": 0, "sessions": 0, "projectsCreated": 0,
     "agentsStarted": 0, "agentsMerged": 0, "phoneCalls": 0,
-    "userTurns": 0, "costUsdCents": 0
+    "userTurns": 0, "costUsdCents": 0,
+    "toolCalls": 0, "commits": 0, "phoneMs": 0
   },
   "models": {
     "claude-opus-4-7": { "tokens": 123, "costUsdCents": 45 }
@@ -59,12 +64,12 @@ Body der Meldung:
 }
 ```
 
-`userTurns` sind die Durchläufe, die Nutzer selbst gestartet haben, `costUsdCents` die geschätzten API-Kosten aller Claude-Aufrufe in US-Cent. `models` enthält je Modell-ID alle vier Token-Arten zusammen und die geschätzten Kosten, kumulativ seit dem Stichtag. `plan` ist das Abo des in Claude Code angemeldeten Kontos (`ultra`, `max`, `pro`, `team`, `enterprise` ...), gelesen aus `organizationType` und dem Rate-Limit-Tier in `.claude.json`; `null` ohne claude.ai-Anmeldung. Ältere App-Versionen schicken `max_20x` und `max_5x`; die Gesamtzahlen zählen sie als `ultra` und `max`. Ältere App-Versionen schicken diese Felder nicht; dann gelten 0, `{}` und `null`.
+`userTurns` sind die Durchläufe, die Nutzer selbst gestartet haben, `costUsdCents` die geschätzten API-Kosten aller Claude-Aufrufe in US-Cent. `toolCalls` sind Claudes Werkzeugaufrufe in Sessions, `commits` die Commits, die FORGE selbst angelegt hat (Auto-Commit, Commit-Dialog, Telefon), `phoneMs` die Dauer aller angenommenen Telefonate; die ersten beiden zählen ab der App-Version, die sie mitbringt. `models` enthält je Modell-ID alle vier Token-Arten zusammen und die geschätzten Kosten, kumulativ seit dem Stichtag. `plan` ist das Abo des in Claude Code angemeldeten Kontos (`ultra`, `max`, `pro`, `team`, `enterprise` ...), gelesen aus `organizationType` und dem Rate-Limit-Tier in `.claude.json`; `null` ohne claude.ai-Anmeldung. Ältere App-Versionen schicken `max_20x` und `max_5x`; die Gesamtzahlen zählen sie als `ultra` und `max`. Ältere App-Versionen schicken diese Felder nicht; dann gelten 0, `{}` und `null`.
 
 Regeln (siehe `src/lib/report.ts`):
 
 - Zähler sind ganze Zahlen ab 0. Unbekannte Schlüssel werden ignoriert, fehlende zählen als 0.
-- Obergrenzen pro Installation: Token-Felder 10^12, `claudeWorkMs` 10^11, `costUsdCents` 10^10, alle anderen 10^7. Darüber: 400.
+- Obergrenzen pro Installation: Token-Felder 10^12, `claudeWorkMs` und `phoneMs` 10^11, `costUsdCents` 10^10, `toolCalls` 10^9, alle anderen 10^7. Darüber: 400.
 - `models`: höchstens 20 Einträge, Schlüssel 1 bis 64 Zeichen aus `[A-Za-z0-9._:[]-]`, Werte `tokens` (ganzzahlig, 0 bis 4·10^12) und `costUsdCents` (ganzzahlig, 0 bis 10^10), beide Pflicht.
 - `plan`: `null` oder 1 bis 24 Zeichen aus `[a-z0-9_]`.
 - `appVersion` höchstens 32 Zeichen aus `[0-9A-Za-z.+-]`, `os` höchstens 64 Zeichen ohne Steuerzeichen.
@@ -77,6 +82,9 @@ Antwort von `GET /api/v1/totals`:
 {
   "installs": 7,
   "activeInstalls30d": 7,
+  "activeInstalls7d": 6,
+  "activeInstalls24h": 4,
+  "newInstalls30d": 2,
   "onlineInstalls": 2,
   "counters": { "tokensInput": 0, "...": 0, "userTurns": 0, "costUsdCents": 0 },
   "updatedAt": "2026-10-18T00:00:00.000Z",
@@ -84,7 +92,10 @@ Antwort von `GET /api/v1/totals`:
   "versions": [{ "version": "0.1.81", "installs": 3 }],
   "plans": [{ "plan": "ultra", "installs": 4, "online": 1 }, { "plan": null, "installs": 3, "online": 1 }],
   "platforms": [{ "platform": "windows", "installs": 7 }],
-  "history": [{ "day": "2026-10-17", "tokens": 64420000, "claudeTurns": 55, "sessions": 12, "claudeWorkMs": 5400000, "costUsdCents": 4200, "activeInstalls": 7 }]
+  "history": [{ "day": "2026-10-17", "tokens": 64420000, "claudeTurns": 55, "sessions": 12, "claudeWorkMs": 5400000, "costUsdCents": 4200, "userTurns": 50, "agentsStarted": 6, "toolCalls": 900, "commits": 12, "activeInstalls": 7, "newInstalls": 1, "totalInstalls": 7, "downloads": 2 }],
+  "hours": [{ "tokens": 0, "turns": 0 }],
+  "downloads": { "total": 44, "kinds": { "windows": 18, "macos": 10, "linux": 4, "script": 12 } },
+  "project": { "stars": 3, "commits": 423, "latestVersion": "0.1.183", "latestAt": "2026-11-12T10:35:06Z" }
 }
 ```
 
@@ -93,10 +104,31 @@ Antwort von `GET /api/v1/totals`:
 - `plans`: aktive Installationen der letzten 30 Tage je Abo, davon `online` gerade online; `null` heißt unbekannt (ältere App oder ohne claude.ai-Anmeldung).
 - `platforms`: aktive Installationen der letzten 30 Tage je Betriebssystem (`windows`, `macos`, `linux`, `other`, aus dem `os` der Meldungen), die häufigste zuerst.
 - `versions`: aktive Installationen der letzten 30 Tage je FORGE-Version, die häufigste zuerst.
-- `history`: die letzten 30 UTC-Tage einschließlich heute, älteste zuerst; `tokens` ist der Zuwachs aller vier Token-Arten, `claudeTurns` der Zuwachs an Durchläufen, `sessions`, `claudeWorkMs` und `costUsdCents` ebenso.
-- Das README-Badge liest `installs`.
+- `history`: die letzten 30 UTC-Tage einschließlich heute, älteste zuerst; `tokens` ist der Zuwachs aller vier Token-Arten, `claudeTurns` der Zuwachs an Durchläufen, `sessions`, `claudeWorkMs`, `costUsdCents`, `userTurns`, `agentsStarted`, `toolCalls` und `commits` ebenso; `newInstalls` sind die ersten Meldungen des Tages, `totalInstalls` alle an seinem Ende bekannten Installationen, `downloads` die an dem Tag gezählten Downloads.
+- `hours`: 24 Einträge, Index = Stunde des Tages in UTC: Tokens und Durchläufe der letzten 30 Tage in dieser Stunde. Die Seite verschiebt sie in die Zeitzone des Besuchers.
+- `downloads`: siehe Downloads.
+- `project`: Sterne, Commits im Hauptzweig und die neueste veröffentlichte Version aus der GitHub-API, höchstens alle 30 Minuten; `null`, solange GitHub nicht erreichbar ist. Die neueste Version ist die höchste veröffentlichte, nicht GitHubs „latest“ (das bleibt auf dem Release mit dem vollen Installer).
+- `activeInstalls7d`, `activeInstalls24h`: Installationen mit einer Meldung in den letzten 7 Tagen und 24 Stunden.
+- `newInstalls30d`: Installationen, deren erste Meldung in den letzten 30 Tagen lag.
 
 Die Summen werden höchstens alle 5 Minuten neu aus der Datenbank berechnet (Zwischenspeicher im Prozess). Neue Meldungen erscheinen also mit bis zu 5 Minuten Verzögerung.
+
+## Downloads
+
+Ein Download ist ein Mensch, der einen Installer für eine neue Installation lädt (`src/lib/downloads.ts`):
+
+| Weg | Was zählt | Gezählt von |
+| --- | --- | --- |
+| `windows` | `FORGE-Setup.exe` des Release `installer` | GitHub (`download_count`), höchstens alle 30 Minuten gelesen |
+| `macos` | eine `.dmg` von der Download-Seite | dieser Seite (`/dl/macos-arm64`, `/dl/macos-x64`) |
+| `linux` | die AppImage oder `.deb` von der Download-Seite | dieser Seite (`/dl/linux-appimage`, `/dl/linux-deb`) |
+| `script` | der Installationsbefehl von macOS und Linux | dieser Seite (`/install.sh`, abgerufen mit curl oder wget) |
+
+GitHubs Zahlen der übrigen Release-Dateien werden nicht verwendet. Installierte Apps laden `FORGE_<v>_x64-setup.exe` selbst (Update auf eine andere Runtime, Reparatur), und FORGE Setup lädt sie einmal je Installation; die Updates von macOS und Linux sind dieselbe `.app.tar.gz` und AppImage, die der Installationsbefehl nimmt; und jede Datei eines Release wird direkt nach der Veröffentlichung einmal von einer Maschine geladen. Bis zum 15.11.2026 zählte das Badge `*_x64-setup.exe` über alle Releases (damals 44, davon 32 aus gelöschten Releases), also auch diese Updates.
+
+Ein neuer Build von FORGE Setup ersetzt die Datei, und GitHub beginnt ihren Zähler bei 0. `download_assets` behält deshalb den höchsten Stand jeder Datei unter ihrer GitHub-ID; die Summe ist die Gesamtzahl. Eine Datei, die beim ersten Blick älter als ein Tag war, bringt ihren Stand nur in die Summe ein; eine neuere und jeder spätere Zuwachs werden auch auf den Tag gebucht (`download_days`), daraus entsteht der Verlauf. Auch die Meldungen der App lösen den Blick zu GitHub aus, die Zahl bleibt also aktuell, wenn niemand die Seite öffnet.
+
+Die gezählten Links antworten Crawlern und Link-Vorschauen ohne zu zählen (User-Agent), `robots.txt` schließt `/dl/` aus, und eine Adresse zählt höchstens 6-mal am Tag (gesalzener Hash im Speicher, wie die Sperre für neue Installationen). Downloads direkt von der Release-Seite auf GitHub werden für macOS und Linux nicht gezählt.
 
 ## Crew-Relay (/crew)
 

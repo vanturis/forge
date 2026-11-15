@@ -23,7 +23,23 @@ describe("fillHistory and toHistory", () => {
 
   it("sums all four token kinds", () => {
     const h = toHistory([{ day: "2026-10-18", active: "1", tokensInput: "1", tokensOutput: "20", tokensCacheRead: "300", tokensCacheWrite: "4000", claudeTurns: "7", sessions: "2", claudeWorkMs: "9000", costUsdCents: "55" }], "2026-10-18", 1);
-    expect(h).toEqual([{ day: "2026-10-18", tokens: 4321, claudeTurns: 7, sessions: 2, claudeWorkMs: 9000, costUsdCents: 55, activeInstalls: 1 }]);
+    expect(h).toMatchObject([{ day: "2026-10-18", tokens: 4321, claudeTurns: 7, sessions: 2, claudeWorkMs: 9000, costUsdCents: 55, activeInstalls: 1, newInstalls: 0, totalInstalls: 0, downloads: 0 }]);
+  });
+
+  it("adds up the installations, those from before the window included, and takes the downloads per day", () => {
+    const h = toHistory([], "2026-10-18", 3, {
+      newInstalls: new Map([
+        ["2026-09-01", 2],
+        ["2026-10-15", 1],
+        ["2026-10-17", 3],
+      ]),
+      downloads: new Map([["2026-10-18", 4]]),
+    });
+    expect(h.map((d) => [d.day, d.newInstalls, d.totalInstalls, d.downloads])).toEqual([
+      ["2026-10-16", 0, 3, 0],
+      ["2026-10-17", 3, 6, 0],
+      ["2026-10-18", 0, 6, 4],
+    ]);
   });
 
   it("builds one increment column per counter", () => {
@@ -37,7 +53,12 @@ describe("fillHistory and toHistory", () => {
 const url = process.env.STATS_TEST_DATABASE_URL;
 
 describe.skipIf(!url)("queryHistory against Postgres", () => {
-  const ids = ["00000000-0000-4000-8000-0000000000a1", "00000000-0000-4000-8000-0000000000a2", "00000000-0000-4000-8000-0000000000a3"];
+  const ids = [
+    "00000000-0000-4000-8000-0000000000a1",
+    "00000000-0000-4000-8000-0000000000a2",
+    "00000000-0000-4000-8000-0000000000a3",
+    "00000000-0000-4000-8000-0000000000a4",
+  ];
 
   afterAll(async () => {
     const { Pool } = await import("pg");
@@ -68,15 +89,52 @@ describe.skipIf(!url)("queryHistory against Postgres", () => {
     // (the app sends its total since installation)
     await day(ids[2]!, "2001-01-29", { tokensInput: 1 });
     await day(ids[2]!, "2001-01-30", { tokensInput: 2, claudeTurns: 9 });
+    // a4: a new installation whose first report is kept: its first day counts from that report on
+    await p.query("UPDATE installs SET first_counters = $2 WHERE install_id = $1", [ids[3], JSON.stringify({ tokensInput: 3, claudeTurns: 0 })]);
+    await day(ids[3]!, "2001-01-29", { tokensInput: 503, claudeTurns: 4 });
+    await day(ids[3]!, "2001-01-30", { tokensInput: 603, claudeTurns: 5 });
 
     const h = await queryHistory("2001-01-30", 3);
     await p.end();
     // The other counters of the history are 0 here; only these were reported.
     expect(h).toMatchObject([
       { day: "2001-01-28", tokens: 60, claudeTurns: 2, activeInstalls: 1 },
-      { day: "2001-01-29", tokens: 0, claudeTurns: 0, activeInstalls: 2 },
-      { day: "2001-01-30", tokens: 10 + 0 + 1, claudeTurns: 1 + 0 + 0, activeInstalls: 3 },
+      { day: "2001-01-29", tokens: 500, claudeTurns: 4, activeInstalls: 3 },
+      { day: "2001-01-30", tokens: 10 + 0 + 1 + 100, claudeTurns: 1 + 0 + 0 + 1, activeInstalls: 4 },
     ]);
+  });
+
+  it("keeps the first report of an installation and books what a later one adds on the hour", async () => {
+    const { upsertReport } = await import("./db");
+    const { COUNTER_KEYS } = await import("./report");
+    const { Pool } = await import("pg");
+    const p = new Pool({ connectionString: url });
+    const id = ids[3]!;
+    await p.query("DELETE FROM installs WHERE install_id = $1", [id]);
+    const hours = async () => Number((await p.query("SELECT COALESCE(SUM(tokens), 0)::text AS n FROM activity_hours WHERE day = (now() AT TIME ZONE 'UTC')::date")).rows[0].n);
+    const report = (tokensInput: number) => ({
+      schema: 1 as const,
+      installId: id,
+      appVersion: "0.1.200",
+      os: "Windows_NT 10.0.26200",
+      counters: { ...(Object.fromEntries(COUNTER_KEYS.map((k) => [k, 0])) as Record<(typeof COUNTER_KEYS)[number], number>), tokensInput },
+      models: {},
+      plan: null,
+      language: "de",
+    });
+    const before = await hours();
+    expect(await upsertReport(report(40))).toBe(true);
+    // Too soon after the first one: not stored.
+    expect(await upsertReport(report(70))).toBe(false);
+    expect(await hours()).toBe(before);
+    await p.query("UPDATE installs SET last_seen = now() - interval '10 minutes' WHERE install_id = $1", [id]);
+    expect(await upsertReport(report(100))).toBe(true);
+    expect(await hours()).toBe(before + 60);
+    const row = (await p.query("SELECT counters->>'tokensInput' AS now, first_counters->>'tokensInput' AS first FROM installs WHERE install_id = $1", [id])).rows[0];
+    // Leaves the hour table as it was for the next run.
+    await p.query("UPDATE activity_hours SET tokens = tokens - 60 WHERE day = (now() AT TIME ZONE 'UTC')::date AND hour = EXTRACT(HOUR FROM now() AT TIME ZONE 'UTC')::smallint");
+    await p.end();
+    expect(row).toEqual({ now: "100", first: "40" });
   });
 
   it("deletes the daily states with the installation", async () => {

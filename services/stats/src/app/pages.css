@@ -679,7 +679,7 @@
   background: var(--color-surface-2);
 }
 
-/* ---- statistics: head, six cards, eight chart cards, what is collected */
+/* ---- statistics: head, nine cards, the chart cards, what is collected */
 
 .stats-body {
   padding-top: 72px;
@@ -877,7 +877,13 @@
   min-height: 140px;
 }
 
-/* period menu at the right of the head */
+/* the menus at the right of the head: what the chart shows and its period */
+.chart-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
 .range {
   position: relative;
   flex-shrink: 0;
@@ -1040,6 +1046,11 @@
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 
+/* a week or a day has few columns: wider ones fill their slots */
+.bars-few .col-bar {
+  max-width: 36px;
+}
+
 /* the day under the pointer stays, the others step back */
 .bars:hover .col-bar {
   opacity: 0.55;
@@ -1138,6 +1149,32 @@
   line-height: 16px;
 }
 
+/* a few numbers below a plot, in one line */
+.chart-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin: 16px 0 0 50px;
+  font-size: var(--text-body);
+  line-height: 18px;
+}
+
+.chart-facts div {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.chart-facts dt {
+  color: var(--color-muted);
+}
+
+.chart-facts dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* shares: label, bar, percentage */
 .shares {
   display: flex;
@@ -1203,6 +1240,10 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0;
+}
+
+.figures-two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .figure {
@@ -1880,13 +1921,18 @@
     flex-basis: calc(100% - 54px);
   }
 
-  .chart-head .range {
+  .chart-head .chart-actions {
+    flex-wrap: wrap;
     margin-left: 54px;
   }
 
   .range-menu {
     right: auto;
     left: 0;
+  }
+
+  .chart-facts {
+    margin-left: 0;
   }
 
   /* name and share in one line, the bar below at full width: long model names stay readable */

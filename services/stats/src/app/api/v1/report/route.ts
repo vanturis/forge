@@ -1,4 +1,4 @@
-import { installExists, upsertReport } from "@/lib/db";
+import { installExists, syncSetupDownloads, upsertReport } from "@/lib/db";
 import { clientIp, hashIp, newInstallLimiter } from "@/lib/new-install-limiter";
 import { parseReport, readBodyLimited } from "@/lib/report";
 
@@ -26,5 +26,7 @@ export async function POST(req: Request): Promise<Response> {
     console.error("report failed:", err instanceof Error ? err.message : err);
     return error(503, "database unavailable");
   }
+  // Reports arrive every few minutes, also when nobody opens the page: they keep the download count current.
+  void syncSetupDownloads();
   return new Response(null, { status: 204 });
 }

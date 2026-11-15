@@ -15,10 +15,22 @@ export interface Formats {
   dayShort: (day: string) => string;
   /** "So., 18. Okt." / "Sun, Oct 18" for tooltips and tables. */
   dayLong: (day: string) => string;
-  /** Short axis label: "800", "50K", "1,5M" / "1.5M". */
+  /** Short axis label: "800", "50K", "1,5M" / "1.5M", from a billion "40 Mrd." / "40B". */
   axis: (n: number) => string;
   /** Rounded share: "45 %" / "45%". */
   percent: (part: number, whole: number) => string;
+  /** Share with one decimal below ten percent, so small parts do not all read "0 %"; a trace is "<0,1 %". */
+  percentFine: (part: number, whole: number) => string;
+  /** At most one decimal: "6,4" / "6.4". */
+  decimal: (n: number) => string;
+  /** Milliseconds as minutes, one decimal below ten. */
+  minutes: (ms: number) => string;
+  /** Hour of the day (0 to 23): "14 Uhr" / "2 PM". */
+  hour: (hour: number) => string;
+  /** Weekday, 0 is Monday: "Mo" / "Mon", long "Montag" / "Monday". */
+  weekday: (index: number, long?: boolean) => string;
+  /** "12. Nov. 2026" / "Nov 12, 2026", in Berlin time. */
+  date: (iso: string) => string;
 }
 
 function build(locale: Locale): Formats {
@@ -46,7 +58,14 @@ function build(locale: Locale): Formats {
   const dayShort = new Intl.DateTimeFormat(l, { day: "numeric", month: "numeric", timeZone: "UTC" });
   const dayLong = new Intl.DateTimeFormat(l, { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
   const pct = new Intl.NumberFormat(l, { style: "percent", maximumFractionDigits: 0 });
+  const pctFine = new Intl.NumberFormat(l, { style: "percent", maximumFractionDigits: 1 });
+  const hour = new Intl.DateTimeFormat(l, { hour: "numeric", timeZone: "UTC" });
+  const weekdayShort = new Intl.DateTimeFormat(l, { weekday: "short", timeZone: "UTC" });
+  const weekdayLong = new Intl.DateTimeFormat(l, { weekday: "long", timeZone: "UTC" });
+  const date = new Intl.DateTimeFormat(l, { dateStyle: "medium", timeZone: "Europe/Berlin" });
   const day = (d: string) => new Date(`${d}T00:00:00Z`);
+  // 2024-01-01 was a Monday.
+  const monday = Date.UTC(2024, 0, 1);
 
   return {
     count,
@@ -67,8 +86,28 @@ function build(locale: Locale): Formats {
     dateTime: (iso) => dateTime.format(new Date(iso)),
     dayShort: (d) => dayShort.format(day(d)),
     dayLong: (d) => dayLong.format(day(d)),
-    axis: (n) => (Math.abs(n) < 1e3 ? full.format(n) : Math.abs(n) < 1e6 ? `${oneDecimal.format(n / 1e3)}K` : `${oneDecimal.format(n / 1e6)}M`),
+    axis: (n) => {
+      const abs = Math.abs(n);
+      if (abs < 1e3) return full.format(n);
+      if (abs < 1e6) return `${oneDecimal.format(n / 1e3)}K`;
+      if (abs < 1e9) return `${oneDecimal.format(n / 1e6)}M`;
+      // Billions of tokens a day: "40.000M" would not fit beside the plot.
+      return compact.format(n);
+    },
     percent: (part, whole) => pct.format(whole ? part / whole : 0),
+    percentFine: (part, whole) => {
+      const share = whole ? part / whole : 0;
+      if (share > 0 && share < 0.001) return `<${pctFine.format(0.001)}`;
+      return share < 0.1 ? pctFine.format(share) : pct.format(share);
+    },
+    decimal: (n) => oneDecimal.format(n),
+    minutes: (ms) => {
+      const minutes = ms / 60_000;
+      return minutes < 10 ? oneDecimal.format(minutes) : count(Math.round(minutes));
+    },
+    hour: (h) => hour.format(new Date(Date.UTC(2024, 0, 1, h))),
+    weekday: (i, long) => (long ? weekdayLong : weekdayShort).format(new Date(monday + i * 86_400_000)),
+    date: (iso) => date.format(new Date(iso)),
   };
 }
 

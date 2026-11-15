@@ -16,7 +16,9 @@ The page uses the design of the desktop app: the color, font and radius tokens f
 
 One row per installation in the table `installs`: random installation ID, first and last report, FORGE version, operating system, the cumulative counters as JSON, the tokens and costs per Claude model (`models`, JSON) the type of Claude subscription (`plan`) and the language of the FORGE interface (`language`). The app always sends the total since 2026-10-17 (start of the statistics, `USAGE_STATS_SINCE` in `packages/sidecar/src/persistence/db.ts`), and the service overwrites the last state. App versions before this cutoff date send the total since installation; with the update their counters drop once.
 
-In addition, `install_days` holds the state of each installation at the end of each UTC day (one row per installation and day, each report overwrites the one for the current day). The history is derived from this: the increase for a day is the state minus the last earlier state of the same installation. The first state of an installation does not count as an increase, nor does a counter missing from the earlier state (a new app version that sends its total since installation). Negative differences (reinstallation with an empty database, update to the cutoff date) count as 0. Active installations on a day are those with a state on that day. Turning off the statistics deletes the installation together with its daily states (`ON DELETE CASCADE`).
+In addition, `install_days` holds the state of each installation at the end of each UTC day (one row per installation and day, each report overwrites the one for the current day). The history is derived from this: the increase for a day is the state minus the last earlier state of the same installation. On an installation's first day the earlier state is its very first report (`installs.first_counters`): a new installation reports a minute after its start, so its first day counts from there. Installations from before that column have none; their first state does not count as an increase. Nor does a counter missing from the earlier state (a new app version that sends its total since installation). Negative differences (reinstallation with an empty database, update to the cutoff date) count as 0. Active installations on a day are those with a state on that day. Turning off the statistics deletes the installation together with its daily states (`ON DELETE CASCADE`).
+
+`activity_hours` holds, per UTC day and hour, the tokens and runs all installations added in that hour (the difference between two reports of an installation, summed; nothing per installation). `download_assets` remembers the download count of every `FORGE-Setup.exe` GitHub ever listed, `download_days` the counted downloads per day and way (see Downloads).
 
 No IP addresses in the database or in logs. For the limit on mass-created IDs, the process keeps salted hashes of the IP addresses in memory, only for the current day.
 
@@ -30,7 +32,9 @@ The service creates the tables itself on first access (`CREATE TABLE IF NOT EXIS
 | `DELETE /api/v1/report/<installId>` | Delete the record (statistics turned off in FORGE) | 204, even if it did not exist; 400 not a UUID v4 |
 | `GET /api/v1/totals` | Totals, models, versions and history as JSON (see below), `Cache-Control: public, max-age=300` | 200; 503 |
 | `GET /api/v1/live` | Installations online right now, in total and per subscription (`{ onlineInstalls, plans: [{ plan, online }], updatedAt }`); the page polls every 30 seconds, cached for at most 15 seconds | 200; 503 |
-| `GET /api/v1/downloads` | Downloads of the installer (`*-setup.exe`) across all releases, excluding updates, signatures and markers; for the README badge, fetched from GitHub at most every 30 minutes | 200; 503 |
+| `GET /api/v1/downloads` | Installer downloads by people, without updates (`{ downloads, windows, macos, linux, script }`, see Downloads); `downloads` is what the README badge shows | 200; 503 |
+| `GET /dl/<file>` | Counted download link of the download page (`macos-arm64`, `macos-x64`, `linux-appimage`, `linux-deb`): forwards to the file of the newest release on GitHub | 302; 404 unknown file |
+| `GET /install.sh` | Forwards to `scripts/install.sh` in the repository; a fetch by curl or wget counts as a download of the install command | 302 |
 | `GET /api/v1/donations` | Donated so far (`{ donations: { cents, count } }`, euro cents; `donations: null` without `STRIPE_SECRET_KEY`); for the heart in the app, fetched from Stripe at most every 10 minutes | 200; 503 |
 | `GET /api/health` | Health check with a DB query | 200 `ok`; 503 |
 | `GET /` | Public page | 200, on DB failure with a notice instead of numbers |
@@ -50,7 +54,8 @@ Body of the report:
     "tokensInput": 0, "tokensOutput": 0, "tokensCacheRead": 0, "tokensCacheWrite": 0,
     "claudeTurns": 0, "claudeWorkMs": 0, "sessions": 0, "projectsCreated": 0,
     "agentsStarted": 0, "agentsMerged": 0, "phoneCalls": 0,
-    "userTurns": 0, "costUsdCents": 0
+    "userTurns": 0, "costUsdCents": 0,
+    "toolCalls": 0, "commits": 0, "phoneMs": 0
   },
   "models": {
     "claude-opus-4-7": { "tokens": 123, "costUsdCents": 45 }
@@ -60,12 +65,12 @@ Body of the report:
 }
 ```
 
-`userTurns` are the runs that users started themselves, `costUsdCents` the estimated API cost of all Claude calls in US cents. `models` contains, per model ID, all four token types combined and the estimated cost, cumulative since the cutoff date. `plan` is the subscription of the account logged in to Claude Code (`ultra`, `max`, `pro`, `team`, `enterprise` ...), read from `organizationType` and the rate limit tier in `.claude.json`; `null` without a claude.ai login. Older app versions send `max_20x` and `max_5x`; the totals count them as `ultra` and `max`. `language` is the language of the FORGE interface (`de`, `en`). Older app versions do not send these fields; then 0, `{}` and `null` apply.
+`userTurns` are the runs that users started themselves, `costUsdCents` the estimated API cost of all Claude calls in US cents. `toolCalls` are Claude's tool calls in sessions, `commits` the commits FORGE itself created (auto-commit, commit dialog, phone), `phoneMs` the duration of all answered phone calls; the first two count from the app version that brought them. `models` contains, per model ID, all four token types combined and the estimated cost, cumulative since the cutoff date. `plan` is the subscription of the account logged in to Claude Code (`ultra`, `max`, `pro`, `team`, `enterprise` ...), read from `organizationType` and the rate limit tier in `.claude.json`; `null` without a claude.ai login. Older app versions send `max_20x` and `max_5x`; the totals count them as `ultra` and `max`. `language` is the language of the FORGE interface (`de`, `en`). Older app versions do not send these fields; then 0, `{}` and `null` apply.
 
 Rules (see `src/lib/report.ts`):
 
 - Counters are integers from 0. Unknown keys are ignored, missing ones count as 0.
-- Upper limits per installation: token fields 10^12, `claudeWorkMs` 10^11, `costUsdCents` 10^10, all others 10^7. Above that: 400.
+- Upper limits per installation: token fields 10^12, `claudeWorkMs` and `phoneMs` 10^11, `costUsdCents` 10^10, `toolCalls` 10^9, all others 10^7. Above that: 400.
 - `models`: at most 20 entries, keys 1 to 64 characters from `[A-Za-z0-9._:[]-]`, values `tokens` (integer, 0 to 4·10^12) and `costUsdCents` (integer, 0 to 10^10), both required.
 - `plan`: `null` or 1 to 24 characters from `[a-z0-9_]`.
 - `language`: `null` or two lowercase letters.
@@ -79,6 +84,8 @@ Response of `GET /api/v1/totals`:
 {
   "installs": 7,
   "activeInstalls30d": 7,
+  "activeInstalls7d": 6,
+  "activeInstalls24h": 4,
   "newInstalls30d": 2,
   "onlineInstalls": 2,
   "counters": { "tokensInput": 0, "...": 0, "userTurns": 0, "costUsdCents": 0 },
@@ -88,7 +95,10 @@ Response of `GET /api/v1/totals`:
   "plans": [{ "plan": "ultra", "installs": 4, "online": 1 }, { "plan": null, "installs": 3, "online": 1 }],
   "platforms": [{ "platform": "windows", "installs": 7 }],
   "languages": [{ "language": "de", "installs": 5 }, { "language": null, "installs": 2 }],
-  "history": [{ "day": "2026-10-17", "tokens": 64420000, "claudeTurns": 55, "sessions": 12, "claudeWorkMs": 5400000, "costUsdCents": 4200, "activeInstalls": 7 }]
+  "history": [{ "day": "2026-10-17", "tokens": 64420000, "claudeTurns": 55, "sessions": 12, "claudeWorkMs": 5400000, "costUsdCents": 4200, "userTurns": 50, "agentsStarted": 6, "toolCalls": 900, "commits": 12, "activeInstalls": 7, "newInstalls": 1, "totalInstalls": 7, "downloads": 2 }],
+  "hours": [{ "tokens": 0, "turns": 0 }],
+  "downloads": { "total": 44, "kinds": { "windows": 18, "macos": 10, "linux": 4, "script": 12 } },
+  "project": { "stars": 3, "commits": 423, "latestVersion": "0.1.183", "latestAt": "2026-11-12T10:35:06Z" }
 }
 ```
 
@@ -99,10 +109,30 @@ Response of `GET /api/v1/totals`:
 - `versions`: active installations of the last 30 days per FORGE version, most common first.
 - `languages`: active installations of the last 30 days per interface language, most first; `null` means an app version that does not send it.
 - `newInstalls30d`: installations whose first report was in the last 30 days.
-- `history`: the last 30 UTC days including today, oldest first; `tokens` is the increase of all four token types, `claudeTurns` the increase in runs, `sessions`, `claudeWorkMs` and `costUsdCents` likewise.
-- The README badge reads `installs`.
+- `history`: the last 30 UTC days including today, oldest first; `tokens` is the increase of all four token types, `claudeTurns` the increase in runs, `sessions`, `claudeWorkMs`, `costUsdCents`, `userTurns`, `agentsStarted`, `toolCalls` and `commits` likewise; `newInstalls` are the first reports of that day, `totalInstalls` all installations known at its end, `downloads` the downloads counted that day.
+- `hours`: 24 entries, index = hour of the day in UTC: tokens and runs of the last 30 days in that hour. The page shifts them into the visitor's time zone.
+- `downloads`: see Downloads.
+- `project`: stars, commits on the default branch and the newest published version from the GitHub API, at most every 30 minutes; `null` while GitHub cannot be reached. The newest version is the highest published one, not GitHub's "latest" (that stays on the release with the full installer).
+- `activeInstalls7d`, `activeInstalls24h`: installations with a report in the last 7 days and 24 hours.
 
 The totals are recomputed from the database at most every 5 minutes (in-process cache). New reports therefore appear with a delay of up to 5 minutes.
+
+## Downloads
+
+A download is a person fetching an installer for a new installation (`src/lib/downloads.ts`):
+
+| Way | What counts | Counted by |
+| --- | --- | --- |
+| `windows` | `FORGE-Setup.exe` of the release `installer` | GitHub (`download_count`), read at most every 30 minutes |
+| `macos` | a `.dmg` from the download page | this site (`/dl/macos-arm64`, `/dl/macos-x64`) |
+| `linux` | the AppImage or `.deb` from the download page | this site (`/dl/linux-appimage`, `/dl/linux-deb`) |
+| `script` | the install command of macOS and Linux | this site (`/install.sh` fetched by curl or wget) |
+
+GitHub's numbers of the other release files are not used. Installed apps fetch `FORGE_<v>_x64-setup.exe` themselves (update to another runtime, repair) and FORGE Setup fetches it once per installation; the updates of macOS and Linux are the same `.app.tar.gz` and AppImage the install command takes; and every file of a release is fetched once by a machine right after it was published. Until 2026-11-15 the badge counted `*_x64-setup.exe` across all releases (44 then, 32 of them from deleted releases), which included those updates.
+
+A new build of FORGE Setup replaces the file and GitHub starts its count at 0. `download_assets` therefore keeps the highest count of every file by its GitHub ID; the total is their sum. A file that was older than a day when first seen brings its count into the total only; a newer one and every later increase are also booked on the day (`download_days`), which feeds the history. Reports of the app trigger the look at GitHub as well, so the count stays current when nobody opens the page.
+
+The counted links answer crawlers and link previews without counting (user agent), `robots.txt` excludes `/dl/`, and one address counts at most 6 times a day (salted hash in memory, like the limit on new installations). Downloads straight from the release page on GitHub are not counted for macOS and Linux.
 
 ## Crew relay (/crew)
 

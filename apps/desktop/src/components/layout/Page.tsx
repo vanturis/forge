@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { AlwaysOnTopButton } from "./AlwaysOnTopButton";
 import { SyncButton } from "./SyncButton";
 import { PhoneButton } from "./PhoneButton";
-import { hasTitleBar } from "@/lib/title-bar";
+import { hasTitleBar, windowDrag } from "@/lib/title-bar";
 
 /** Thin vertical line between groups of header controls. */
 export function HeaderDivider() {
@@ -28,12 +28,13 @@ export function AppButtons({ divider = false }: { divider?: boolean }) {
 export function Page({ title, subtitle, actions, children }: { title: string; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="flex min-h-18 items-center justify-between gap-4 px-7 pb-3 pt-5">
+      <header {...windowDrag} className="flex min-h-18 select-none items-center justify-between gap-4 px-7 pb-3 pt-5">
         <div className="min-w-0">
           <h1 className="text-[22px] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
           {subtitle && <div className="mt-0.5 text-body text-muted">{subtitle}</div>}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        {/* Not part of the drag area: a page's actions may hold controls Tauri does not recognize as such. */}
+        <div data-tauri-drag-region="false" className="flex shrink-0 items-center gap-2">
           {actions}
           <AppButtons divider={!!actions} />
         </div>

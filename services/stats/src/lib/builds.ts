@@ -6,6 +6,8 @@ export type Os = "windows" | "macos" | "linux";
 
 /** A file of the newest release that has builds for macOS or Linux, for the manual download. */
 export interface BuildFile {
+  /** name in the counted download link /dl/<key> */
+  key: string;
   label: string;
   url: string;
 }
@@ -20,24 +22,29 @@ type Asset = { name?: string; browser_download_url?: string };
 type Release = { tag_name?: string; draft?: boolean; prerelease?: boolean; assets?: Asset[] };
 
 /** File names of the release workflow (ADR 0014) and how the download page names them. */
-const FILES: Record<"macos" | "linux", { pattern: RegExp; label: string }[]> = {
+const FILES: Record<"macos" | "linux", { key: string; pattern: RegExp; label: string }[]> = {
   macos: [
-    { pattern: /^FORGE_[^_]+_darwin-arm64\.dmg$/, label: "Apple silicon (.dmg)" },
-    { pattern: /^FORGE_[^_]+_darwin-x64\.dmg$/, label: "Intel (.dmg)" },
+    { key: "macos-arm64", pattern: /^FORGE_[^_]+_darwin-arm64\.dmg$/, label: "Apple silicon (.dmg)" },
+    { key: "macos-x64", pattern: /^FORGE_[^_]+_darwin-x64\.dmg$/, label: "Intel (.dmg)" },
   ],
   linux: [
-    { pattern: /^FORGE_[^_]+_linux-x64\.AppImage$/, label: "AppImage" },
-    { pattern: /^FORGE_[^_]+_linux-x64\.deb$/, label: "Debian, Ubuntu (.deb)" },
+    { key: "linux-appimage", pattern: /^FORGE_[^_]+_linux-x64\.AppImage$/, label: "AppImage" },
+    { key: "linux-deb", pattern: /^FORGE_[^_]+_linux-x64\.deb$/, label: "Debian, Ubuntu (.deb)" },
   ],
 };
+
+/** The system a counted download link /dl/<key> belongs to; null for an unknown key. */
+export function buildFileOs(key: string): "macos" | "linux" | null {
+  return (["macos", "linux"] as const).find((os) => FILES[os].some((f) => f.key === key)) ?? null;
+}
 
 function newest(releases: Release[], os: "macos" | "linux"): Builds["macos"] {
   for (const r of releases) {
     // Pre-releases are dev builds (and the FORGE Setup release); new installations get the stable one.
     if (r.draft || r.prerelease) continue;
-    const files = FILES[os].flatMap(({ pattern, label }) => {
+    const files = FILES[os].flatMap(({ key, pattern, label }) => {
       const a = r.assets?.find((x) => x.name && pattern.test(x.name));
-      return a?.browser_download_url ? [{ label, url: a.browser_download_url }] : [];
+      return a?.browser_download_url ? [{ key, label, url: a.browser_download_url }] : [];
     });
     if (files.length) return { version: (r.tag_name ?? "").replace(/^v/, ""), files };
   }

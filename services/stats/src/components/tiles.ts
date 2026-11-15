@@ -1,4 +1,4 @@
-import { CircleDollarSign, Clock, Coins, MessagesSquare, Repeat, Wifi } from "lucide-react";
+import { Bot, CircleDollarSign, Clock, Coins, Download, MessagesSquare, MonitorDown, Repeat, Wifi } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Totals } from "@/lib/db";
 import { ONLINE_MINUTES } from "@/lib/constants";
@@ -43,12 +43,17 @@ export function tiles(t: Totals, locale: Locale): TileDef[] {
     // The app sums what the SDK reports per run: the price of the tokens at API rates, also for subscriptions.
     { icon: CircleDollarSign, label: tt.cost, value: c.costUsdCents, format: f.usd, sub: tt.costSub, spark: spark((d) => d.costUsdCents), sparkAccent: true },
     { icon: Wifi, label: tt.online, value: t.onlineInstalls, format: f.count, sub: tt.onlineSub(ONLINE_MINUTES), spark: null, sparkAccent: false, live: t.onlineInstalls > 0 },
+    { icon: MonitorDown, label: tt.installs, value: t.installs, format: f.count, sub: tt.installsSub(f.count(t.newInstalls30d)), spark: spark((d) => d.newInstalls), sparkAccent: true },
+    { icon: Download, label: tt.downloads, value: t.downloads.total, format: f.count, sub: tt.downloadsSub, spark: spark((d) => d.downloads), sparkAccent: false },
+    { icon: Bot, label: tt.agents, value: c.agentsStarted, format: f.count, sub: tt.agentsSub(f.count(c.agentsMerged)), spark: spark((d) => d.agentsStarted), sparkAccent: true },
   ];
 }
 
 const ZERO: Totals = {
   installs: 0,
   activeInstalls30d: 0,
+  activeInstalls7d: 0,
+  activeInstalls24h: 0,
   newInstalls30d: 0,
   onlineInstalls: 0,
   counters: Object.fromEntries(COUNTER_KEYS.map((k) => [k, 0])) as Counters,
@@ -59,6 +64,9 @@ const ZERO: Totals = {
   platforms: [],
   languages: [],
   history: [],
+  hours: [],
+  downloads: { total: 0, kinds: { windows: 0, macos: 0, linux: 0, script: 0 } },
+  project: null,
 };
 
 /** Labels and icons of the tiles while the numbers load. */

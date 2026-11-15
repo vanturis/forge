@@ -5,6 +5,7 @@ import { EyeOff, FolderX, GripHorizontal, LayoutGrid } from "lucide-react";
 import { useLiveSessions, useProject } from "@/lib/queries";
 import { errorMessage, RpcCallError } from "@/lib/rpc";
 import { paneCapacity, paneRows, SPLIT_BAR_HEIGHT } from "@/lib/split-view";
+import { windowDrag } from "@/lib/title-bar";
 import { cn, relativeTime } from "@/lib/utils";
 import { canSwapAreas, MAIN_AREA, useUi, type SplitPane } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
@@ -245,7 +246,7 @@ function PaneSkeleton() {
 function PaneMessage({ pane, title = t.workspace.split.area, children }: { pane: SplitPane; title?: string; children: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <header className="relative flex h-12 shrink-0 items-center gap-3 border-b border-border px-5">
+      <header {...windowDrag} className="relative flex h-12 shrink-0 select-none items-center gap-3 border-b border-border px-5">
         <AreaGrip area={pane.id} />
         <LayoutGrid className="h-4 w-4 shrink-0 text-muted" />
         <h1 className="min-w-0 flex-1 truncate text-title-sm font-semibold">{title}</h1>

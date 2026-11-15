@@ -15,6 +15,9 @@ export const COUNTER_KEYS = [
   "phoneCalls",
   "userTurns",
   "costUsdCents",
+  "toolCalls",
+  "commits",
+  "phoneMs",
 ] as const;
 
 export type CounterKey = (typeof COUNTER_KEYS)[number];
@@ -35,6 +38,9 @@ export const COUNTER_LIMITS: Counters = {
   phoneCalls: 1e7,
   userTurns: 1e7,
   costUsdCents: 1e10,
+  toolCalls: 1e9,
+  commits: 1e7,
+  phoneMs: 1e11,
 };
 
 export const MAX_MODELS = 20;

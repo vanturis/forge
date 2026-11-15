@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
-import { Box, Check, ChevronDown, Coins, CreditCard, Languages, LayoutGrid, MessagesSquare, Monitor, Tag } from "lucide-react";
+import { Activity, Box, CalendarDays, Check, ChevronDown, Clock, CreditCard, Download, Gauge, GitBranch, Languages, Layers, LayoutGrid, Monitor, MonitorDown, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { localHours, weekdayMeans } from "@/lib/activity";
 import type { Platform, Totals } from "@/lib/db";
-import type { HistoryDay } from "@/lib/history";
+import { DOWNLOAD_KINDS } from "@/lib/downloads";
+import { tokenSum, type HistoryDay } from "@/lib/history";
 import { groupModels } from "@/lib/models";
 import { compareVersions, newestVersion } from "@/lib/versions";
 import { Skeleton } from "./blocks";
 import { useI18n } from "./locale";
 import { Reveal } from "./motion";
 
-// The cards of the live stats: tokens per day as columns, active installations as an area, the top
-// models as share bars, the platforms as a ring, below them the versions, Claude plans and languages
-// as share bars and the feature counters as figures.
+// The cards of the live stats, two in a row: the history per day (columns, any counter) and the
+// installations (area), the activity by time of day and by weekday, the models and token kinds as share
+// bars, the platforms as a ring, versions, Claude plans, languages and downloads as share bars, and the
+// project facts, feature counters and averages as figures.
 
 /** Height of the plot area; the x-axis band comes below. */
 const PLOT_H = 116;
@@ -26,6 +29,13 @@ const TOP_MODELS = 3;
 const TOP_SHARES = 4;
 /** Legend order of the platforms; all four are always listed. */
 const PLATFORMS: Platform[] = ["windows", "macos", "linux", "other"];
+/** What the history chart can show, in the order of its menu. */
+const DAY_METRICS = ["tokens", "cost", "turns", "sessions", "workTime", "prompts", "agents", "toolCalls", "commits", "downloads"] as const;
+type DayMetric = (typeof DAY_METRICS)[number];
+const INSTALL_METRICS = ["active", "total"] as const;
+type InstallMetric = (typeof INSTALL_METRICS)[number];
+/** Days behind the weekday chart: four of every weekday. */
+const WEEKDAY_DAYS = 28;
 
 /** Clean 1-2-5 steps for an axis up to `max`, at most four steps. */
 export function niceTicks(max: number): number[] {
@@ -51,20 +61,19 @@ function ChartCard({ icon: Icon, title, sub, action, children }: { icon: LucideI
           <h3>{title}</h3>
           <p>{sub}</p>
         </div>
-        {action}
+        {action && <div className="chart-actions">{action}</div>}
       </div>
       {children}
     </section>
   );
 }
 
-/** "Letzte 30 Tage" with a small menu of the periods; closes on a click outside and on Escape. */
-function RangeSelect({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
-  const { t } = useI18n();
-  const m = t.stats.charts;
+/** A pill with the current choice and a small menu of the others; closes on a click outside and on Escape. */
+function MenuSelect<T extends string | number>({ label, value, options, onChange }: { label: string; value: T; options: Array<{ value: T; label: string }>; onChange: (v: T) => void }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const menuId = useId();
+  const current = options.find((o) => o.value === value)?.label ?? "";
   useEffect(() => {
     if (!open) return;
     const onDown = (e: PointerEvent) => {
@@ -88,28 +97,28 @@ function RangeSelect({ value, onChange }: { value: Range; onChange: (r: Range) =
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label={`${m.range}: ${m.lastDays(value)}`}
+        aria-label={`${label}: ${current}`}
         onClick={() => setOpen((o) => !o)}
       >
-        {m.lastDays(value)}
+        {current}
         <ChevronDown aria-hidden />
       </button>
       {open && (
-        <div id={menuId} role="menu" className="range-menu" aria-label={m.range}>
-          {RANGES.map((r) => (
+        <div id={menuId} role="menu" className="range-menu" aria-label={label}>
+          {options.map((o) => (
             <button
-              key={r}
+              key={o.value}
               type="button"
               role="menuitemradio"
-              aria-checked={r === value}
+              aria-checked={o.value === value}
               className="range-item"
               onClick={() => {
-                onChange(r);
+                onChange(o.value);
                 setOpen(false);
               }}
             >
-              {m.lastDays(r)}
-              {r === value && <Check aria-hidden />}
+              {o.label}
+              {o.value === value && <Check aria-hidden />}
             </button>
           ))}
         </div>
@@ -118,12 +127,17 @@ function RangeSelect({ value, onChange }: { value: Range; onChange: (r: Range) =
   );
 }
 
+function RangeSelect({ value, onChange }: { value: Range; onChange: (r: Range) => void }) {
+  const m = useI18n().t.stats.charts;
+  return <MenuSelect label={m.range} value={value} onChange={onChange} options={RANGES.map((r) => ({ value: r, label: m.lastDays(r) }))} />;
+}
+
 interface Point {
   key: string;
   value: number;
   /** tooltip: the value first, then what it belongs to */
   tip: [value: string, label: string];
-  /** x-axis label at this day; null leaves it out */
+  /** x-axis label at this point; null leaves it out */
   axis: string | null;
 }
 
@@ -167,7 +181,7 @@ function DayPlot({ points, kind, label }: { points: Point[]; kind: "columns" | "
           {max === 0 ? (
             <p className="chart-empty plot-empty">{t.stats.charts.empty}</p>
           ) : kind === "columns" ? (
-            <div className="bars">
+            <div className={n <= 12 ? "bars bars-few" : "bars"}>
               {points.map((p, i) => (
                 <div
                   key={p.key}
@@ -234,6 +248,8 @@ interface ShareRow {
   value: number;
   /** hover text with the absolute number */
   title: string;
+  /** shown at the right instead of the percentage */
+  text?: string;
 }
 
 /** The first `top` rows, the rest summed into one row; nothing is cut when only one would be left over. */
@@ -242,8 +258,8 @@ function topRows(rows: ShareRow[], top: number, other: (value: number) => ShareR
   return [...rows.slice(0, top), other(rows.slice(top).reduce((n, r) => n + r.value, 0))];
 }
 
-/** Label, share bar and percentage per row. */
-function ShareList({ rows }: { rows: ShareRow[] }) {
+/** Label, share bar and percentage per row; `fine` shows small shares with a decimal. */
+function ShareList({ rows, fine }: { rows: ShareRow[]; fine?: boolean }) {
   const { t, f } = useI18n();
   const total = rows.reduce((n, r) => n + r.value, 0);
   if (!total) return <p className="chart-empty card-empty">{t.stats.charts.empty}</p>;
@@ -253,9 +269,9 @@ function ShareList({ rows }: { rows: ShareRow[] }) {
         <li key={r.key} className="share" title={r.title}>
           <span className="share-label">{r.label}</span>
           <span className="share-track" aria-hidden>
-            <span className="share-fill" style={{ width: `${Math.max(1, (r.value / total) * 100)}%`, "--i": i } as CSSProperties} />
+            {r.value > 0 && <span className="share-fill" style={{ width: `${Math.max(1, (r.value / total) * 100)}%`, "--i": i } as CSSProperties} />}
           </span>
-          <span className="share-value">{f.percent(r.value, total)}</span>
+          <span className="share-value">{r.text ?? (fine ? f.percentFine(r.value, total) : f.percent(r.value, total))}</span>
         </li>
       ))}
     </ul>
@@ -267,6 +283,28 @@ function TopModels({ totals }: { totals: Totals }) {
   const m = t.stats.charts;
   const rows = groupModels(totals.models).map((r) => ({ key: r.label, label: modelName(r.label), value: r.tokens, title: m.tokens(f.count(r.tokens)) }));
   return <ShareList rows={topRows(rows, TOP_MODELS, (value) => ({ key: "other", label: m.otherModels, value, title: m.tokens(f.count(value)) }))} />;
+}
+
+/** The four token kinds, most first: reading the cache is nearly all of it, which the plain sum hides. */
+function TokenKinds({ totals }: { totals: Totals }) {
+  const { t, f } = useI18n();
+  const m = t.stats.charts;
+  const c = totals.counters;
+  const rows = [
+    { key: "cacheRead", value: c.tokensCacheRead },
+    { key: "cacheWrite", value: c.tokensCacheWrite },
+    { key: "output", value: c.tokensOutput },
+    { key: "input", value: c.tokensInput },
+  ] as const;
+  return <ShareList fine rows={[...rows].sort((a, b) => b.value - a.value).map((r) => ({ key: r.key, label: m.kinds[r.key], value: r.value, title: m.tokens(f.count(r.value)) }))} />;
+}
+
+/** Downloads per way with the absolute number; the share is the hover text. */
+function DownloadShares({ totals }: { totals: Totals }) {
+  const { t, f } = useI18n();
+  const m = t.stats.charts;
+  const d = totals.downloads;
+  return <ShareList rows={DOWNLOAD_KINDS.map((k) => ({ key: k, label: m.downloadKinds[k], value: d.kinds[k], title: f.percent(d.kinds[k], d.total), text: f.count(d.kinds[k]) }))} />;
 }
 
 /** Known values in their order, then "Andere" for the rest and last the installations that sent none. */
@@ -344,29 +382,84 @@ function LanguageShares({ totals }: { totals: Totals }) {
   );
 }
 
-/** The feature counters as figures: installations, own prompts, projects, agents, phone calls. */
-function Figures({ totals }: { totals: Totals }) {
-  const { t, f } = useI18n();
-  const m = t.stats.charts.figures;
-  const c = totals.counters;
-  const items = [
-    { key: "installs", value: totals.installs, label: m.installs, sub: m.installsSub(f.count(totals.newInstalls30d)) },
-    { key: "active", value: totals.activeInstalls30d, label: m.active, sub: m.activeSub },
-    { key: "prompts", value: c.userTurns, label: m.prompts, sub: m.promptsSub },
-    { key: "projects", value: c.projectsCreated, label: m.projects, sub: m.projectsSub },
-    { key: "agents", value: c.agentsStarted, label: m.agents, sub: m.agentsSub(f.count(c.agentsMerged)) },
-    { key: "phone", value: c.phoneCalls, label: m.phoneCalls, sub: m.phoneCallsSub },
-  ];
+interface Figure {
+  key: string;
+  label: string;
+  value: string;
+  sub: string;
+}
+
+/** Figures on quiet tiles, three in a row or two. */
+function FigureGrid({ items, two }: { items: Figure[]; two?: boolean }) {
   return (
-    <dl className="figures">
+    <dl className={two ? "figures figures-two" : "figures"}>
       {items.map((it) => (
         <div key={it.key} className="figure">
           <dt>{it.label}</dt>
-          <dd className="figure-value">{f.count(it.value)}</dd>
+          <dd className="figure-value">{it.value}</dd>
           <dd className="figure-sub">{it.sub}</dd>
         </div>
       ))}
     </dl>
+  );
+}
+
+/** The feature counters: own prompts, projects, agents, phone calls, tool calls, commits. */
+function Features({ totals }: { totals: Totals }) {
+  const { t, f } = useI18n();
+  const m = t.stats.charts.figures;
+  const c = totals.counters;
+  return (
+    <FigureGrid
+      items={[
+        { key: "prompts", value: f.count(c.userTurns), label: m.prompts, sub: m.promptsSub },
+        { key: "projects", value: f.count(c.projectsCreated), label: m.projects, sub: m.projectsSub },
+        { key: "agents", value: f.count(c.agentsStarted), label: m.agents, sub: m.agentsSub(f.count(c.agentsMerged)) },
+        // The duration came with a later app version than the calls.
+        { key: "phone", value: f.count(c.phoneCalls), label: m.phoneCalls, sub: c.phoneMs > 0 ? m.phoneMinutes(f.count(Math.round(c.phoneMs / 60_000))) : m.phoneCallsSub },
+        { key: "toolCalls", value: f.count(c.toolCalls), label: m.toolCalls, sub: m.toolCallsSub },
+        { key: "commits", value: f.count(c.commits), label: m.commits, sub: m.commitsSub },
+      ]}
+    />
+  );
+}
+
+/** Means over everything counted; 0 while there is nothing to divide by. */
+function Averages({ totals }: { totals: Totals }) {
+  const { t, f } = useI18n();
+  const m = t.stats.charts.averages;
+  const c = totals.counters;
+  const per = (a: number, b: number) => (b > 0 ? a / b : 0);
+  return (
+    <FigureGrid
+      items={[
+        { key: "tokens", value: f.count(Math.round(per(tokenSum(c), c.claudeTurns))), label: m.tokensPerTurn, sub: m.tokensPerTurnSub },
+        { key: "cost", value: f.usd(per(c.costUsdCents, c.claudeTurns)), label: m.costPerTurn, sub: m.costPerTurnSub },
+        { key: "time", value: `${f.minutes(per(c.claudeWorkMs, c.claudeTurns))} ${m.minutesUnit}`, label: m.timePerTurn, sub: m.timePerTurnSub },
+        { key: "turns", value: f.decimal(per(c.claudeTurns, c.sessions)), label: m.turnsPerSession, sub: m.turnsPerSessionSub },
+        { key: "merged", value: f.percent(c.agentsMerged, c.agentsStarted), label: m.merged, sub: m.mergedSub(f.count(c.agentsStarted)) },
+        { key: "hours", value: f.hours(per(c.claudeWorkMs, totals.installs)), label: m.hoursPerInstall, sub: m.hoursPerInstallSub },
+      ]}
+    />
+  );
+}
+
+/** Facts of the repository; GitHub may be out of reach, the numbers of FORGE are not. */
+function ProjectFacts({ totals }: { totals: Totals }) {
+  const { t, f } = useI18n();
+  const m = t.stats.charts.project;
+  const p = totals.project;
+  if (!p) return <p className="chart-empty card-empty">{m.unavailable}</p>;
+  return (
+    <FigureGrid
+      two
+      items={[
+        { key: "stars", value: f.count(p.stars), label: m.stars, sub: m.starsSub },
+        ...(p.commits !== null ? [{ key: "commits", value: f.count(p.commits), label: m.commits, sub: m.commitsSub }] : []),
+        ...(p.latestVersion ? [{ key: "version", value: `v${p.latestVersion}`, label: m.version, sub: p.latestAt ? m.versionSub(f.date(p.latestAt)) : "" }] : []),
+        { key: "license", value: "AGPL-3.0", label: m.license, sub: m.licenseSub },
+      ]}
+    />
   );
 }
 
@@ -424,11 +517,21 @@ function Platforms({ totals }: { totals: Totals }) {
 /** Every day for a week, every second day for two weeks, else every 7th day counted back from today. */
 const axisStep = (days: number) => (days <= 7 ? 1 : days <= 14 ? 2 : 7);
 
+/** The visitor's whole hours ahead of UTC; 0 on the server and until the page is mounted. */
+function useUtcOffset(): number {
+  const [offset, setOffset] = useState(0);
+  useEffect(() => setOffset(Math.round(-new Date().getTimezoneOffset() / 60)), []);
+  return offset;
+}
+
 export function StatsCharts({ totals }: { totals: Totals }) {
   const { t, f } = useI18n();
   const m = t.stats.charts;
-  const [tokensRange, setTokensRange] = useState<Range>(30);
+  const [dayMetric, setDayMetric] = useState<DayMetric>("tokens");
+  const [dayRange, setDayRange] = useState<Range>(30);
+  const [installMetric, setInstallMetric] = useState<InstallMetric>("active");
   const [installsRange, setInstallsRange] = useState<Range>(30);
+  const offset = useUtcOffset();
   const history = totals.history;
   const today = history[history.length - 1]?.day;
   const dayName = (day: string) => (day === today ? m.today(f.dayLong(day)) : f.dayLong(day));
@@ -437,32 +540,113 @@ export function StatsCharts({ totals }: { totals: Totals }) {
     return days.map((d, i) => ({ key: d.day, value: value(d), tip: tip(d), axis: (days.length - 1 - i) % axisStep(range) === 0 ? f.dayShort(d.day) : null }));
   };
 
+  // What a column is worth and what its tooltip says; cost in dollars and working time in hours for the axis.
+  const dayMetrics: Record<DayMetric, { value: (d: HistoryDay) => number; tip: (d: HistoryDay) => string }> = {
+    tokens: { value: (d) => d.tokens, tip: (d) => m.tokens(f.count(d.tokens)) },
+    cost: { value: (d) => d.costUsdCents / 100, tip: (d) => f.usd(d.costUsdCents) },
+    turns: { value: (d) => d.claudeTurns, tip: (d) => m.turns(d.claudeTurns, f.count(d.claudeTurns)) },
+    sessions: { value: (d) => d.sessions, tip: (d) => m.units.sessions(d.sessions, f.count(d.sessions)) },
+    workTime: { value: (d) => d.claudeWorkMs / 3_600_000, tip: (d) => m.units.hours(f.hours(d.claudeWorkMs)) },
+    prompts: { value: (d) => d.userTurns, tip: (d) => m.units.prompts(d.userTurns, f.count(d.userTurns)) },
+    agents: { value: (d) => d.agentsStarted, tip: (d) => m.units.agents(d.agentsStarted, f.count(d.agentsStarted)) },
+    toolCalls: { value: (d) => d.toolCalls, tip: (d) => m.units.toolCalls(d.toolCalls, f.count(d.toolCalls)) },
+    commits: { value: (d) => d.commits, tip: (d) => m.units.commits(d.commits, f.count(d.commits)) },
+    downloads: { value: (d) => d.downloads, tip: (d) => m.units.downloads(d.downloads, f.count(d.downloads)) },
+  };
+  const metric = dayMetrics[dayMetric];
+
+  const hours = localHours(
+    Array.from({ length: 24 }, (_, h) => totals.hours[h] ?? { tokens: 0, turns: 0 }),
+    offset,
+  );
+  const weekdays = weekdayMeans(history.slice(-WEEKDAY_DAYS).map((d) => ({ day: d.day, value: d.tokens })));
+
   return (
     <Reveal className="charts">
-      <ChartCard icon={Coins} title={m.tokensPerDay} sub={m.tokensPerDaySub} action={<RangeSelect value={tokensRange} onChange={setTokensRange} />}>
+      <ChartCard
+        icon={Activity}
+        title={m.perDay}
+        sub={m.perDaySub}
+        action={
+          <>
+            <MenuSelect label={m.metric} value={dayMetric} onChange={setDayMetric} options={DAY_METRICS.map((k) => ({ value: k, label: m.metrics[k] }))} />
+            <RangeSelect value={dayRange} onChange={setDayRange} />
+          </>
+        }
+      >
         <DayPlot
           kind="columns"
-          label={m.tokensPerDay}
-          points={points(
-            tokensRange,
-            (d) => d.tokens,
-            (d) => [m.tokens(f.count(d.tokens)), `${dayName(d.day)} · ${m.turns(d.claudeTurns, f.count(d.claudeTurns))}`],
-          )}
+          label={`${m.perDay}: ${m.metrics[dayMetric]}`}
+          points={points(dayRange, metric.value, (d) => [metric.tip(d), dayMetric === "tokens" ? `${dayName(d.day)} · ${m.turns(d.claudeTurns, f.count(d.claudeTurns))}` : dayName(d.day)])}
         />
       </ChartCard>
-      <ChartCard icon={MessagesSquare} title={m.activePerDay} sub={m.activePerDaySub} action={<RangeSelect value={installsRange} onChange={setInstallsRange} />}>
+      <ChartCard
+        icon={MonitorDown}
+        title={m.installsChart}
+        sub={installMetric === "active" ? m.installsSubActive : m.installsSubTotal}
+        action={
+          <>
+            <MenuSelect label={m.metric} value={installMetric} onChange={setInstallMetric} options={INSTALL_METRICS.map((k) => ({ value: k, label: m.installMetrics[k] }))} />
+            <RangeSelect value={installsRange} onChange={setInstallsRange} />
+          </>
+        }
+      >
         <DayPlot
           kind="area"
-          label={m.activePerDay}
-          points={points(
-            installsRange,
-            (d) => d.activeInstalls,
-            (d) => [m.installs(d.activeInstalls, f.count(d.activeInstalls)), dayName(d.day)],
-          )}
+          label={`${m.installsChart}: ${m.installMetrics[installMetric]}`}
+          points={
+            installMetric === "active"
+              ? points(
+                  installsRange,
+                  (d) => d.activeInstalls,
+                  (d) => [m.installs(d.activeInstalls, f.count(d.activeInstalls)), dayName(d.day)],
+                )
+              : points(
+                  installsRange,
+                  (d) => d.totalInstalls,
+                  (d) => [m.installs(d.totalInstalls, f.count(d.totalInstalls)), d.newInstalls > 0 ? `${dayName(d.day)} · ${m.units.newInstalls(f.count(d.newInstalls))}` : dayName(d.day)],
+                )
+          }
+        />
+        <dl className="chart-facts">
+          {(
+            [
+              ["day", totals.activeInstalls24h],
+              ["week", totals.activeInstalls7d],
+              ["month", totals.activeInstalls30d],
+            ] as const
+          ).map(([key, n]) => (
+            <div key={key}>
+              <dt>{m.activeFacts[key]}</dt>
+              <dd>{f.count(n)}</dd>
+            </div>
+          ))}
+        </dl>
+      </ChartCard>
+      <ChartCard icon={Clock} title={m.hours} sub={m.hoursSub}>
+        <DayPlot
+          kind="columns"
+          label={m.hours}
+          points={hours.map((h, i) => ({
+            key: String(i),
+            value: h.tokens,
+            tip: [m.tokens(f.count(h.tokens)), `${m.hourRange(f.hour(i), f.hour((i + 1) % 24))} · ${m.turns(h.turns, f.count(h.turns))}`],
+            axis: i % 6 === 0 ? f.hour(i) : null,
+          }))}
+        />
+      </ChartCard>
+      <ChartCard icon={CalendarDays} title={m.weekdays} sub={m.weekdaysSub}>
+        <DayPlot
+          kind="columns"
+          label={m.weekdays}
+          points={weekdays.map((v, i) => ({ key: String(i), value: v, tip: [m.tokens(f.count(Math.round(v))), m.weekdayAverage(f.weekday(i, true))], axis: f.weekday(i) }))}
         />
       </ChartCard>
       <ChartCard icon={Box} title={m.topModels} sub={m.topModelsSub}>
         <TopModels totals={totals} />
+      </ChartCard>
+      <ChartCard icon={Layers} title={m.tokenKinds} sub={m.tokenKindsSub}>
+        <TokenKinds totals={totals} />
       </ChartCard>
       <ChartCard icon={Monitor} title={m.platforms} sub={m.platformsSub}>
         <Platforms totals={totals} />
@@ -476,8 +660,17 @@ export function StatsCharts({ totals }: { totals: Totals }) {
       <ChartCard icon={Languages} title={m.languages} sub={m.languagesSub}>
         <LanguageShares totals={totals} />
       </ChartCard>
+      <ChartCard icon={Download} title={m.downloads} sub={m.downloadsSub}>
+        <DownloadShares totals={totals} />
+      </ChartCard>
+      <ChartCard icon={GitBranch} title={m.project.title} sub={m.project.sub}>
+        <ProjectFacts totals={totals} />
+      </ChartCard>
       <ChartCard icon={LayoutGrid} title={m.figures.title} sub={m.figures.sub}>
-        <Figures totals={totals} />
+        <Features totals={totals} />
+      </ChartCard>
+      <ChartCard icon={Gauge} title={m.averages.title} sub={m.averages.sub}>
+        <Averages totals={totals} />
       </ChartCard>
     </Reveal>
   );
@@ -487,27 +680,36 @@ export function StatsCharts({ totals }: { totals: Totals }) {
 export function ChartsSkeleton() {
   const { t } = useI18n();
   const m = t.stats.charts;
-  const head = (Icon: LucideIcon, title: string, range: boolean) => (
-    <div className="chart-head">
-      <span className="icon-tile" aria-hidden>
-        <Icon />
-      </span>
-      <div className="chart-title">
-        <h3>{title}</h3>
-        <p>
-          <Skeleton width="11rem" />
-        </p>
+  const card = (Icon: LucideIcon, title: string, body: ReactNode, selects = 0) => (
+    <section className="chart-card" aria-label={title}>
+      <div className="chart-head">
+        <span className="icon-tile" aria-hidden>
+          <Icon />
+        </span>
+        <div className="chart-title">
+          <h3>{title}</h3>
+          <p>
+            <Skeleton width="11rem" />
+          </p>
+        </div>
+        {selects > 0 && (
+          <div className="chart-actions">
+            {Array.from({ length: selects }, (_, i) => (
+              <Skeleton key={i} width={i === selects - 1 ? "136px" : "104px"} style={{ height: 36, borderRadius: 9999 }} />
+            ))}
+          </div>
+        )}
       </div>
-      {range && <Skeleton width="136px" style={{ height: 36, borderRadius: 9999 }} />}
-    </div>
+      {body}
+    </section>
   );
-  const plot = (seed: number) => (
+  const plot = (seed: number, columns = 30) => (
     <div className="day-plot">
       <div className="y-axis" style={{ height: PLOT_H }} />
       <div className="plot-wrap">
         <div className="plot" style={{ height: PLOT_H }}>
-          <div className="bars">
-            {Array.from({ length: 30 }, (_, i) => (
+          <div className={columns <= 12 ? "bars bars-few" : "bars"}>
+            {Array.from({ length: columns }, (_, i) => (
               <div key={i} className="col">
                 <span className="col-bar skeleton-bar" style={{ height: `${12 + ((i * 37 + seed * 11) % 70)}%` }} />
               </div>
@@ -526,7 +728,7 @@ export function ChartsSkeleton() {
             <Skeleton width={`${55 + ((i * 13) % 30)}%`} />
           </span>
           <span className="share-track">
-            <span className="share-fill skeleton-bar" style={{ width: `${70 - i * 18}%` }} />
+            <span className="share-fill skeleton-bar" style={{ width: `${Math.max(12, 70 - i * 18)}%` }} />
           </span>
           <span className="share-value">
             <Skeleton width="2rem" />
@@ -535,22 +737,51 @@ export function ChartsSkeleton() {
       ))}
     </ul>
   );
+  const figures = (count: number, two = false) => (
+    <dl className={two ? "figures figures-two" : "figures"}>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="figure">
+          <dt>
+            <Skeleton width={`${50 + ((i * 17) % 35)}%`} />
+          </dt>
+          <dd className="figure-value">
+            <Skeleton width="3.5rem" />
+          </dd>
+          <dd className="figure-sub">
+            <Skeleton width="70%" />
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
   return (
     <div className="charts" aria-busy>
-      <section className="chart-card" aria-label={m.tokensPerDay}>
-        {head(Coins, m.tokensPerDay, true)}
-        {plot(0)}
-      </section>
-      <section className="chart-card" aria-label={m.activePerDay}>
-        {head(MessagesSquare, m.activePerDay, true)}
-        {plot(1)}
-      </section>
-      <section className="chart-card" aria-label={m.topModels}>
-        {head(Box, m.topModels, false)}
-        {shares(4)}
-      </section>
-      <section className="chart-card" aria-label={m.platforms}>
-        {head(Monitor, m.platforms, false)}
+      {card(Activity, m.perDay, plot(0), 2)}
+      {card(
+        MonitorDown,
+        m.installsChart,
+        <>
+          {plot(1)}
+          <dl className="chart-facts">
+            {(["day", "week", "month"] as const).map((key) => (
+              <div key={key}>
+                <dt>{m.activeFacts[key]}</dt>
+                <dd>
+                  <Skeleton width="1.5rem" />
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </>,
+        2,
+      )}
+      {card(Clock, m.hours, plot(2, 24))}
+      {card(CalendarDays, m.weekdays, plot(3, 7))}
+      {card(Box, m.topModels, shares(4))}
+      {card(Layers, m.tokenKinds, shares(4))}
+      {card(
+        Monitor,
+        m.platforms,
         <div className="platforms">
           <div className="ring">
             <svg viewBox="0 0 42 42" aria-hidden>
@@ -568,38 +799,15 @@ export function ChartsSkeleton() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-      <section className="chart-card" aria-label={m.versions}>
-        {head(Tag, m.versions, false)}
-        {shares(4)}
-      </section>
-      <section className="chart-card" aria-label={m.plans}>
-        {head(CreditCard, m.plans, false)}
-        {shares(4)}
-      </section>
-      <section className="chart-card" aria-label={m.languages}>
-        {head(Languages, m.languages, false)}
-        {shares(3)}
-      </section>
-      <section className="chart-card" aria-label={m.figures.title}>
-        {head(LayoutGrid, m.figures.title, false)}
-        <dl className="figures">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="figure">
-              <dt>
-                <Skeleton width={`${50 + ((i * 17) % 35)}%`} />
-              </dt>
-              <dd className="figure-value">
-                <Skeleton width="3.5rem" />
-              </dd>
-              <dd className="figure-sub">
-                <Skeleton width="70%" />
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+        </div>,
+      )}
+      {card(Tag, m.versions, shares(4))}
+      {card(CreditCard, m.plans, shares(4))}
+      {card(Languages, m.languages, shares(3))}
+      {card(Download, m.downloads, shares(4))}
+      {card(GitBranch, m.project.title, figures(4, true))}
+      {card(LayoutGrid, m.figures.title, figures(6))}
+      {card(Gauge, m.averages.title, figures(6))}
     </div>
   );
 }

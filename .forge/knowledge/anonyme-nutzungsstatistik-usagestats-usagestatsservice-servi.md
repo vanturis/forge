@@ -1,8 +1,8 @@
 ---
-title: "Anonyme Nutzungsstatistik und Token-Erfassung (usageStats, modelUsage, services/stats)"
-summary: "Wie FORGE Tokens erfasst (modelUsage statt usage), welche Summen (ab Stichtag 17.10.2026) und welches Abo anonym an forge-stats.vanturis.de gehen, wie Zustimmung und Abschalten laufen; nötig vor Änderungen an Token-Zählung, Zählern oder dem Dienst."
-tags: ["sidecar","tokens","sdk","stolperfalle","einstellungen","telefon"]
-updated: "2026-10-31T10:50:45.724Z"
+title: "Anonyme Nutzungsstatistik und Token-Erfassung (usageStats, modelUsage, stats_counters, services/stats)"
+summary: "Wie FORGE Tokens erfasst (modelUsage statt usage), welche Summen und Zähler (ab Stichtag 17.10.2026, inkl. toolCalls, commits, phoneMs) anonym an den Statistik-Dienst gehen und wo sie gezählt werden; nötig vor Änderungen an Token-Zählung, Zählern oder dem Dienst."
+tags: ["sidecar","tokens","sdk","stolperfalle","einstellungen","telefon","stats"]
+updated: "2026-11-15T08:20:46.511Z"
 ---
 
 ## Token-Erfassung: modelUsage, nicht usage (Stolperfalle, behoben 2026-10-18)
@@ -10,7 +10,7 @@ updated: "2026-10-31T10:50:45.724Z"
 - `modelUsage` ist **kumulativ über die Durchläufe eines Claude-Prozesses**. `normalize.ts` legt es als `turn.result.models` ins Ereignis; `Db.appendEvent` bildet die Differenz zum letzten `turn.result` derselben Session mit Tokens (`lastModelTotals`, überspringt abgestürzte Läufe mit Nullen) über `modelDelta`: sinkt der Stand eines Modells (neuer Prozess ohne gespeicherte Summen, `/clear`), zählt der neue Wert ganz. Fortgesetzte Sessions bringen ihre gespeicherten Summen mit, die Differenz stimmt dann.
 - `claude_usage` hat dafür `models` (JSON je Modell, Delta des Durchlaufs) und `cost_usd`. Einmal-Aufrufe (`recordClaudeUsage`, Titel, Commit-Nachrichten, Telefon) nehmen `modelUsage` direkt, dort ist es die Summe der Abfrage.
 - Modell-IDs mit `[1m]` (1M-Kontext, z. B. `claude-opus-5-5[1m]`) kommen so aus dem SDK, wenn ein Nutzer das 1M-Modell gewählt hat. Die App schickt sie roh, die Statistikseite fasst sie zusammen.
-- Tests: `packages/sidecar/test/usage-stats.test.ts` (Subagent-Modell, Absturz, neuer Prozess, Kosten, Stichtag, Modell-Filter, `readPlan`).
+- Tests: `packages/sidecar/test/usage-stats.test.ts` (Subagent-Modell, Absturz, neuer Prozess, Kosten, Stichtag, Modell-Filter, `readPlan`, Zähler `toolCalls`/`commits`/`phoneMs`).
 
 ## Statistik (Entscheidungen 2026-10-17/18, vom Besitzer)
 - Eigener Dienst unter `https://forge-stats.vanturis.de` (`USAGE_STATS_URL` in `packages/protocol/src/support.ts`), Code in `services/stats` (Next.js + Postgres per docker-compose, nicht im pnpm-Workspace, von ESLint und release.yml ausgenommen). Vor Coolify steht ein HAProxy, der TLS beendet: Domain in Coolify mit `http://…:3000`, Client-IP über `CLIENT_IP_HEADER`. Der Dienst wird nicht automatisch deployt: nach Änderungen in Coolify neu deployen.
@@ -20,13 +20,22 @@ updated: "2026-10-31T10:50:45.724Z"
 - Gesamtzahlen öffentlich auf der Startseite des Dienstes (im Stil der App, mit Diagrammen, Impressum von Vanturis). Das README-Badge „Downloads“ zählt nur Installer über `GET /api/v1/downloads` des Dienstes.
 
 ## Client (`packages/sidecar/src/stats/usage-stats.ts`)
-- Nur in der installierten App (`FORGE_RUNTIME_DIR`). Tick jede Minute, Versand wenn der letzte mindestens 5 Minuten her ist: `POST /api/v1/report` mit kumulativen `counters`, `models` ({ Modell-ID: { tokens, costUsdCents } }) und `plan`. Aus und schon gesendet: einmal `DELETE`. 429 gilt als gesendet.
+- Nur in der installierten App (`FORGE_RUNTIME_DIR`). Tick jede Minute, Versand wenn der letzte mindestens 5 Minuten her ist: `POST /api/v1/report` mit kumulativen `counters` (alles aus `UsageTotals` außer `models`, neue Felder gehen also automatisch mit), `models` ({ Modell-ID: { tokens, costUsdCents } }) und `plan`. Aus und schon gesendet: einmal `DELETE`. 429 gilt als gesendet.
 - `models`: nur IDs, die das Muster des Dienstes erfüllen (`MODEL_ID`), die 20 mit den meisten Tokens. Grund: eine ungültige ID (z. B. `<synthetic>`) ließe den Dienst die ganze Meldung mit 400 ablehnen, und zwar bei jedem Versuch. Kosten je Modell werden erst am Ende auf Cent gerundet.
 - `plan` (seit 2026-10-18) kommt aus `readPlan()` in `claude/diagnostics.ts`: `oauthAccount.organizationType` (`claude_max` → `max`) plus Tier aus `userRateLimitTier ?? organizationRateLimitTier` über `planName` (`default_claude_max_20x` → `ultra`, `default_claude_max_5x` → `max`), null ohne claude.ai-Anmeldung. Ältere App-Versionen senden `max_20x` und `max_5x`, der Dienst zählt sie beim Lesen um (`CURRENT_PLAN` in `services/stats/src/lib/db.ts`). Bewusst aus `.claude.json` statt `claude auth status`: kein Prozess alle 5 Minuten, keine E-Mail/Org-Namen.
 - Installations-ID in `<dataDir>/usage-stats.json`, bewusst nicht in den Einstellungen (Backup und Sync würden sie auf andere PCs kopieren).
 - `Db.usageTotals()`: Tokens, Durchläufe, Arbeitszeit, Sessions aus `claude_usage`; `userTurns` = Session-Durchläufe ohne `purpose`; `costUsdCents` und `models` nur aus Zeilen mit `modelUsage`; Projekte aus `stats_counters.projectsCreated` (nicht für Worktrees und Backup-Restore); gestartete Agenten = `agent_log` ∪ vorhandene Worktree-Projekte (laufende zählen mit), zusammengeführte aus `agent_log`. Alles ab Stichtag.
 - Prüfen mit echten Daten: Kopie von `%APPDATA%\forge\forge.db` plus `-wal` in einen Temp-Ordner, `new Db(kopie).usageTotals()` in einer temporären Vitest-Datei; Ausgabe in eine Datei schreiben (console.log erscheint im Vitest-Lauf nicht).
-- Neuer Zähler oder neues Feld: `UsageTotals` + `usageTotals()` (mit Stichtag-Filter) bzw. Dep in `UsageStatsDeps`, im Dienst (Schema in `report.ts`, Obergrenzen, Spalte, Seite), Texte in `UsageStatsPrompt`, Datenschutz in `SettingsView`, README, `services/stats/README.md`, „Was erfasst wird“ auf der Seite und `docs/SECURITY.md`.
+
+## Zähler toolCalls, commits, phoneMs (seit 2026-11-15)
+- `stats_counters` (key, value) hält, was keine andere Tabelle überlebt. Erhöhen über `Db.countStat("toolCalls" | "commits")` (intern `bumpCounter`). Diese Zähler haben keinen Stichtag-Filter und kein Nachtragen: sie zählen ab der Version, die sie eingeführt hat.
+- `toolCalls`: in `SessionStream.handle` (`sessions/stream.ts`) bei jedem `tool.use` des Live-Streams, auch von Subagenten (`parentToolUseId`). **Bewusst nicht in `Db.appendEvent`**: `importHistory` (Session, die außerhalb von FORGE begann) und `importEvents` (Kopien, Crew) schreiben auch `tool.use`-Ereignisse, die nicht FORGEs Arbeit sind.
+- `commits`: Hook `GitEngine.onCommit`, in `app.ts` auf `db.countStat("commits")` gesetzt. Feuert nach jedem gelungenen `GitEngine.commit()`. Damit zählen alle Aufrufer ohne eigenen Code: Auto-Commit (`turn-automation.ts`), RPC `git.commit` (Git-Ansicht, Commit-Dialog), Telefon (`phone-service.ts`), „Beim Schließen alles pushen“ (`push-all.ts`) und der Commit der Restdateien eines Agenten vor dem Zusammenführen (`agent-finish.ts`, `remainingCommit`). Nicht gezählt: Merge-Commits (`concludeMerge`, `mergeCommit` laufen über `git.exec`), `initialCommit` (leerer erster Commit) und alles, was Claude über Bash committet.
+- `phoneMs`: Summe aus `phone_calls` (`ended_at - started_at` über `julianday`), nur `result = 'answered'`, mit Stichtag-Filter auf `started_at` wie `phoneCalls`. Ein Anruf wird erst beim Ende gespeichert (`finishRecord`), laufende zählen also in keiner der beiden Zahlen. Verpasste und abgelehnte Anrufe zählen in `phoneCalls`, aber nicht in `phoneMs` (dort wäre es nur Klingelzeit). `phone_calls` wird nirgends gelöscht.
+- Obergrenzen im Dienst: `toolCalls` 1e9, `commits` 1e7, `phoneMs` 1e11. Ein alter Dienst ignoriert unbekannte Schlüssel.
+
+## Neuer Zähler oder neues Feld (Checkliste)
+`UsageTotals` + `usageTotals()` (mit Stichtag-Filter oder über `stats_counters`) bzw. Dep in `UsageStatsDeps`; im Dienst Schema in `report.ts`, Obergrenzen, Spalte, Seite; Texte: `setup.usageStats.sent` und `views.usageStatsText` unter `apps/desktop/src/i18n/{de,en}/` (Hinweis-Dialog `UsageStatsPrompt`, Datenschutz in `SettingsView`), `README.md`, `README.de.md`, `docs/SECURITY.md`, `docs/SECURITY.de.md`, `services/stats/README.md` und „Was erfasst wird“ auf der Seite. Die Telefon-Beschreibung (`phone-tools.ts`, `usage_stats`) nennt nur Beispiele und der Tagesbericht-Knopf „FORGE gesamt“ ist nur ein Link auf die Statistikseite: beide brauchen keine Änderung.
 
 ## Überall angebunden
 Einstellungen > Über FORGE > Datenschutz, Befehlspalette, Tagesbericht (Knopf „FORGE gesamt“), Telefon `forge_settings usage_stats`, Unterstützen-Dialog hinter dem roten Herz neben der Suche.

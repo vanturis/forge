@@ -1,6 +1,8 @@
 import { Pool } from "pg";
 import { ONLINE_MINUTES } from "./constants";
-import { HISTORY_DAYS, historyDays, historySql, toHistory, type HistoryDay, type HistoryRow } from "./history";
+import { DOWNLOAD_KINDS, fetchSetupAssets, type DownloadKind, type Downloads, type SetupAsset } from "./downloads";
+import { HISTORY_DAYS, historyDays, historySql, toHistory, tokenSum, type HistoryDay, type HistoryRow } from "./history";
+import { getProject, type Project } from "./project";
 import { COUNTER_KEYS, type Counters, type ModelUsage, type Report } from "./report";
 import type { VersionCount } from "./versions";
 
@@ -24,6 +26,12 @@ export interface PlatformCount {
   installs: number;
 }
 
+/** What all installations did in one hour of the day (UTC), summed over the last 30 days. */
+export interface HourActivity {
+  tokens: number;
+  turns: number;
+}
+
 /** Minimum time between two accepted reports of one installation; the app reports every 5 minutes. */
 export const REPORT_INTERVAL_MINUTES = 4;
 const TOTALS_MAX_AGE_MS = 5 * 60 * 1000;
@@ -35,6 +43,9 @@ const MAX_TOTAL_MODELS = 50;
 export interface Totals {
   installs: number;
   activeInstalls30d: number;
+  activeInstalls7d: number;
+  /** installations with a report in the last 24 hours */
+  activeInstalls24h: number;
   /** installations whose first report was in the last 30 days */
   newInstalls30d: number;
   /** installations with a report in the last ONLINE_MINUTES */
@@ -53,6 +64,12 @@ export interface Totals {
   languages: LanguageCount[];
   /** the last 30 days (UTC), oldest first */
   history: HistoryDay[];
+  /** 24 entries, index = hour of the day in UTC, over the last 30 days */
+  hours: HourActivity[];
+  /** installer downloads by people, without updates (lib/downloads.ts) */
+  downloads: Downloads;
+  /** facts of the repository on GitHub; null while GitHub cannot be reached */
+  project: Project | null;
 }
 
 let pool: Pool | null = null;
@@ -84,13 +101,34 @@ async function db(): Promise<Pool> {
       ALTER TABLE installs ADD COLUMN IF NOT EXISTS models jsonb NOT NULL DEFAULT '{}'::jsonb;
       ALTER TABLE installs ADD COLUMN IF NOT EXISTS plan text;
       ALTER TABLE installs ADD COLUMN IF NOT EXISTS language text;
+      ALTER TABLE installs ADD COLUMN IF NOT EXISTS first_counters jsonb;
       CREATE TABLE IF NOT EXISTS install_days (
         install_id uuid NOT NULL REFERENCES installs(install_id) ON DELETE CASCADE,
         day date NOT NULL,
         counters jsonb NOT NULL,
         PRIMARY KEY (install_id, day)
       );
-      CREATE INDEX IF NOT EXISTS install_days_day ON install_days (day)`,
+      CREATE INDEX IF NOT EXISTS install_days_day ON install_days (day);
+      CREATE TABLE IF NOT EXISTS activity_hours (
+        day date NOT NULL,
+        hour smallint NOT NULL,
+        tokens numeric NOT NULL DEFAULT 0,
+        turns integer NOT NULL DEFAULT 0,
+        PRIMARY KEY (day, hour)
+      );
+      CREATE TABLE IF NOT EXISTS download_assets (
+        asset_id bigint PRIMARY KEY,
+        name text NOT NULL,
+        downloads integer NOT NULL,
+        first_seen timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS download_days (
+        day date NOT NULL,
+        kind text NOT NULL,
+        downloads integer NOT NULL,
+        PRIMARY KEY (day, kind)
+      )`,
     )
     .then(() => undefined)
     .catch((err: unknown) => {
@@ -108,29 +146,65 @@ export async function installExists(installId: string): Promise<boolean> {
 }
 
 /**
+ * What a report adds to the hour it arrives in: the difference to the installation's previous report.
+ * Nothing for a first report (its total is no work of this hour) and nothing for a decrease.
+ */
+export function reportDelta(prev: Partial<Counters> | null, now: Counters): HourActivity {
+  if (!prev) return { tokens: 0, turns: 0 };
+  const before = {
+    tokensInput: prev.tokensInput ?? 0,
+    tokensOutput: prev.tokensOutput ?? 0,
+    tokensCacheRead: prev.tokensCacheRead ?? 0,
+    tokensCacheWrite: prev.tokensCacheWrite ?? 0,
+  };
+  return { tokens: Math.max(0, tokenSum(now) - tokenSum(before)), turns: Math.max(0, now.claudeTurns - (prev.claudeTurns ?? 0)) };
+}
+
+/**
  * Stores the report as the installation's latest state and as its state of the current UTC day; false
- * when the previous report is younger than the interval (then neither is written).
+ * when the previous report is younger than the interval (then nothing is written). The first report of
+ * an installation also stays as first_counters, the base of its first day in the history.
  */
 export async function upsertReport(r: Report): Promise<boolean> {
   const p = await db();
-  const res = await p.query(
-    `WITH up AS (
-       INSERT INTO installs (install_id, first_seen, last_seen, app_version, os, counters, models, plan, language)
-       VALUES ($1, now(), now(), $2, $3, $4, $5, $7, $8)
+  // All parts of the statement see the table as it was before: prev is the state this report replaces.
+  const res = await p.query<{ prev: Partial<Counters> | null }>(
+    `WITH prev AS (
+       SELECT counters FROM installs WHERE install_id = $1
+     ), up AS (
+       INSERT INTO installs (install_id, first_seen, last_seen, app_version, os, counters, models, plan, language, first_counters)
+       VALUES ($1, now(), now(), $2, $3, $4::jsonb, $5, $7, $8, $4::jsonb)
        ON CONFLICT (install_id) DO UPDATE
          SET last_seen = now(), app_version = EXCLUDED.app_version, os = EXCLUDED.os,
              counters = EXCLUDED.counters, models = EXCLUDED.models, plan = EXCLUDED.plan,
              language = EXCLUDED.language
          WHERE installs.last_seen <= now() - make_interval(mins => $6)
        RETURNING install_id
+     ), days AS (
+       INSERT INTO install_days (install_id, day, counters)
+       SELECT install_id, (now() AT TIME ZONE 'UTC')::date, $4::jsonb FROM up
+       ON CONFLICT (install_id, day) DO UPDATE SET counters = EXCLUDED.counters
+       RETURNING 1
      )
-     INSERT INTO install_days (install_id, day, counters)
-     SELECT install_id, (now() AT TIME ZONE 'UTC')::date, $4 FROM up
-     ON CONFLICT (install_id, day) DO UPDATE SET counters = EXCLUDED.counters
-     RETURNING 1`,
+     SELECT (SELECT counters FROM prev) AS prev FROM days`,
     [r.installId, r.appVersion, r.os, JSON.stringify(r.counters), JSON.stringify(r.models), REPORT_INTERVAL_MINUTES, r.plan, r.language],
   );
-  return (res.rowCount ?? 0) > 0;
+  const row = res.rows[0];
+  if (!row) return false;
+  const delta = reportDelta(row.prev, r.counters);
+  if (delta.tokens > 0 || delta.turns > 0) {
+    // The report is stored; the hour chart missing a few minutes is no reason to make the app send again.
+    await p
+      .query(
+        `INSERT INTO activity_hours (day, hour, tokens, turns)
+         VALUES ((now() AT TIME ZONE 'UTC')::date, EXTRACT(HOUR FROM now() AT TIME ZONE 'UTC')::smallint, $1, $2)
+         ON CONFLICT (day, hour) DO UPDATE
+           SET tokens = activity_hours.tokens + EXCLUDED.tokens, turns = activity_hours.turns + EXCLUDED.turns`,
+        [delta.tokens, delta.turns],
+      )
+      .catch((err: unknown) => console.error("activity failed:", err instanceof Error ? err.message : err));
+  }
+  return true;
 }
 
 export async function deleteInstall(installId: string): Promise<void> {
@@ -212,29 +286,150 @@ async function queryPlatforms(p: Pool): Promise<PlatformCount[]> {
   return res.rows.map((r) => ({ platform: r.platform, installs: Number(r.installs) }));
 }
 
+async function queryHours(p: Pool): Promise<HourActivity[]> {
+  const res = await p.query<{ hour: number; tokens: string; turns: string }>(
+    `SELECT hour, SUM(tokens)::text AS tokens, SUM(turns)::text AS turns
+     FROM activity_hours
+     WHERE day > (now() AT TIME ZONE 'UTC')::date - ${HISTORY_DAYS}
+     GROUP BY hour`,
+  );
+  const hours: HourActivity[] = Array.from({ length: 24 }, () => ({ tokens: 0, turns: 0 }));
+  for (const r of res.rows) if (hours[r.hour]) hours[r.hour] = { tokens: Number(r.tokens), turns: Number(r.turns) };
+  return hours;
+}
+
+// ---- downloads (what counts as one: lib/downloads.ts)
+
+/**
+ * Remembers the download count of every FORGE-Setup.exe ever seen, so the total survives the next upload
+ * (GitHub starts the new file at 0), and books the increase since the last look on today.
+ */
+export async function storeSetupDownloads(assets: SetupAsset[], now = Date.now()): Promise<void> {
+  const p = await db();
+  for (const a of assets) {
+    // A file that was there long before the first look: its count so far belongs to no day.
+    const old = a.createdAt !== null && now - Date.parse(a.createdAt) > 86_400_000;
+    const res = await p.query<{ delta: number }>(
+      `WITH prev AS (
+         SELECT downloads FROM download_assets WHERE asset_id = $1
+       ), up AS (
+         INSERT INTO download_assets (asset_id, name, downloads) VALUES ($1, $2, $3)
+         ON CONFLICT (asset_id) DO UPDATE
+           SET downloads = GREATEST(download_assets.downloads, EXCLUDED.downloads), updated_at = now()
+         RETURNING downloads
+       )
+       SELECT ((SELECT downloads FROM up) - COALESCE((SELECT downloads FROM prev), $4))::int AS delta`,
+      [a.id, a.name, a.downloads, old ? a.downloads : 0],
+    );
+    const delta = res.rows[0]?.delta ?? 0;
+    if (delta > 0) await countDownload("windows", delta);
+  }
+}
+
+/** Books downloads on today (UTC). For "windows" this feeds the day chart only; its total is download_assets. */
+export async function countDownload(kind: DownloadKind, n = 1): Promise<void> {
+  const p = await db();
+  await p.query(
+    `INSERT INTO download_days (day, kind, downloads) VALUES ((now() AT TIME ZONE 'UTC')::date, $1, $2)
+     ON CONFLICT (day, kind) DO UPDATE SET downloads = download_days.downloads + EXCLUDED.downloads`,
+    [kind, n],
+  );
+}
+
+async function queryDownloads(p: Pool): Promise<Downloads> {
+  const res = await p.query<{ kind: string; n: string }>(
+    `SELECT 'windows' AS kind, COALESCE(SUM(downloads), 0)::text AS n FROM download_assets
+     UNION ALL
+     SELECT kind, SUM(downloads)::text AS n FROM download_days WHERE kind <> 'windows' GROUP BY kind`,
+  );
+  const kinds = Object.fromEntries(DOWNLOAD_KINDS.map((k) => [k, 0])) as Record<DownloadKind, number>;
+  for (const r of res.rows) if (r.kind in kinds) kinds[r.kind as DownloadKind] = Number(r.n);
+  return { total: DOWNLOAD_KINDS.reduce((n, k) => n + kinds[k], 0), kinds };
+}
+
+const SETUP_SYNC_MS = 30 * 60_000;
+let setupSyncAt = 0;
+let setupSync: Promise<void> | null = null;
+/** what GitHub reported last, for the badge while the database is down */
+let setupSeen: number | null = null;
+
+/**
+ * Looks at GitHub's count of FORGE-Setup.exe at most every 30 minutes. Never throws: the page and the
+ * reports that trigger it work without GitHub. A failed look is tried again after a minute.
+ */
+export function syncSetupDownloads(fetchFn: typeof fetch = fetch): Promise<void> {
+  if (Date.now() - setupSyncAt < SETUP_SYNC_MS) return Promise.resolve();
+  setupSync ??= (async () => {
+    try {
+      const assets = await fetchSetupAssets(fetchFn);
+      setupSeen = assets.reduce((n, a) => n + a.downloads, 0);
+      await storeSetupDownloads(assets);
+      setupSyncAt = Date.now();
+    } catch (err) {
+      console.error("download sync failed:", err instanceof Error ? err.message : err);
+      setupSyncAt = Date.now() - SETUP_SYNC_MS + 60_000;
+    }
+  })().finally(() => {
+    setupSync = null;
+  });
+  return setupSync;
+}
+
+/** The downloads, current with GitHub; without the database what GitHub reported last (Windows only). */
+export async function getDownloads(): Promise<Downloads> {
+  await syncSetupDownloads();
+  try {
+    return await queryDownloads(await db());
+  } catch (err) {
+    if (setupSeen === null) throw err;
+    return { total: setupSeen, kinds: { windows: setupSeen, macos: 0, linux: 0, script: 0 } };
+  }
+}
+
+async function countsByDay(p: Pool, sql: string, params: unknown[] = []): Promise<Map<string, number>> {
+  const res = await p.query<{ day: string; n: string }>(sql, params);
+  return new Map(res.rows.map((r) => [r.day, Number(r.n)]));
+}
+
 /** The history of the `days` UTC days up to `endDay` (today when left out). */
 export async function queryHistory(endDay?: string, days = HISTORY_DAYS): Promise<HistoryDay[]> {
   const p = await db();
   const end = endDay ?? new Date().toISOString().slice(0, 10);
-  const res = await p.query<HistoryRow>(historySql(), [historyDays(end, days)[0], end]);
-  return toHistory(res.rows, end, days);
+  const start = historyDays(end, days)[0];
+  const [res, newInstalls, downloads] = await Promise.all([
+    p.query<HistoryRow>(historySql(), [start, end]),
+    countsByDay(p, `SELECT to_char((first_seen AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD') AS day, COUNT(*)::text AS n FROM installs GROUP BY 1`),
+    countsByDay(
+      p,
+      `SELECT to_char(day, 'YYYY-MM-DD') AS day, SUM(downloads)::text AS n FROM download_days WHERE day BETWEEN $1::date AND $2::date GROUP BY day`,
+      [start, end],
+    ),
+  ]);
+  return toHistory(res.rows, end, days, { newInstalls, downloads });
 }
 
 async function queryTotals(): Promise<Totals> {
   const p = await db();
-  const [models, versions, plans, platforms, languages, history] = await Promise.all([
+  const project = getProject();
+  // Before the history, which shows today's downloads.
+  await syncSetupDownloads();
+  const [models, versions, plans, platforms, languages, history, hours, downloads] = await Promise.all([
     queryModels(p),
     queryVersions(p),
     queryPlans(p),
     queryPlatforms(p),
     queryLanguages(p),
     queryHistory(),
+    queryHours(p),
+    queryDownloads(p),
   ]);
   // The keys come from COUNTER_KEYS, not from input, so interpolating them is safe.
   const sums = COUNTER_KEYS.map((k) => `COALESCE(SUM((counters->>'${k}')::numeric), 0)::text AS "${k}"`).join(",\n");
   const res = await p.query<Record<string, string>>(
     `SELECT COUNT(*)::text AS installs,
        COUNT(*) FILTER (WHERE last_seen > now() - interval '30 days')::text AS active,
+       COUNT(*) FILTER (WHERE last_seen > now() - interval '7 days')::text AS active7,
+       COUNT(*) FILTER (WHERE last_seen > now() - interval '24 hours')::text AS active1,
        COUNT(*) FILTER (WHERE first_seen > now() - interval '30 days')::text AS new,
        COUNT(*) FILTER (WHERE last_seen > now() - make_interval(mins => $1))::text AS online,
        ${sums}
@@ -246,6 +441,8 @@ async function queryTotals(): Promise<Totals> {
   return {
     installs: Number(row.installs ?? 0),
     activeInstalls30d: Number(row.active ?? 0),
+    activeInstalls7d: Number(row.active7 ?? 0),
+    activeInstalls24h: Number(row.active1 ?? 0),
     newInstalls30d: Number(row.new ?? 0),
     onlineInstalls: Number(row.online ?? 0),
     counters,
@@ -256,6 +453,9 @@ async function queryTotals(): Promise<Totals> {
     platforms,
     languages,
     history,
+    hours,
+    downloads,
+    project: await project,
   };
 }
 

@@ -20,7 +20,7 @@ import { PROFILE_IDS, PROFILE_INFO, ProfileBadge, ProfileIcon } from "@/componen
 import { tagLabel } from "@/components/workspace/ProjectSettingsTab";
 import { RemoteControlButton } from "@/components/workspace/RemoteControl";
 import { InTitleBar } from "@/components/layout/TitleBar";
-import { hasTitleBar } from "@/lib/title-bar";
+import { hasTitleBar, windowDrag } from "@/lib/title-bar";
 import { AppButtons, HeaderDivider } from "@/components/layout/Page";
 import { useSplitLayout } from "./chat-slot";
 import { CrewPresence } from "@/components/crew/CrewPresence";
@@ -160,7 +160,7 @@ export function SplitControlBar({ projectId }: { projectId: string }) {
   const shown = useSplitLayout()?.shown ?? 1;
   const closeAll = useUi((s) => s.closeSplitPanes);
   return (
-    <div className="flex h-12 shrink-0 animate-fade-in items-center gap-3 border-b border-border px-5">
+    <div {...windowDrag} className="flex h-12 shrink-0 animate-fade-in select-none items-center gap-3 border-b border-border px-5">
       <LayoutGrid className="h-4 w-4 shrink-0 text-muted" />
       <span className="min-w-0 truncate text-body font-medium">{m.splitView}</span>
       <span className="hidden shrink-0 text-caption-lg text-subtle md:inline">{m.areas(shown)}</span>
@@ -239,7 +239,7 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
   // A temporary chat has nothing to set up: no favourite, tags, permission profile or panels.
   if (isTmpChat(project))
     return (
-      <header className="relative flex h-12 shrink-0 items-center gap-3 border-b border-border px-5">
+      <header {...windowDrag} className="relative flex h-12 shrink-0 select-none items-center gap-3 border-b border-border px-5">
         <AreaGrip area={pane ? pane.id : MAIN_AREA} />
         <TempChatIcon size={26} className="rounded-lg" />
         {pane ? <ProjectSwitch pane={pane} current={projectId}>{name}</ProjectSwitch> : name}
@@ -263,7 +263,7 @@ export function WorkspaceHeader({ projectId, pane }: { projectId: string; pane?:
     );
 
   return (
-    <header className="relative flex h-12 shrink-0 items-center gap-3 border-b border-border px-5">
+    <header {...windowDrag} className="relative flex h-12 shrink-0 select-none items-center gap-3 border-b border-border px-5">
       <AreaGrip area={pane ? pane.id : MAIN_AREA} />
       <ProjectIcon id={project.parentId ?? project.id} name={project.name} size={26} />
       {/* Only the name gives way in a narrow window; the star sits outside it, so it cannot slide over the tags. */}

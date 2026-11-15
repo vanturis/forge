@@ -50,6 +50,34 @@ describe("percent", () => {
   });
 });
 
+describe("percentFine", () => {
+  it("keeps a decimal for small shares, so they do not all read 0", () => {
+    expect(norm(de.percentFine(984, 1000))).toBe("98 %");
+    expect(norm(de.percentFine(12, 1000))).toBe("1,2 %");
+    expect(norm(de.percentFine(3, 10_000))).toBe("<0,1 %");
+    expect(norm(de.percentFine(0, 1000))).toBe("0 %");
+    expect(en.percentFine(12, 1000)).toBe("1.2%");
+    expect(en.percentFine(1, 0)).toBe("0%");
+  });
+});
+
+describe("minutes, hour, weekday, date", () => {
+  it("writes milliseconds as minutes", () => {
+    expect(de.minutes(398_000)).toBe("6,6");
+    expect(en.minutes(60_000 * 42.4)).toBe("42");
+  });
+
+  it("names hours, weekdays and dates in the language", () => {
+    expect(norm(de.hour(14))).toBe("14 Uhr");
+    expect(norm(en.hour(14))).toBe("2 PM");
+    expect(de.weekday(0)).toBe("Mo");
+    expect(de.weekday(6, true)).toBe("Sonntag");
+    expect(en.weekday(0)).toBe("Mon");
+    expect(de.date("2026-11-12T10:39:27Z")).toBe("12.11.2026");
+    expect(en.date("2026-11-12T10:39:27Z")).toBe("Nov 12, 2026");
+  });
+});
+
 describe("day labels", () => {
   it("formats UTC days", () => {
     expect(de.dayShort("2026-10-18")).toBe("18.10.");
