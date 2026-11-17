@@ -2615,6 +2615,70 @@ describe("what newer Claude Code versions report", () => {
     expect(rt.reloads).toEqual([false, false]);
   });
 
+  it("shows a failed API request that is sent again until an answer arrives", async () => {
+    const s = await svc.start({ projectId, prompt: "Lies a.txt" });
+    const sink = rt.sinks[0]!;
+    const before = Date.now();
+    sink.onMessage({ type: "system", subtype: "api_retry", attempt: 2, max_retries: 10, retry_delay_ms: 8000, error_status: 529, error: "overloaded" });
+    const retry = svc.get(s.id).retry!;
+    expect(retry).toMatchObject({ attempt: 2, maxRetries: 10, errorStatus: 529, error: "overloaded" });
+    expect(new Date(retry.retryAt).getTime()).toBeGreaterThanOrEqual(before + 8000);
+    expect(persistedTypes(s.id)).not.toContain("api_retry");
+    // no HTTP answer at all
+    sink.onMessage({ type: "system", subtype: "api_retry", attempt: 3, max_retries: 10, retry_delay_ms: 100, error_status: null, error: "unknown" });
+    expect(svc.get(s.id).retry).toMatchObject({ attempt: 3, errorStatus: null });
+    sink.onMessage({ type: "stream_event", event: { type: "message_start", message: { id: "m1" } } });
+    expect(svc.get(s.id).retry).toBeNull();
+    // one that never got through ends with the turn
+    sink.onMessage({ type: "system", subtype: "api_retry", attempt: 10, max_retries: 10, retry_delay_ms: 100, error_status: 529, error: "overloaded" });
+    sink.onMessage({ ...done, subtype: "error_during_execution", is_error: true });
+    expect(svc.get(s.id).retry).toBeNull();
+  });
+
+  it("shows how far Claude's thinking got while the block runs", async () => {
+    const s = await svc.start({ projectId, prompt: "Lies a.txt" });
+    const sink = rt.sinks[0]!;
+    const updates: Array<number | null | undefined> = [];
+    emitted.length = 0;
+    sink.onMessage({ type: "stream_event", event: { type: "content_block_start", index: 0, content_block: { type: "thinking" } }, api_message_id: "m1" });
+    sink.onMessage({ type: "system", subtype: "thinking_tokens", estimated_tokens: 50, estimated_tokens_delta: 50 });
+    sink.onMessage({ type: "system", subtype: "thinking_tokens", estimated_tokens: 303, estimated_tokens_delta: 253 });
+    for (const e of emitted) if (e.event === "session.updated") updates.push(e.payload.thinkingTokens);
+    // frames within a second are not broadcast one by one
+    expect(updates).toEqual([50]);
+    expect(svc.get(s.id).thinkingTokens).toBe(303);
+    // a subagent's block does not end the main thread's thinking
+    sink.onMessage({ type: "stream_event", parent_tool_use_id: "t1", event: { type: "content_block_stop", index: 0 } });
+    expect(svc.get(s.id).thinkingTokens).toBe(303);
+    sink.onMessage({ type: "stream_event", event: { type: "content_block_stop", index: 0 } });
+    expect(svc.get(s.id).thinkingTokens).toBeNull();
+    // outside of a turn nothing would take the value back
+    sink.onMessage(done);
+    sink.onMessage({ type: "system", subtype: "thinking_tokens", estimated_tokens: 80, estimated_tokens_delta: 80 });
+    expect(svc.get(s.id).thinkingTokens).toBeNull();
+  });
+
+  it("follows a turn the CLI names before its first output", async () => {
+    const s = await svc.start({ projectId, prompt: "Lies a.txt" });
+    const sink = rt.sinks[0]!;
+    expect(rt.started[0]!.env.CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS).toBe("1");
+    // while FORGE's own turn runs the state says nothing new
+    sink.onMessage({ type: "system", subtype: "session_state_changed", state: "running" });
+    sink.onMessage(done);
+    sink.onMessage({ type: "system", subtype: "session_state_changed", state: "idle" });
+    expect(svc.get(s.id).status).toBe("idle");
+    // a background command finished: the CLI works again
+    sink.onMessage({ type: "system", subtype: "session_state_changed", state: "running" });
+    expect(svc.get(s.id).status).toBe("running");
+    sink.onMessage(done);
+    expect(svc.get(s.id).status).toBe("idle");
+    // a turn that ends without a result does not leave the session running
+    sink.onMessage({ type: "system", subtype: "session_state_changed", state: "running" });
+    sink.onMessage({ type: "system", subtype: "session_state_changed", state: "idle" });
+    expect(svc.get(s.id).status).toBe("idle");
+    expect(persistedTypes(s.id)).not.toContain("session_state_changed");
+  });
+
   it("records taken back answers, notices, refusals and lost writes in the timeline", async () => {
     const s = await svc.start({ projectId, prompt: "Lies a.txt" });
     const sink = rt.sinks[0]!;

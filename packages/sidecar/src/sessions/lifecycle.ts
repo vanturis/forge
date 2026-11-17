@@ -224,6 +224,10 @@ export class SessionLifecycle {
       taskToolUse: new Map(),
       context: null,
       suggestion: null,
+      retry: null,
+      thinkingTokens: null,
+      thinkingPublishedAt: 0,
+      cliTurn: false,
       reloadPending: false,
     };
     this.core.live.set(rec.id, live);
@@ -253,6 +257,8 @@ export class SessionLifecycle {
             ...(settings.subagentEffort ? { CLAUDE_CODE_SUBAGENT_EFFORT: settings.subagentEffort } : {}),
             // Also what lets an SDK session run a long MCP call as a background task (task_type "mcp_task").
             ...(settings.autoBackgroundTasks ? { CLAUDE_AUTO_BACKGROUND_TASKS: "1" } : {}),
+            // system/session_state_changed: names a turn the CLI starts by itself before its first output.
+            CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS: "1",
           },
           idleCompaction: settings.idleCompaction,
           promptSuggestions: settings.promptSuggestions,

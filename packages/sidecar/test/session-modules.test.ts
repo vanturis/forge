@@ -71,6 +71,10 @@ function liveSession(rt: Partial<RuntimeSession> = {}): LiveSession {
     taskToolUse: new Map(),
     context: null,
     suggestion: null,
+    retry: null,
+    thinkingTokens: null,
+    thinkingPublishedAt: 0,
+    cliTurn: false,
     reloadPending: false,
   };
   core.live.set(SID, live);

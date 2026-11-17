@@ -1,4 +1,4 @@
-import type { SessionEvent } from "@forge/protocol";
+import type { ApiRetry, SessionEvent } from "@forge/protocol";
 import { t } from "@/i18n";
 
 /** Shown while Claude works, in the spirit of the spinner words in the Claude Code shell. */
@@ -36,4 +36,12 @@ export function formatElapsed(ms: number): string {
   if (s < 60) return `${s} s`;
   if (s < 3600) return `${Math.floor(s / 60)} min ${String(s % 60).padStart(2, "0")} s`;
   return `${Math.floor(s / 3600)} h ${String(Math.floor((s % 3600) / 60)).padStart(2, "0")} min`;
+}
+
+/** Why a request to the API failed and when Claude Code sends it again; past that time the new attempt runs. */
+export function retryText(retry: ApiRetry, now: number): string {
+  const m = t.chat.working.retry;
+  const cause = retry.errorStatus === null ? m.noAnswer : retry.error === "overloaded" ? m.overloaded : retry.error === "rate_limit" ? m.rateLimit : m.failed(retry.errorStatus);
+  const left = new Date(retry.retryAt).getTime() - now;
+  return `${cause} ${left > 0 ? m.waiting(formatElapsed(Math.ceil(left / 1000) * 1000), retry.attempt, retry.maxRetries) : m.trying(retry.attempt, retry.maxRetries)}`;
 }

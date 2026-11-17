@@ -499,7 +499,7 @@ function SessionThread({ sessionId, session, project }: { sessionId: string; ses
       {jump && <JumpToEnd kind={jump} onClick={jumpToEnd} />}
       </div>
       {/* Outside the scroll area: the line stays right above the composer, however short the chat is. */}
-      {startedAt && <WorkingIndicator startedAt={startedAt} subagents={session?.subagents} sessionId={sessionId} />}
+      {startedAt && <WorkingIndicator startedAt={startedAt} subagents={session?.subagents} sessionId={sessionId} retry={session?.retry} thinkingTokens={session?.thinkingTokens} />}
       {session?.mirror ? (
         <MirrorBar session={{ ...session, mirror: session.mirror }} />
       ) : (

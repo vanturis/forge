@@ -1,18 +1,18 @@
 import { memo, useEffect, useState, type ReactNode } from "react";
-import { ArrowDownToLine, Bot, Hourglass, MessageSquareText, MessagesSquare, Square, SquareTerminal } from "lucide-react";
-import type { BackgroundTask, SubagentProgress } from "@forge/protocol";
+import { ArrowDownToLine, Bot, Hourglass, MessageSquareText, MessagesSquare, RefreshCw, Square, SquareTerminal } from "lucide-react";
+import type { ApiRetry, BackgroundTask, SubagentProgress } from "@forge/protocol";
 import { call } from "@/lib/queries";
 import { errorMessage } from "@/lib/rpc";
 import { toast } from "@/stores/toast";
 import { useUi, type TaskView } from "@/stores/ui";
-import { cn } from "@/lib/utils";
+import { cn, formatTokens } from "@/lib/utils";
 import { contextItems } from "@/lib/context-menu";
 import type { MenuItem } from "@/components/ui/dropdown";
 import { Button } from "@/components/ui/button";
 import { Kbd, Tooltip } from "@/components/ui/misc";
 import { ChatRow } from "./ChatRow";
 import { ClaudeMark } from "./ClaudeMark";
-import { formatElapsed, pickPhrase } from "./working";
+import { formatElapsed, pickPhrase, retryText } from "./working";
 import { t } from "@/i18n";
 
 function useNow() {
@@ -152,9 +152,22 @@ export function TaskWorking({ startedAt, progress }: { startedAt: string; progre
 /**
  * Activity line under the chat while a turn runs, like the spinner line of the Claude Code shell.
  * Subagents of the turn are listed below it with their latest progress; each can be sent to the
- * background, so the turn goes on without waiting for it.
+ * background, so the turn goes on without waiting for it. A request Claude Code sends again after
+ * a failure gets its own line: the turn waits, it is not stuck.
  */
-export const WorkingIndicator = memo(function WorkingIndicator({ startedAt, subagents = [], sessionId }: { startedAt: string; subagents?: SubagentProgress[]; sessionId?: string }) {
+export const WorkingIndicator = memo(function WorkingIndicator({
+  startedAt,
+  subagents = [],
+  sessionId,
+  retry,
+  thinkingTokens,
+}: {
+  startedAt: string;
+  subagents?: SubagentProgress[];
+  sessionId?: string;
+  retry?: ApiRetry | null;
+  thinkingTokens?: number | null;
+}) {
   const now = useNow();
   const elapsed = now - new Date(startedAt).getTime();
   const toBackground = async (toolUseId: string | null) => {
@@ -170,9 +183,17 @@ export const WorkingIndicator = memo(function WorkingIndicator({ startedAt, suba
     <div className="max-h-40 shrink-0 overflow-y-auto px-6 pt-2 text-small">
       <WorkingLine startedAt={startedAt} now={now}>
         <span className="tabular-nums text-subtle">
-          ({formatElapsed(elapsed)} · <Kbd>Esc</Kbd> {t.chat.working.toInterrupt})
+          ({formatElapsed(elapsed)}
+          {thinkingTokens != null && !retry && <> · {t.chat.working.thinking(formatTokens(thinkingTokens))}</>} · <Kbd>Esc</Kbd> {t.chat.working.toInterrupt})
         </span>
       </WorkingLine>
+      {retry && (
+        <ChatRow marker={<RefreshCw className="h-3.5 w-3.5 text-warning" />}>
+          <span className="text-muted" role="status">
+            {retryText(retry, now)}
+          </span>
+        </ChatRow>
+      )}
       {subagents.map((a) => (
         <ChatRow key={a.taskId} marker={<Bot className="h-3.5 w-3.5 text-accent" />}>
           <div

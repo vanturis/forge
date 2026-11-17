@@ -26,6 +26,8 @@ export class SessionCore {
       context: live?.context ?? this.db.getSessionContext(r.id),
       autoContinueAt: this.db.getAutoContinue(r.id)?.dueAt ?? null,
       suggestion: live?.suggestion ?? null,
+      retry: live?.retry ?? null,
+      thinkingTokens: live?.thinkingTokens ?? null,
     };
   }
 

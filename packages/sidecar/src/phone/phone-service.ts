@@ -1813,6 +1813,7 @@ export class PhoneService {
             m.details.last(last ? excerptData(last, 1500) : null),
             s.status === "waiting_approval" ? m.details.open(pendingText(db, s.id)) : "",
             tasks.length ? m.details.tasks(tasks.join("\n")) : "",
+            s.retry && s.status === "running" ? m.details.retry(s.retry.attempt, s.retry.maxRetries, s.retry.error === "overloaded") : "",
             s.suggestion && s.status === "idle" ? m.details.suggestion(excerptData(s.suggestion, 300)) : "",
           ]
             .filter(Boolean)

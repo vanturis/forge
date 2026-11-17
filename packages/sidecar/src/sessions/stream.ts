@@ -13,6 +13,8 @@ import type { TurnDispatch } from "./turns.js";
 
 /** A suggestion is one short message; anything longer is not worth showing in the composer. */
 const MAX_SUGGESTION = 300;
+/** Thinking frames come several times a second and carry only a rough progress value. */
+const THINKING_PUBLISH_MS = 1000;
 
 export interface StreamParts {
   automation: TurnAutomation;
@@ -64,6 +66,19 @@ export class SessionStream {
       return;
     }
     if (m.type === "system" && (m.subtype === "task_started" || m.subtype === "task_progress" || m.subtype === "task_notification")) this.trackTask(id, live, m);
+    if (m.type === "system" && m.subtype === "api_retry") {
+      this.noteRetry(id, live, m);
+      return;
+    }
+    if (m.type === "system" && m.subtype === "thinking_tokens") {
+      this.noteThinking(id, live, m.estimated_tokens);
+      return;
+    }
+    if (m.type === "system" && m.subtype === "session_state_changed") {
+      this.noteCliState(id, live, m.state);
+      return;
+    }
+    this.noteAnswer(id, live, m);
     // Arrives after the turn's result. One that comes late, into the next turn, is already out of date.
     if (m.type === "prompt_suggestion") {
       const text = typeof m.suggestion === "string" ? m.suggestion.trim() : "";
@@ -105,6 +120,9 @@ export class SessionStream {
         const wasInterrupt = live.interrupting;
         live.interrupting = false;
         live.turnActive = false;
+        live.cliTurn = false;
+        live.retry = null;
+        live.thinkingTokens = null;
         this.remote.endTurn(id, live);
         pruneSeenUuids(live.seenUuids);
         const failed = body.isError && !wasInterrupt;
@@ -134,6 +152,70 @@ export class SessionStream {
       },
       () => {},
     );
+  }
+
+  /** A failed API request the CLI sends again: the turn is not stuck, it waits. */
+  private noteRetry(id: string, live: LiveSession, m: Record<string, unknown>) {
+    const attempt = finite(m.attempt);
+    if (attempt === null) return;
+    live.retry = {
+      attempt,
+      maxRetries: finite(m.max_retries) ?? attempt,
+      retryAt: new Date(Date.now() + Math.max(0, finite(m.retry_delay_ms) ?? 0)).toISOString(),
+      errorStatus: finite(m.error_status),
+      error: typeof m.error === "string" ? m.error : "unknown",
+    };
+    // What the failed attempt had thought so far is gone with it.
+    live.thinkingTokens = null;
+    this.core.publish(this.core.db.getSession(id));
+  }
+
+  /** Running estimate of the thinking block Claude is in; outside of a turn nothing would take it back. */
+  private noteThinking(id: string, live: LiveSession, estimated: unknown) {
+    const tokens = finite(estimated);
+    if (tokens === null || !live.turnActive) return;
+    live.thinkingTokens = tokens;
+    const now = Date.now();
+    if (now - live.thinkingPublishedAt < THINKING_PUBLISH_MS) return;
+    live.thinkingPublishedAt = now;
+    this.core.publish(this.core.db.getSession(id));
+  }
+
+  /** An answer that arrives ends the wait for a retry; the end of a block of the main thread ends its thinking. */
+  private noteAnswer(id: string, live: LiveSession, m: Record<string, unknown>) {
+    const event = m.type === "stream_event" ? (m.event as Record<string, unknown> | undefined)?.type : null;
+    let changed = false;
+    if (live.retry && (m.type === "assistant" || event === "message_start")) {
+      live.retry = null;
+      changed = true;
+    }
+    if (live.thinkingTokens !== null && !m.parent_tool_use_id && (event === "content_block_stop" || event === "message_start" || event === "message_stop")) {
+      live.thinkingTokens = null;
+      changed = true;
+    }
+    if (changed) this.core.publish(this.core.db.getSession(id));
+  }
+
+  /**
+   * The CLI's own state (CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS). "running" while FORGE shows idle is a turn
+   * the CLI started by itself, named about a second before its first output. With a subagent in the
+   * background the CLI stays "running" after the result and names no further turn, so the check on the
+   * first output in handle() stays.
+   */
+  private noteCliState(id: string, live: LiveSession, state: unknown) {
+    const status = this.core.db.getSession(id)?.status;
+    if (state === "running") {
+      if (live.closing || status !== "idle") return;
+      live.cliTurn = true;
+      this.turns.markRunning(id, live);
+    } else if (state === "idle" && live.cliTurn) {
+      // Ended without a result: nothing else would take the session out of "running".
+      live.cliTurn = false;
+      live.turnActive = false;
+      live.retry = null;
+      live.thinkingTokens = null;
+      if (status === "running") this.core.setStatus(id, "idle");
+    }
   }
 
   private refreshContext(id: string, live: LiveSession) {
@@ -245,4 +327,8 @@ export class SessionStream {
     live.background = next;
     this.core.publish(this.core.db.getSession(id));
   }
+}
+
+function finite(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }

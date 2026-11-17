@@ -1,4 +1,4 @@
-import type { BackgroundTask, ContextUsage, SessionStatus, SubagentProgress } from "@forge/protocol";
+import type { ApiRetry, BackgroundTask, ContextUsage, SessionStatus, SubagentProgress } from "@forge/protocol";
 import type { ApprovalDecision, ApprovalRequest, RuntimeSession } from "../claude/runtime.js";
 import type { Normalizer } from "../claude/normalize.js";
 import type { ProfileConfig } from "../policy/profiles.js";
@@ -44,6 +44,14 @@ export interface LiveSession {
   context: ContextUsage | null;
   /** Claude Code's guess at the next message, from after the last turn until the next one starts */
   suggestion: string | null;
+  /** the failed API request the turn waits to send again; null once an answer arrives */
+  retry: ApiRetry | null;
+  /** estimated tokens of the running thinking block; null outside of one */
+  thinkingTokens: number | null;
+  /** when thinkingTokens was last published (ms) */
+  thinkingPublishedAt: number;
+  /** the CLI reported a turn of its own (session_state_changed) that has no result yet */
+  cliTurn: boolean;
   /** plugins changed while the session worked; they are loaded once its turn has ended */
   reloadPending: boolean;
 }

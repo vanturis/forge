@@ -373,6 +373,8 @@ Security:
     subagent: (desc: string, since: string, summary: string) => `Subagent ${desc}, ${since}${summary ? `, latest: ${summary}` : ""}`,
     background: (kind: string, desc: string, since: string, summary: string) => `In the background: ${kind} ${desc}, ${since}${summary ? `, latest: ${summary}` : ""}`,
     context: (percent: number) => ` Context ${percent} percent full.`,
+    retry: (attempt: number, max: number, overloaded: boolean) =>
+      `The session waits for the Claude API, ${overloaded ? "it is overloaded" : "the last request failed"}. Claude Code tries again by itself, attempt ${attempt} of ${max}.`,
     suggestion: (text: string) => `Claude Code suggests as the next message: ${text}. Send it with send_message if the caller wants that.`,
     usage: (tokens, windows) => `Session usage: ${tokens} tokens${windows ? `, estimated share of the plan: ${windows}` : ""}.`,
     usageWindow: (label, percent) => `${label} ${percent} percent`,

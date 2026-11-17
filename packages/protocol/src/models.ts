@@ -197,6 +197,19 @@ export const ContextUsage = z.object({
 });
 export type ContextUsage = z.infer<typeof ContextUsage>;
 
+/** A request to the Claude API that failed and that Claude Code sends again by itself. */
+export const ApiRetry = z.object({
+  attempt: z.number(),
+  maxRetries: z.number(),
+  /** when the next attempt starts (ISO) */
+  retryAt: z.string(),
+  /** HTTP status of the failed attempt; null: no answer came (connection, timeout) */
+  errorStatus: z.number().nullable(),
+  /** Claude Code's name for the cause: "overloaded", "rate_limit", "server_error", ... */
+  error: z.string(),
+});
+export type ApiRetry = z.infer<typeof ApiRetry>;
+
 export const Session = z.object({
   id: z.string(),
   projectId: z.string(),
@@ -227,6 +240,10 @@ export const Session = z.object({
   autoContinueAt: z.string().nullable(),
   /** Claude Code's guess at the user's next message after the last turn (not persisted); gone once a turn starts */
   suggestion: z.string().nullable().optional(),
+  /** the running turn waits for another attempt of a failed API request (not persisted); gone once an answer arrives */
+  retry: ApiRetry.nullable().optional(),
+  /** estimated tokens of the thinking block Claude is in right now (not persisted); null when it is not thinking */
+  thinkingTokens: z.number().nullable().optional(),
   /** a crew member's session shown here read-only (crew.shareAsk view); missing for own sessions */
   mirror: CrewMirror.optional(),
 });

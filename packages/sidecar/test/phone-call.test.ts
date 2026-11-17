@@ -3,7 +3,7 @@ import { createSocket, type Socket } from "node:dgram";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ForgeError, type BackgroundTask, type MemoryScope, type PhoneState, type PlanUsage, type ServerEvent, type Settings, type SubagentProgress } from "@forge/protocol";
+import { ForgeError, type ApiRetry, type BackgroundTask, type MemoryScope, type PhoneState, type PlanUsage, type ServerEvent, type Settings, type SubagentProgress } from "@forge/protocol";
 import * as cfg from "../src/config/claude-config.js";
 import { encodeG711, FRAME_SAMPLES, rms, decodeG711 } from "../src/phone/audio.js";
 import type { ConversationCallbacks } from "../src/phone/call-controller.js";
@@ -39,6 +39,7 @@ interface FakeSession {
   background: BackgroundTask[];
   subagents: SubagentProgress[];
   archived?: boolean;
+  retry?: ApiRetry | null;
 }
 
 const fakeSession = (o: Omit<FakeSession, "updatedAt" | "background" | "subagents"> & Partial<FakeSession>): FakeSession => ({
@@ -1197,6 +1198,7 @@ describe("PhoneService end to end with a test PBX", () => {
       projectName: "shop",
       subagents: [{ taskId: "k1", toolUseId: "tu1", description: "Auth prüfen", agentType: null, summary: "Liest die Login-Routen", lastTool: null, toolUses: 2, startedAt: fiveMinutesAgo }],
       background: [{ taskId: "b1", description: "npm test", taskType: "local_bash", toolUseId: "tb1", startedAt: new Date().toISOString(), summary: null }],
+      retry: { attempt: 2, maxRetries: 10, retryAt: new Date().toISOString(), errorStatus: 529, error: "overloaded" },
     });
     const now = new Date().toISOString();
     db.insertSession({ id: "s1", projectId, claudeSessionId: null, cwd: t.dir, title: "Warenkorb", model: null, effort: null, profile: "balanced", permissionMode: "default", status: "running", apiKeySource: null, createdAt: now, updatedAt: now, lastError: null });
@@ -1210,6 +1212,7 @@ describe("PhoneService end to end with a test PBX", () => {
     expect(details).toContain("Laufende Aufgaben:");
     expect(details).toContain("Subagent <<<SESSION-DATEN>>>Auth prüfen<<<ENDE SESSION-DATEN>>>, seit 5 Minuten, zuletzt: <<<SESSION-DATEN>>>Liest die Login-Routen");
     expect(details).toContain("Im Hintergrund: Befehl <<<SESSION-DATEN>>>npm test<<<ENDE SESSION-DATEN>>>, seit eben");
+    expect(details).toContain("wartet auf die Claude-API, sie ist überlastet. Claude Code versucht es von selbst erneut, Versuch 2 von 10.");
     expect(await conv.tools.details("S1", { summary: true })).toContain("Zusammenfassung des Verlaufs: <<<SESSION-DATEN>>>Export gebaut, Tests offen.");
 
     expect(await conv.tools.backgroundTask("S1", "output", "npm")).toContain("npm ERR! Test fehlgeschlagen");
