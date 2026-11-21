@@ -39,6 +39,8 @@ export interface LifecycleParts {
   sessionTools?: (rec: SessionRecord) => { tools: SessionTool[]; context: string } | null;
   /** context for Claude around its tool calls (see SessionSink.toolContext) */
   toolContext?: (sessionId: string, phase: "pre" | "post", toolName: string, input: Record<string, unknown>) => string | null;
+  /** something keeps CLI processes from starting right now (Claude Code is being updated): resolves when it is over; null when nothing does */
+  startHold?: () => Promise<void> | null;
 }
 
 /** Starting, resuming, stopping and ending the CLI process of a session. */
@@ -53,6 +55,7 @@ export class SessionLifecycle {
   private readonly catalog: RuntimeCatalog;
   private readonly sessionTools: LifecycleParts["sessionTools"];
   private readonly toolContext: LifecycleParts["toolContext"];
+  private readonly startHold: LifecycleParts["startHold"];
 
   constructor(
     private readonly core: SessionCore,
@@ -68,6 +71,7 @@ export class SessionLifecycle {
     this.catalog = parts.catalog;
     this.sessionTools = parts.sessionTools;
     this.toolContext = parts.toolContext;
+    this.startHold = parts.startHold;
   }
 
   /** Runs `job` as the one start/resume of the session; others wait for it in resume(). */
@@ -82,6 +86,9 @@ export class SessionLifecycle {
   }
 
   async start(params: StartParams): Promise<Session> {
+    // Awaited only when something holds, so a start keeps its timing otherwise.
+    const held = this.startHold?.();
+    if (held) await held;
     const { db } = this.core;
     const project = this.projects.requireExisting(params.projectId);
     const settings = db.getSettings();
@@ -134,6 +141,9 @@ export class SessionLifecycle {
 
   /** Continues a stored session (also after an app restart) with a new prompt. */
   async resume(sessionId: string, prompt: string | null, attachments: Attachment[] = [], source?: MessageSource, task?: TaskTurn): Promise<Session> {
+    // A message to a running process starts nothing and goes through.
+    const held = this.core.live.has(sessionId) ? null : this.startHold?.();
+    if (held) await held;
     // A start/resume of this session is in flight (double Enter, UI and phone): wait for it, then send to it.
     for (let p = this.attaching.get(sessionId); p; p = this.attaching.get(sessionId)) await p.catch(() => {});
     if (this.core.live.has(sessionId)) return prompt === null ? this.core.get(sessionId) : this.turns.send(sessionId, prompt, attachments, source, task);
@@ -169,6 +179,8 @@ export class SessionLifecycle {
    * starts over. `beforePrompt` runs right before the prompt reaches the timeline.
    */
   async restartAt(sessionId: string, resumeAt: string | null, prompt: string, beforePrompt: () => void): Promise<Session> {
+    const held = this.startHold?.();
+    if (held) await held;
     for (let p = this.attaching.get(sessionId); p; p = this.attaching.get(sessionId)) await p.catch(() => {});
     const { db } = this.core;
     const rec = db.getSession(sessionId);

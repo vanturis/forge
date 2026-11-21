@@ -1208,6 +1208,36 @@ describe("concurrency and lifecycle", () => {
     expect(userTexts(s.id).slice(1).sort()).toEqual(["drei", "eins", "zwei"]);
   });
 
+  it("starts and resumes no CLI process while Claude Code is being updated at the start of FORGE", async () => {
+    const stored = await storedSession();
+    let release: () => void = () => {};
+    let hold: Promise<void> | null = new Promise<void>((r) => (release = r));
+    svc.useStartHold(() => hold);
+    const before = rt.started.length;
+    const starting = svc.start({ projectId, prompt: "neu" });
+    const resuming = svc.resume(stored.id, "weiter");
+    await new Promise((r) => setTimeout(r, 20));
+    expect(rt.started.length).toBe(before);
+    expect(userTexts(stored.id)).not.toContain("weiter");
+
+    hold = null;
+    release();
+    const [started] = await Promise.all([starting, resuming]);
+    expect(rt.started.length).toBe(before + 2);
+    expect(svc.get(started.id).live).toBe(true);
+    expect(svc.get(stored.id)).toMatchObject({ live: true, status: "running" });
+    expect(userTexts(stored.id)).toContain("weiter");
+  });
+
+  it("lets a message to a running process through while starts are held", async () => {
+    const s = await svc.start({ projectId, prompt: "x" });
+    success(rt.sinks[0]!);
+    svc.useStartHold(() => new Promise<void>(() => {}));
+    await svc.resume(s.id, "geht durch");
+    expect(rt.sent).toContain("geht durch");
+    expect(rt.started).toHaveLength(1);
+  });
+
   it("ignores the end and the output of a process that was already replaced", async () => {
     const s = await storedSession();
     const oldSink = rt.sinks[0]!;

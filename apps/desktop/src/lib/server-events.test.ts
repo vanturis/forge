@@ -146,6 +146,25 @@ describe("server event routing", () => {
     expect(useToasts.getState().toasts.map((t) => t.title)).toEqual(["Neues Modell verfügbar", "Update fehlgeschlagen"]);
   });
 
+  it("leaves the result of the update at FORGE's start to its own screen", () => {
+    const setup = (phase: string) => ({ event: "claude.setup", payload: { task: "update", phase, message: null } }) as ServerEvent;
+    const atStart = (phase: string) => ({ event: "claude.startUpdate", payload: { phase, installed: "2.1.100", latest: "2.1.105", message: null, skippable: false } }) as ServerEvent;
+    const f = fakeSource();
+    stop = startServerEvents(qc, f.source);
+
+    f.emit(atStart("updating"));
+    expect(qc.getQueryData(keys.claudeStartUpdate)).toMatchObject({ phase: "updating", latest: "2.1.105" });
+    // The sidecar sends the end of the update first, then the end of the start update.
+    f.emit(setup("error"));
+    f.emit(atStart("failed"));
+    expect(useToasts.getState().toasts).toEqual([]);
+
+    // Skipped: an update that ends in the background reports like one started by hand.
+    f.emit(atStart("skipped"));
+    f.emit(setup("error"));
+    expect(useToasts.getState().toasts.map((t) => t.title)).toEqual(["Update fehlgeschlagen"]);
+  });
+
   it("signals a finished session from the main window only", () => {
     vi.mocked(playSound).mockClear();
     const f = fakeSource();

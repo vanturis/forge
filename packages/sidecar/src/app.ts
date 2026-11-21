@@ -5,6 +5,7 @@ import { UploadStore } from "./claude/uploads.js";
 import { GitEngine } from "./git/git.js";
 import { GitHubService } from "./github/github.js";
 import { ClaudeSetupService } from "./claude/setup.js";
+import { ClaudeStartUpdateService } from "./claude/start-update.js";
 import { McpService } from "./config/mcp.js";
 import { claudeJsonPath } from "./util/paths.js";
 import { ExtensionWatch } from "./config/extension-watch.js";
@@ -130,9 +131,18 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
       // A new or updated Claude Code may bring new models and commands.
       if (payload.phase === "done") sessions.invalidateRuntimeInfo();
       emit({ event: "claude.setup", payload });
+      claudeStartUpdate.onSetup(payload);
     },
     () => db.getSettings(),
   );
+  const claudeStartUpdate = new ClaudeStartUpdateService({
+    enabled: () => db.getSettings().claudeUpdateOnStart,
+    check: () => claudeSetup.checkUpdate(),
+    update: () => claudeSetup.update(),
+    emit: (payload) => emit({ event: "claude.startUpdate", payload }),
+    log: (m) => opts.log?.(m),
+  });
+  sessions.useStartHold(() => claudeStartUpdate.wait());
   const mcp = new McpService(
     () => locateClaude(db.getSettings().claudePath),
     () => sessionEnv(db.getSettings().stripApiKey),
@@ -425,7 +435,8 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
   // Only in the desktop app (the shell passes its version); tests and the CLI do not look for updates,
   // write no start backups, do not sync and install nothing.
   // Sessions open at the last restart for an update come back; a second step of the update goes first.
-  sessions.resumeAfterUpdate(() => updates.holdsResume());
+  // They also wait for a Claude Code update of this start: taken later, the marks survive FORGE being closed meanwhile.
+  sessions.resumeAfterUpdate(() => updates.holdsResume() || claudeStartUpdate.blocking());
   if (process.env.FORGE_APP_VERSION) {
     updates.start();
     installs.start();
@@ -440,6 +451,9 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     if (!settings.claudePath && !hasOwnClaude()) {
       opts.log?.(locateClaude(null) ? "Claude Code ist extern verwaltet, FORGE installiert eine eigene, aktualisierbare Kopie" : "Claude Code fehlt, Installation startet");
       claudeSetup.install();
+    } else if (settings.setupDone) {
+      // Only with a CLI that is there and set up: before that the setup assistant leads through the installation.
+      void claudeStartUpdate.run();
     }
   }
   const dictation = new DictationService({
@@ -482,6 +496,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     phone,
     github,
     claudeSetup,
+    claudeStartUpdate,
     db,
     git,
     projects,
@@ -518,6 +533,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
       preview.shutdown();
       testDb.shutdown();
       github.shutdown();
+      claudeStartUpdate.shutdown();
       claudeSetup.shutdown();
       dictation.shutdown();
       db.close();

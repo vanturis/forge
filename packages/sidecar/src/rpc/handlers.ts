@@ -10,6 +10,7 @@ import type { UploadStore } from "../claude/uploads.js";
 import type { UiCompareService } from "../preview/ui-compare.js";
 import type { GitHubService } from "../github/github.js";
 import type { ClaudeSetupService } from "../claude/setup.js";
+import type { ClaudeStartUpdateService } from "../claude/start-update.js";
 import type { McpService } from "../config/mcp.js";
 import type { McpLoginService } from "../config/mcp-login.js";
 import type { PluginService } from "../config/plugins.js";
@@ -49,6 +50,7 @@ export interface Services {
   dataDir: string;
   github: GitHubService;
   claudeSetup: ClaudeSetupService;
+  claudeStartUpdate: ClaudeStartUpdateService;
   mcp: McpService;
   plugins: PluginService;
   mcpLogins: McpLoginService;
@@ -140,6 +142,8 @@ export function createHandlers(s: Services): Handlers {
     "claude.login": () => s.claudeSetup.login(),
     "claude.checkUpdate": () => s.claudeSetup.checkUpdate(),
     "claude.update": () => s.claudeSetup.update(),
+    "claude.startUpdateState": () => s.claudeStartUpdate.current(),
+    "claude.resolveStartUpdate": ({ action }) => (action === "retry" ? s.claudeStartUpdate.retry() : s.claudeStartUpdate.skip()),
     "claude.submitLoginCode": ({ code }) => s.claudeSetup.submitCode(code),
     "claude.cancelSetup": () => s.claudeSetup.cancel(),
     "claude.logout": async () => {

@@ -234,6 +234,8 @@ export const views = {
     promptSuggestionsLabel: "Nächste Nachricht vorschlagen",
     promptSuggestionsDescription: "Nach einem Durchlauf schlägt Claude Code vor, was du als Nächstes schreiben könntest. Der Vorschlag steht grau im Eingabefeld, Tab übernimmt ihn. Er nutzt den Prompt-Cache der Session und kostet kaum Tokens. Wirkt ab dem nächsten Start einer Session.",
     autoBackgroundTasksLabel: "Lange Aufgaben in den Hintergrund",
+    claudeUpdateOnStartLabel: "Claude Code beim Start aktualisieren",
+    claudeUpdateOnStartDescription: "Gibt es beim Start von FORGE ein Update von Claude Code, installiert FORGE es sofort. Bis es fertig ist, bleibt FORGE gesperrt und keine Session startet. Ohne Netz startet FORGE ohne Update. Später findest du Updates über den Knopf in der Seitenleiste.",
     autoBackgroundTasksDescription: "Subagenten und MCP-Aufrufe, die länger als etwa zwei Minuten laufen, gehen in den Hintergrund. Du kannst währenddessen weiterschreiben, Claude meldet das Ergebnis, sobald es da ist. Wirkt ab dem nächsten Start einer Session.",
     idleCompactionDescription: "Claude Code fasst ein Gespräch ab 200.000 Tokens nach etwa 54 Minuten Leerlauf zusammen, bevor der Prompt-Cache abläuft. Die nächste Nachricht wird dadurch günstiger, die Zusammenfassung verbraucht aber selbst Tokens. Wirkt ab dem nächsten Start einer Session.",
     idleCloseLabel: "Untätige Sessions schließen nach",

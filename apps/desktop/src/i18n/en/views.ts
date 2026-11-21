@@ -234,6 +234,8 @@ export const views: typeof De = {
     promptSuggestionsLabel: "Suggest the next message",
     promptSuggestionsDescription: "After a turn Claude Code suggests what you could write next. The suggestion shows in gray in the input field, Tab takes it over. It uses the session's prompt cache and costs hardly any tokens. Takes effect the next time a session starts.",
     autoBackgroundTasksLabel: "Move long tasks to the background",
+    claudeUpdateOnStartLabel: "Update Claude Code at start",
+    claudeUpdateOnStartDescription: "If there is a Claude Code update when FORGE starts, FORGE installs it right away. Until it is done, FORGE stays locked and no session starts. Without network FORGE starts without the update. Later you find updates through the button in the sidebar.",
     autoBackgroundTasksDescription: "Subagents and MCP calls that run longer than about two minutes move to the background. You can keep writing meanwhile, and Claude reports the result once it is there. Takes effect the next time a session starts.",
     idleCompactionDescription: "Claude Code summarizes a conversation of 200,000 tokens or more after about 54 idle minutes, before the prompt cache expires. That makes the next message cheaper, but the summary uses tokens itself. Takes effect the next time a session starts.",
     idleCloseLabel: "Close idle sessions after",

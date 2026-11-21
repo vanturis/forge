@@ -108,6 +108,7 @@ export class SessionService {
   private dailyReport: DailyReportText | null = null;
   /** live collaboration with other FORGE installations; set by app.ts, it needs this service itself */
   private crew: CrewService | null = null;
+  private startHold: () => Promise<void> | null = () => null;
 
   constructor(
     private readonly db: Db,
@@ -263,6 +264,7 @@ export class SessionService {
       approvals: this.approvals,
       stream,
       catalog: this.catalog,
+      startHold: () => this.startHold(),
       toolContext: (id, phase, toolName, input) => (phase === "pre" ? (this.crew?.editWarning(id, toolName, input) ?? null) : (this.crew?.takeNews(id, true) ?? null)),
       sessionTools: (rec) => this.withCrew(rec, () =>
         forgeSessionTools(rec, {
@@ -295,6 +297,11 @@ export class SessionService {
     }
     return crew ? { tools: [...own.tools, ...crew.tools], context: `${own.context}
 ${crew.context}` } : own;
+  }
+
+  /** While `hold` returns a promise, no session starts or resumes its CLI process; they wait for it. */
+  useStartHold(hold: () => Promise<void> | null) {
+    this.startHold = hold;
   }
 
   /** Crew tools, notes and live context for sessions started from now on. */

@@ -401,6 +401,7 @@ export const layout: typeof De = {
       idleCompaction: "Compact long idle sessions",
       promptSuggestions: "Suggest the next message",
       autoBackgroundTasks: "Move long tasks to the background",
+      claudeUpdateOnStart: "Update Claude Code at start",
       askPushOnClose: "Ask about unpushed work when closing",
       uiCompare: "Before and after images for UI changes",
       stripApiKey: "Hide ANTHROPIC_API_KEY",

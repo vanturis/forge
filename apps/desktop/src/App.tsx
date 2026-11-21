@@ -20,6 +20,7 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { AppUpdateDialog } from "@/components/layout/AppUpdate";
 import { InstallRepairBanner, RELEASES_URL } from "@/components/layout/InstallRepair";
 import { SetupWizard } from "@/components/setup/SetupWizard";
+import { ClaudeStartUpdateGate } from "@/components/layout/ClaudeStartUpdateGate";
 import { SyncPrompt } from "@/components/setup/SyncPrompt";
 import { UsageStatsPrompt } from "@/components/setup/UsageStatsPrompt";
 import { SupportDialog } from "@/components/settings/SupportSettings";
@@ -106,16 +107,7 @@ function Screen({ boot, chatWindow }: { boot: Boot; chatWindow: ChatWindowTarget
       </Centered>
     );
   }
-  if (boot.state === "starting") {
-    return (
-      <Centered>
-        <Logo height={53} />
-        <div className="flex items-center gap-2 text-body text-muted">
-          <Spinner /> {t.app.starting}
-        </div>
-      </Centered>
-    );
-  }
+  if (boot.state === "starting") return <Starting />;
   if (boot.state === "down") {
     return (
       <Centered>
@@ -135,7 +127,24 @@ function Screen({ boot, chatWindow }: { boot: Boot; chatWindow: ChatWindowTarget
       </Centered>
     );
   }
-  return chatWindow ? <ChatWindowShell target={chatWindow} /> : <Shell />;
+  if (chatWindow) return <ChatWindowShell target={chatWindow} />;
+  // Chat windows are opened from the main window, so they come after this as well.
+  return (
+    <ClaudeStartUpdateGate starting={<Starting />}>
+      <Shell />
+    </ClaudeStartUpdateGate>
+  );
+}
+
+function Starting() {
+  return (
+    <Centered>
+      <Logo height={53} />
+      <div className="flex items-center gap-2 text-body text-muted">
+        <Spinner /> {t.app.starting}
+      </div>
+    </Centered>
+  );
 }
 
 function Shell() {

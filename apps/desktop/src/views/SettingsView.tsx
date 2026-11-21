@@ -258,6 +258,12 @@ function ClaudeSection({ s, save }: { s: Settings; save: Save }) {
         <div className="px-4 py-3.5">
           <ClaudeSetupCard />
         </div>
+        <SwitchRow
+          label={sv.claudeUpdateOnStartLabel}
+          description={sv.claudeUpdateOnStartDescription}
+          checked={s.claudeUpdateOnStart}
+          onChange={(v) => void save({ claudeUpdateOnStart: v })}
+        />
       </Group>
 
       <UsageSettings />

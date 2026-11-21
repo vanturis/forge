@@ -494,6 +494,8 @@ function settingText(s: Settings, key: keyof ForgeSettingsPatch | "alwaysOnTop")
       return m.settings.promptSuggestions(s.promptSuggestions);
     case "autoBackgroundTasks":
       return m.settings.autoBackgroundTasks(s.autoBackgroundTasks);
+    case "claudeUpdateOnStart":
+      return m.settings.claudeUpdateOnStart(s.claudeUpdateOnStart);
     case "idleCloseMinutes":
       return s.idleCloseMinutes > 0 ? m.settings.idleClose(s.idleCloseMinutes) : m.settings.idleOpen;
     case "longSessionTokens":
@@ -3247,7 +3249,7 @@ export class PhoneService {
           const cur = await call("settings.get", {});
           const update: Partial<Settings> = {};
           const changed: Array<keyof ForgeSettingsPatch> = [];
-          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "idleCompaction", "promptSuggestions", "autoBackgroundTasks", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
+          const flags = ["sounds", "desktopNotifications", "enterToSend", "autoContinueAfterLimit", "limitWarnings", "idleCompaction", "promptSuggestions", "autoBackgroundTasks", "claudeUpdateOnStart", "updateChecks", "debugLogs", "stripApiKey", "screenshotKey", "uiCompare", "learnTemplates", "askPushOnClose", "usageStats"] as const;
           for (const k of flags) {
             const v = patch[k];
             if (v === undefined) continue;
@@ -3381,6 +3383,9 @@ export class PhoneService {
             return tr().phone.error(c.message ?? sy.noDescription);
           }
           if (action === "claude_check") {
+            const atStart = await call("claude.startUpdateState", {});
+            if (atStart.phase === "failed") return sy.claudeStartFailed(atStart.message);
+            if (atStart.phase === "updating" && atStart.skippable) return sy.claudeStartSlow;
             const st = await call("claude.setupState", {});
             if (st.phase === "running" && st.task !== "login") return st.task === "install" ? sy.claudeInstalling : sy.claudeUpdating;
             const last = st.task === "update" || st.task === "install" ? (st.phase === "error" ? sy.lastFailed(st.message ?? null) : "") : "";
@@ -3389,7 +3394,18 @@ export class PhoneService {
             if (u.error) return sy.claudeLatestUnknown(u.installed, u.error, last);
             return `${u.available ? sy.claudeAvailable(u.latest ?? "", u.installed) : sy.claudeCurrent(u.installed)}${last}`;
           }
+          if (action === "claude_start_skip") {
+            const before = (await call("claude.startUpdateState", {})).phase;
+            if (before !== "checking" && before !== "updating" && before !== "failed") return sy.claudeStartNothing;
+            await call("claude.resolveStartUpdate", { action: "skip" });
+            return sy.claudeStartSkipped;
+          }
           if (action === "claude_update") {
+            // The update of FORGE's start failed and the window still waits for an answer: this is the retry.
+            if ((await call("claude.startUpdateState", {})).phase === "failed") {
+              const next = await call("claude.resolveStartUpdate", { action: "retry" });
+              return next.phase === "failed" ? sy.claudeStartFailed(next.message) : sy.claudeUpdateStarted;
+            }
             try {
               await call("claude.update", {});
             } catch (e) {

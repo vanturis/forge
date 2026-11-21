@@ -43,6 +43,7 @@ export const keys = {
   githubOrgs: ["githubOrgs"] as const,
   claudeSetup: ["claudeSetup"] as const,
   claudeUpdate: ["claudeUpdate"] as const,
+  claudeStartUpdate: ["claudeStartUpdate"] as const,
   files: (id: string, dir: string) => ["files", id, dir] as const,
   file: (id: string, path: string) => ["file", id, path] as const,
   claudeMd: (id: string) => ["claudeMd", id] as const,
@@ -120,6 +121,10 @@ export const useGitHubOrgs = (enabled = true) =>
 export const useGitHubLogin = () => useQuery({ queryKey: keys.githubLogin, queryFn: () => call("github.loginState", {}), staleTime: Infinity });
 
 export const useClaudeSetup = () => useQuery({ queryKey: keys.claudeSetup, queryFn: () => call("claude.setupState", {}), staleTime: Infinity });
+
+/** The Claude Code update FORGE runs by itself at its start; changes arrive as claude.startUpdate. */
+export const useClaudeStartUpdate = () =>
+  useQuery({ queryKey: keys.claudeStartUpdate, queryFn: () => call("claude.startUpdateState", {}), staleTime: Infinity, retry: false });
 
 /** Checked on app start (the sidebar mounts this right away) and every six hours after that. */
 export const useClaudeUpdate = () =>

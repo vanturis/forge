@@ -2026,6 +2026,7 @@ describe("PhoneService end to end with a test PBX", () => {
   }, 30_000);
 
   it("manages extensions, global settings, updates and backups", async () => {
+    const atStart = (phase: string, patch: Record<string, unknown> = {}) => ({ phase, installed: "2.1.100", latest: "2.1.105", message: null, skippable: false, ...patch });
     const backup = (id: string, createdAt: string, reason: string) => ({
       id,
       createdAt,
@@ -2096,6 +2097,7 @@ describe("PhoneService end to end with a test PBX", () => {
         throw new ForgeError("CLAUDE_NOT_INSTALLED", "Claude Code ist nicht installiert.");
       },
       "claude.install": () => ({ task: "install", phase: "running", url: null, log: [], message: null }),
+      "claude.startUpdateState": () => atStart("idle"),
     };
     const { conv, end } = await openCall("c-ext");
     expect(await conv.tools.extensions("mcp", "list")).toBe("MCP-Server: <<<SESSION-DATEN>>>context7 verbunden (global)<<<ENDE SESSION-DATEN>>>");
@@ -2133,6 +2135,8 @@ describe("PhoneService end to end with a test PBX", () => {
     expect(await conv.tools.forgeSettings({})).toContain("untätige Claude-Prozesse schließen nach 60 Minuten");
     expect(await conv.tools.forgeSettings({ idleCloseMinutes: 30 })).toBe("Gespeichert: untätige Claude-Prozesse schließen nach 30 Minuten.");
     expect(await conv.tools.forgeSettings({ idleCloseMinutes: 0 })).toBe("Gespeichert: untätige Claude-Prozesse bleiben offen.");
+    expect(await conv.tools.forgeSettings({ claudeUpdateOnStart: false })).toBe("Gespeichert: Claude Code beim Start von FORGE aktualisieren aus.");
+    expect(db.getSettings().claudeUpdateOnStart).toBe(false);
     expect(db.getSettings().idleCloseMinutes).toBe(0);
     expect(await conv.tools.forgeSettings({})).toContain("Farbschema FORGE, Fensterhintergrund leicht transparent");
     expect(await conv.tools.forgeSettings({ colorScheme: "gruvbox", transparency: "medium" })).toBe("Gespeichert: Farbschema Gruvbox, Fensterhintergrund mittel transparent.");
@@ -2174,6 +2178,18 @@ describe("PhoneService end to end with a test PBX", () => {
     expect(await conv.tools.forgeSystem("install_repair")).toMatch(/^FORGE ist vollständig installiert/);
     expect(await conv.tools.forgeSystem("claude_update")).toBe("Claude Code wird installiert. Ob es geklappt hat, sagt claude_check.");
     expect(rpcCalls.at(-1)?.[0]).toBe("claude.install");
+    // The update FORGE began at its start failed or hangs: the phone can retry it or go on without it.
+    expect(await conv.tools.forgeSystem("claude_start_skip")).toBe("Gerade wartet nichts auf ein Update von Claude Code.");
+    rpcResults["claude.startUpdateState"] = () => atStart("failed", { message: "kein Netz." });
+    rpcResults["claude.resolveStartUpdate"] = (p: { action: string }) => atStart(p.action === "retry" ? "updating" : "skipped");
+    expect(await conv.tools.forgeSystem("claude_check")).toMatch(/^Das Update von Claude Code beim Start von FORGE ist fehlgeschlagen: kein Netz\. Das Fenster von FORGE wartet/);
+    expect(await conv.tools.forgeSystem("claude_update")).toBe("Claude Code wird aktualisiert. Laufende Sessions nutzen die neue Version erst nach einem Neustart.");
+    expect(rpcCalls.at(-1)).toEqual(["claude.resolveStartUpdate", { action: "retry" }]);
+    rpcResults["claude.startUpdateState"] = () => atStart("updating", { skippable: true });
+    expect(await conv.tools.forgeSystem("claude_check")).toMatch(/dauert länger als üblich/);
+    expect(await conv.tools.forgeSystem("claude_start_skip")).toBe("FORGE macht ohne das Update von Claude Code weiter. Sessions können jetzt starten.");
+    expect(rpcCalls.at(-1)).toEqual(["claude.resolveStartUpdate", { action: "skip" }]);
+    rpcResults["claude.startUpdateState"] = () => atStart("idle");
     // Signing in again needs the browser at the computer: only after the keypad code.
     rpcResults["claude.logout"] = () => ({ task: null, phase: "idle", url: null, log: [], message: null });
     const logoutAsk = await conv.tools.forgeSystem("claude_logout");

@@ -72,6 +72,7 @@ beforeEach(() => {
     idleCompaction: true,
     promptSuggestions: true,
     autoBackgroundTasks: false,
+    claudeUpdateOnStart: true,
     disabledPolicyRules: [],
     setupDone: false,
     syncEnabled: false,

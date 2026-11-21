@@ -489,6 +489,7 @@ export const DEFAULT_SETTINGS: Settings = {
   idleCompaction: true,
   promptSuggestions: true,
   autoBackgroundTasks: false,
+  claudeUpdateOnStart: true,
   longSessionTokens: 600_000,
   updateChecks: true,
   updateChannel: "stable",

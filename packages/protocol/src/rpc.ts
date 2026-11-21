@@ -6,6 +6,7 @@ import {
   Attachment,
   BranchInfo,
   ClaudeSetupState,
+  ClaudeStartUpdate,
   ClaudeUpdateInfo,
   CommitDetails,
   CommitInfo,
@@ -154,6 +155,10 @@ export const methods = {
   "claude.login": { params: empty, result: ClaudeSetupState },
   "claude.checkUpdate": { params: empty, result: ClaudeUpdateInfo },
   "claude.update": { params: empty, result: ClaudeSetupState },
+  /** the update FORGE runs by itself at its start; changes arrive as claude.startUpdate */
+  "claude.startUpdateState": { params: empty, result: ClaudeStartUpdate },
+  /** retry: runs the failed update again; skip: goes on without it (a running update keeps running) */
+  "claude.resolveStartUpdate": { params: z.object({ action: z.enum(["retry", "skip"]) }), result: ClaudeStartUpdate },
   "claude.submitLoginCode": { params: z.object({ code: z.string().min(1).max(2000) }), result: ClaudeSetupState },
   "claude.cancelSetup": { params: empty, result: ClaudeSetupState },
   /** signs Claude Code out on this computer; sessions need a new sign-in afterwards */
@@ -922,6 +927,7 @@ export type ServerEvent =
   | { event: "project.updated"; payload: { projectId: string } }
   | { event: "github.login"; payload: GitHubLoginState }
   | { event: "claude.setup"; payload: ClaudeSetupState }
+  | { event: "claude.startUpdate"; payload: ClaudeStartUpdate }
   /** Claude Code rejected the sign-in in a session (expired or revoked): the UI offers to sign in again */
   | { event: "claude.authRequired"; payload: { sessionId: string } }
   | { event: "remote.updated"; payload: RemoteState }

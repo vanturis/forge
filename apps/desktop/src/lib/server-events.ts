@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { ResultOf, ServerEvent, Session } from "@forge/protocol";
+import type { ClaudeStartUpdate, ResultOf, ServerEvent, Session } from "@forge/protocol";
 import { useMcpLogin } from "@/stores/mcp-login";
 import { useSessionEvents } from "@/stores/session-events";
 import { useDevOutput } from "@/stores/dev-output";
@@ -164,11 +164,16 @@ export function routeServerEvent(qc: QueryClient, git: GitRefresher, e: ServerEv
         void qc.invalidateQueries({ queryKey: keys.claudeUpdate });
       }
       if (isChatWindow()) break;
+      // The update of FORGE's start reports on its own screen (ClaudeStartUpdateGate); this event comes before its end.
+      if (qc.getQueryData<ClaudeStartUpdate>(keys.claudeStartUpdate)?.phase === "updating") break;
       if (e.payload.task === "update" && e.payload.phase === "done") {
         toast.success(t.lib.serverEvents.claudeUpdated, `${e.payload.message ?? ""} ${t.lib.serverEvents.claudeUpdatedBody}`.trim());
       } else if (e.payload.task === "update" && e.payload.phase === "error") {
         toast.error(t.lib.serverEvents.updateFailed, e.payload.message ?? undefined);
       }
+      break;
+    case "claude.startUpdate":
+      qc.setQueryData(keys.claudeStartUpdate, e.payload);
       break;
     case "claude.authRequired":
       void call("system.diagnostics", { refresh: true }).then((d) => qc.setQueryData(keys.diagnostics, d));

@@ -669,6 +669,8 @@ export const Settings = z.object({
   promptSuggestions: z.boolean(),
   /** subagents and MCP calls that run longer than about two minutes move to the background (CLAUDE_AUTO_BACKGROUND_TASKS) */
   autoBackgroundTasks: z.boolean(),
+  /** FORGE installs a waiting Claude Code update when it starts, before sessions can start (ClaudeStartUpdate) */
+  claudeUpdateOnStart: z.boolean(),
   /** context size (tokens) from which the composer suggests going on in a new session; 0 never */
   longSessionTokens: z.number().int().min(0).max(2_000_000),
   /** look for new FORGE releases on GitHub (start and every 30 minutes) */
@@ -1002,6 +1004,23 @@ export const ClaudeSetupState = z.object({
   message: z.string().nullable(),
 });
 export type ClaudeSetupState = z.infer<typeof ClaudeSetupState>;
+
+/**
+ * The Claude Code update FORGE runs by itself when it starts. While it is checking or updating, no
+ * session starts and the main window shows a lock; "failed" keeps the lock until the user decides.
+ * The progress of the update itself is in ClaudeSetupState (log).
+ */
+export const ClaudeStartUpdate = z.object({
+  /** idle: nothing to do (switched off, no CLI, check failed, already current) */
+  phase: z.enum(["idle", "checking", "updating", "failed", "done", "skipped"]),
+  installed: z.string().nullable(),
+  latest: z.string().nullable(),
+  /** why the update failed */
+  message: z.string().nullable(),
+  /** the update runs longer than expected: going on without it is offered */
+  skippable: z.boolean(),
+});
+export type ClaudeStartUpdate = z.infer<typeof ClaudeStartUpdate>;
 
 export const MemoryScope = z.enum(["global", "project", "project-dir", "local"]);
 export type MemoryScope = z.infer<typeof MemoryScope>;

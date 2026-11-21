@@ -277,6 +277,8 @@ export interface ForgeSettingsPatch {
   promptSuggestions?: boolean;
   /** long subagents and MCP calls move to the background */
   autoBackgroundTasks?: boolean;
+  /** FORGE installs a waiting Claude Code update when it starts */
+  claudeUpdateOnStart?: boolean;
   /** minutes until an idle session's process ends; 0 never */
   idleCloseMinutes?: number;
   /** context tokens from which FORGE suggests a new session; 0 never */
@@ -323,6 +325,7 @@ export const SYSTEM_ACTIONS = [
   "dev_promote",
   "claude_check",
   "claude_update",
+  "claude_start_skip",
   "claude_logout",
   "backup_list",
   "backup_create",
@@ -1000,6 +1003,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
       idle_compaction: { type: "boolean", optional: true },
       prompt_suggestions: { type: "boolean", optional: true },
       auto_background_tasks: { type: "boolean", optional: true },
+      claude_update_on_start: { type: "boolean", optional: true },
       idle_close_minutes: { type: "number", optional: true, min: 0, max: 1440 },
       long_session_tokens: { type: "number", optional: true, min: 0, max: 2000000 },
       update_checks: { type: "boolean", optional: true },
@@ -1032,6 +1036,7 @@ const TOOL_DEFS: readonly ToolDef[] = [
         idleCompaction: optBool(a.idle_compaction),
         promptSuggestions: optBool(a.prompt_suggestions),
         autoBackgroundTasks: optBool(a.auto_background_tasks),
+        claudeUpdateOnStart: optBool(a.claude_update_on_start),
         idleCloseMinutes: optNum(a.idle_close_minutes),
         longSessionTokens: optNum(a.long_session_tokens),
         updateChecks: optBool(a.update_checks),

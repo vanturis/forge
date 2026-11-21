@@ -156,13 +156,14 @@ export class ClaudeSetupService {
     const base = { channel, checkedAt: new Date().toISOString() };
     const s = this.settings();
     const claude = locateClaude(s.claudePath);
-    const installed = claude ? parseVersion((await run(claude, ["--version"], { env: sessionEnv(s.stripApiKey), timeoutMs: 20_000 })).stdout) : null;
-    try {
-      const latest = await fetchLatestVersion(channel);
-      return { ...base, installed, latest, available: !!installed && compareVersions(latest, installed) > 0, error: null };
-    } catch (e) {
-      return { ...base, installed, latest: null, available: false, error: e instanceof Error ? e.message : String(e) };
-    }
+    // Both at once: FORGE's start waits for this answer (ClaudeStartUpdateService).
+    const version = claude ? run(claude, ["--version"], { env: sessionEnv(s.stripApiKey), timeoutMs: 20_000 }).then((r) => parseVersion(r.stdout)) : Promise.resolve(null);
+    const newest = fetchLatestVersion(channel).then(
+      (latest) => ({ latest, error: null }),
+      (e: unknown) => ({ latest: null, error: e instanceof Error ? e.message : String(e) }),
+    );
+    const [installed, { latest, error }] = await Promise.all([version, newest]);
+    return { ...base, installed, latest, available: !!installed && !!latest && compareVersions(latest, installed) > 0, error };
   }
 
   /** Runs the CLI's own updater. Open sessions keep the old version until they are restarted. */

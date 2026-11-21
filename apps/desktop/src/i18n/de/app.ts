@@ -16,4 +16,16 @@ export const app = {
   incomplete: (missing: string) =>
     `FORGE ist nicht vollständig installiert, es fehlt: ${missing}. Installiere FORGE ${byPlatform({ windows: "mit der vollständigen setup.exe von der Release-Seite, nicht mit dem Update-Zip", macos: "neu mit der .dmg von der Release-Seite", linux: "neu mit dem AppImage oder .deb-Paket von der Release-Seite" })}.`,
   openReleases: "Release-Seite öffnen",
+  claudeStartUpdate: {
+    updating: "Claude Code wird aktualisiert",
+    versions: (installed: string, latest: string) => `Installiert ist ${installed}, neu ist ${latest}`,
+    preparing: "Update wird vorbereitet",
+    hint: "Danach geht es von selbst weiter.",
+    slow: "Das Update dauert länger als üblich. Du kannst ohne es weitermachen, es läuft dann im Hintergrund zu Ende.",
+    failed: "Claude Code wurde nicht aktualisiert",
+    unknownReason: "Der Grund ist nicht bekannt.",
+    retry: "Erneut versuchen",
+    skip: "Ohne Update weiter",
+    settingHint: "Das Update beim Start lässt sich in den Einstellungen unter Claude Code abschalten.",
+  },
 };
