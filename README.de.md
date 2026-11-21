@@ -55,7 +55,7 @@
   <tr>
     <td width="50%" valign="top">
       <h3>Claude-Sessions</h3>
-      Streaming, Werkzeug-Karten, Freigaben, Plan-Modus und Rückfragen. Mehrere Sessions nebeneinander in der geteilten Ansicht.
+      Streaming, Werkzeug-Karten, Freigaben, Plan-Modus und Rückfragen. Mehrere Sessions nebeneinander in der geteilten Ansicht. Mit <code>@Projektname</code> verweist du auf ein anderes Projekt: Claude bekommt dessen Ordner und liest dort.
     </td>
     <td width="50%" valign="top">
       <h3>Parallele Agenten</h3>
@@ -245,6 +245,8 @@ unter macOS in `~/Library/Application Support/forge` und unter Linux in `~/.conf
 
 - **Claude Code installieren und aktualisieren:** Fehlt Claude Code, lädt FORGE den offiziellen Installer von
   `claude.ai`. Für den Hinweis auf neue Versionen liest FORGE die Versionsnummer von `downloads.claude.ai`.
+  Gibt es beim Start von FORGE ein Update für Claude Code, installiert FORGE es, bevor du arbeiten kannst. Das
+  lässt sich in den Einstellungen abschalten.
 - **Hilfsaufgaben:** Commit-Nachrichten, Sessiontitel und der Changelog im Update-Fenster laufen ebenfalls über
   dein Claude-Konto.
 - **Telefon (optional, standardmäßig aus):** Gesprächsaudio geht je nach Einstellung an Google (Gemini) oder an

@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import { deflateSync } from "node:zlib";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -91,6 +92,34 @@ describe.skipIf(!enabled)("E2E: sidecar with real Claude Code", () => {
 
     const stored = await c.request("sessions.events", { sessionId });
     expect(stored.map((e) => e.body.type)).toEqual(expect.arrayContaining(["user.message", "session.init", "tool.use", "tool.result", "turn.result"]));
+  }, 240_000);
+
+  it("reads in another project the user mentions with @Name, without asking (Balanced)", async () => {
+    const other = path.join(t.dir, "cento");
+    mkdirSync(other, { recursive: true });
+    writeFileSync(path.join(other, "tokens.css"), ":root { --accent: #c0ffee; }\n");
+    await c.request("projects.import", { path: other });
+    const before = c.events.length;
+    const s = await c.request("sessions.start", {
+      projectId,
+      model: MODEL,
+      prompt: "Which color value does --accent have in tokens.css of @cento? Read the file with the Read tool and answer with the value only.",
+    });
+    const result = await c.waitTurn(s.id, before);
+    expect(result).toMatchObject({ type: "turn.result", isError: false });
+    const stored = await c.request("sessions.events", { sessionId: s.id });
+    // The timeline keeps the user's words; the folder went to Claude as a note.
+    expect(stored.find((e) => e.body.type === "user.message")?.body).toMatchObject({ text: expect.stringContaining("of @cento?") });
+    expect(stored.some((e) => e.body.type === "approval.request")).toBe(false);
+    expect(stored.some((e) => e.body.type === "tool.use" && e.body.name === "Read")).toBe(true);
+    const answer = stored.flatMap((e) => (e.body.type === "assistant.text" ? [e.body.text] : [])).join("\n");
+    expect(answer.toLowerCase()).toContain("#c0ffee");
+    const audit = new DatabaseSync(path.join(dataDir, "forge.db"), { readOnly: true });
+    const sources = audit.prepare("SELECT tool_name, source FROM approvals WHERE session_id = ?").all(s.id);
+    audit.close();
+    // Claude Code asked for the read outside the project; the mention answered it, not the user.
+    expect(sources).toContainEqual({ tool_name: "Read", source: "mention" });
+    await c.request("sessions.close", { sessionId: s.id });
   }, 240_000);
 
   it("shows the real git status/diff and commits the reviewed file", async () => {

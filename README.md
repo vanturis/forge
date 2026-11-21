@@ -55,7 +55,7 @@
   <tr>
     <td width="50%" valign="top">
       <h3>Claude sessions</h3>
-      Streaming, tool cards, approvals, plan mode and questions from Claude. Several sessions side by side in split view.
+      Streaming, tool cards, approvals, plan mode and questions from Claude. Several sessions side by side in split view. With <code>@projectname</code> you refer to another project: Claude gets its folder and reads there.
     </td>
     <td width="50%" valign="top">
       <h3>Parallel agents</h3>
@@ -240,6 +240,8 @@ Projects, chat histories and settings stay on your computer: `%APPDATA%\forge` o
 
 - **Installing and updating Claude Code:** If Claude Code is missing, FORGE downloads the official installer from
   `claude.ai`. To tell you about new versions, FORGE reads the version number from `downloads.claude.ai`.
+  If there is a Claude Code update when FORGE starts, FORGE installs it before you can work. You can turn that
+  off in the settings.
 - **Helper tasks:** Commit messages, session titles and the changelog in the update window also run through your
   Claude account.
 - **Phone (optional, off by default):** Depending on the setting, call audio goes to Google (Gemini) or to
