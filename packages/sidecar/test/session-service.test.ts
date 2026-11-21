@@ -381,7 +381,7 @@ describe("SessionService", () => {
   it("tells sessions in a project without git not to use git and gives them no agents", async () => {
     projects.update(projectId, { gitEnabled: false });
     const s = await svc.start({ projectId, prompt: "Baue die Startseite" });
-    expect(rt.started[0]!.tools!.map((t) => t.name)).toEqual(["notify", "usage_status"]);
+    expect(rt.started[0]!.tools!.map((t) => t.name)).toEqual(["notify", "usage_status", "list_projects"]);
     expect(rt.started[0]!.context).toMatch(/ohne Git/);
     expect(rt.started[0]!.context).toMatch(/keine git-Befehle/);
     expect(rt.started[0]!.context).not.toMatch(/start_agent:/);
@@ -405,7 +405,7 @@ describe("SessionService", () => {
     await initRepo(repo);
     projects.update(projectId, { agentsEnabled: false });
     await svc.start({ projectId, prompt: "Baue die Startseite" });
-    expect(rt.started[0]!.tools!.map((t) => t.name)).toEqual(["agent_status", "message_agent", "notify", "usage_status"]);
+    expect(rt.started[0]!.tools!.map((t) => t.name)).toEqual(["agent_status", "message_agent", "notify", "usage_status", "list_projects"]);
     expect(rt.started[0]!.context).toMatch(/Parallele Agenten hat der Nutzer in diesem Projekt ausgeschaltet/);
     expect(rt.started[0]!.context).not.toMatch(/start_agent:/);
 
@@ -437,6 +437,7 @@ describe("SessionService", () => {
       ["message_agent", false],
       ["notify", true],
       ["usage_status", true],
+      ["list_projects", true],
     ]);
     expect(rt.started[0]!.context).toMatch(/start_agent/);
     const tool = (name: string) => tools.find((t) => t.name === name)!;
@@ -458,7 +459,7 @@ describe("SessionService", () => {
     expect(child.cwd).toContain(".forge-worktrees");
     expect(child.firstMessage?.text).toBe("Baue den CSV-Export in src/export.ts");
     // Agents get no start_agent: one level, no chains.
-    expect(child.tools!.map((t) => t.name)).toEqual(["notify", "usage_status"]);
+    expect(child.tools!.map((t) => t.name)).toEqual(["notify", "usage_status", "list_projects"]);
     expect(child.context).toMatch(/paralleler Agent/);
 
     const status = String(await tool("agent_status").run({}));
@@ -1067,6 +1068,27 @@ describe("turn automation via project tags", () => {
     await expect(pending).resolves.toEqual({ behavior: "allow", scope: "once", updatedInput: { ...input, answers: { "Welche Farbe?": "Blau" } } });
     const resolved = db.listEvents(s.id).find((e) => e.body.type === "approval.resolved")?.body;
     expect(resolved).toMatchObject({ decision: "allow", answers: { "Welche Farbe?": "Blau" } });
+  });
+
+  it("tells Claude where a mentioned project lies and lets it read there without asking", async () => {
+    mkdirSync(path.join(t.dir, "cento"), { recursive: true });
+    const cento = await projects.import(path.join(t.dir, "cento"));
+    const s = await svc.start({ projectId, prompt: "Übernimm das Design aus @cento" });
+    expect(rt.started[0]!.firstMessage).toMatchObject({ text: "Übernimm das Design aus @cento", blocks: [{ type: "text", text: expect.stringContaining(`- @cento: Ordner ${cento.path}`) }] });
+    // The timeline keeps the user's own words.
+    expect(db.listEvents(s.id).find((e) => e.body.type === "user.message")?.body).toMatchObject({ text: "Übernimm das Design aus @cento" });
+
+    const ask = (requestId: string, toolName: string, input: Record<string, unknown>) =>
+      rt.sinks[0]!.onApproval({ requestId, toolUseId: requestId, toolName, input, title: null, description: null, reason: null, suppressAlwaysAllow: false }, new AbortController().signal);
+    await expect(ask("r1", "Read", { file_path: path.join(cento.path, "tokens.css") })).resolves.toEqual({ behavior: "allow", scope: "once" });
+    expect(persistedTypes(s.id)).not.toContain("approval.request");
+
+    // Writing there, and reading anywhere else, is still the user's decision.
+    void ask("r2", "Write", { file_path: path.join(cento.path, "tokens.css"), content: "" });
+    void ask("r3", "Read", { file_path: path.join(t.dir, "elsewhere", "a.txt") });
+    expect(db.listEvents(s.id).filter((e) => e.body.type === "approval.request")).toHaveLength(2);
+    svc.respondApproval(s.id, "r2", "deny", "once");
+    svc.respondApproval(s.id, "r3", "deny", "once");
   });
 
   it("tells Claude when a question is skipped", async () => {

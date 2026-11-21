@@ -12,6 +12,8 @@ import type { StartParams } from "./lifecycle.js";
 import { KNOWLEDGE_DIR, type KnowledgeStore } from "../knowledge/knowledge.js";
 import type { DevAction, DevEnvironment, DevTarget } from "../devtools/environment.js";
 import { MAX_STEP_MS, type PreviewService, type PreviewStep } from "../preview/preview.js";
+import { PROJECT_FILES_ONLY_TAG } from "../policy/profiles.js";
+import { listProjectsTool } from "./project-refs.js";
 import { tr } from "../i18n/index.js";
 
 /** dev_environment with wait: an install without a shared store can take minutes. */
@@ -403,10 +405,13 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
         run: (a) => report(a.all_projects === true ? null : (project.parentId ?? project.id), typeof a.date === "string" ? a.date : undefined),
       }
     : null;
-  const common = [notify, ...(usageStatus ? [usageStatus] : []), ...(dailyReport ? [dailyReport] : [])];
-  const usageLine = [
+  // A project confined to its own files cannot read the others; offering them would only lead to refusals.
+  const listProjects = project.tags.includes(PROJECT_FILES_ONLY_TAG) ? null : listProjectsTool(d.projects, rec.projectId, d.project?.knowledge ?? null);
+  const common = [notify, ...(usageStatus ? [usageStatus] : []), ...(dailyReport ? [dailyReport] : []), ...(listProjects ? [listProjects] : [])];
+  const commonLines = [
     usageStatus ? (limitWarnings ? m.usageLine : m.usageLineQuiet) : "",
     dailyReport ? m.dailyReportLine : "",
+    listProjects ? m.projectsLine : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -420,7 +425,7 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
         m.noGit(rec.cwd),
         m.noGitAgents,
         m.notifyLine,
-        usageLine,
+        commonLines,
         ...own.context,
       ]
         .filter(Boolean)
@@ -448,6 +453,7 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
         autoCommitLine,
         testLine,
         m.agentNotify,
+        listProjects ? m.projectsLine : "",
         ...own.context,
       ]
         .filter(Boolean)
@@ -608,7 +614,7 @@ export function forgeSessionTools(rec: SessionRecord, d: ForgeToolDeps): { tools
       autoCommitLine,
       m.notifyLine,
       testLine,
-      usageLine,
+      commonLines,
       ...own.context,
     ]
       .filter(Boolean)

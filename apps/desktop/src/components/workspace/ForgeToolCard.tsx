@@ -6,6 +6,7 @@ import {
   BookOpen,
   Camera,
   ChevronRight,
+  FolderSearch,
   Gauge,
   GitBranchPlus,
   GitMerge,
@@ -40,6 +41,7 @@ const ICONS: Record<ForgeToolIcon, LucideIcon> = {
   screenshot: Camera,
   console: SquareTerminal,
   interact: MousePointerClick,
+  projects: FolderSearch,
   forge: Anvil,
 };
 

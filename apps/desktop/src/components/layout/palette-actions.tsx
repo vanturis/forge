@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import type { QueryClient } from "@tanstack/react-query";
-import { Archive, ArchiveRestore, Blend, Palette, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
-import { isTmpChat } from "@forge/protocol";
+import { Archive, ArchiveRestore, AtSign, Blend, Palette, ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpCircle, BookOpen, Bot, CalendarDays, Camera, CloudDownload, CloudUpload, Columns2, Combine, Cpu, Database, Download, Eye, FilePlus2, FileStack, FileText, FileUp, FlaskConical, FolderDown, FolderMinus, FolderOpen, FolderPlus, Folders, Gauge, GitBranch, GitBranchPlus, GitCommitHorizontal, GitCompareArrows, GitFork, GitMerge, GitPullRequest, Globe, HandHeart, Languages, Lightbulb, Link, Link2Off, ListChecks, ListPlus, LogIn, LogOut, MessageSquare, MessageSquarePlus, MessageSquareText, Mic, MonitorSmartphone, NotebookText, PackageCheck, PanelBottom, PanelRight, Pencil, Phone, PhoneOff, PhoneOutgoing, Pin, PinOff, Play, Power, QrCode, RefreshCcw, RefreshCw, RotateCcw, Search, Server, Settings2, Shield, ShieldBan, Shrink, Sparkles, Square, SquareArrowOutDownLeft, SquareArrowOutUpRight, SquareTerminal, Timer, ToggleLeft, ToggleRight, Trash2, UserPlus, Users, Wand2, History, MessageSquareDashed, type LucideIcon } from "lucide-react";
+import { isTmpChat, mentionable } from "@forge/protocol";
 import { openTempChat } from "@/lib/temp-chat";
+import { insertMentionSoon } from "@/lib/project-mention";
 import type {
   Crew,
   AppInstallState,
@@ -381,6 +382,13 @@ export function buildActions(ctx: ActionContext): PaletteEntry[] {
       ui.setWorkspaceTab("chat");
       toggleDictationSoon();
     }, { hint: t.layout.actions.ctrl(t.chat.dictation.spaceKey), keywords: t.chat.dictation.paletteKeywords });
+    // A bare "@" in the composer opens the list of the other projects.
+    if (mentionable(qc.getQueryData<ProjectWithStatus[]>(keys.projects) ?? [], project).length) {
+      act("mention-project", t.chat.mention.palette, icon(AtSign), () => {
+        ui.setWorkspaceTab("chat");
+        insertMentionSoon("@");
+      }, { hint: "@", keywords: t.chat.mention.paletteKeywords });
+    }
     if (session) {
       const s = session;
       const current = chatView(s.id);

@@ -134,6 +134,29 @@ export const forgeTools = {
   usageLine: "- usage_status: Abo-Nutzung und Limits; vor großem Aufwand (mehrere Agenten, lange Läufe) prüfen.",
   usageLineQuiet: "- usage_status: Abo-Nutzung und Limits; nur auf Nachfrage des Nutzers. Der Nutzer hat Limit-Warnungen ausgeschaltet: prüfe das Limit nicht von dir aus und weise nicht auf ein knappes Limit hin.",
   dailyReportLine: "- daily_report: was an einem Tag passiert ist (Sessions, Agenten, Commits, Offenes); für Rückblicke und „Was ist heute passiert?“.",
+  // list_projects and @mentions of other projects
+  listProjectsDescription:
+    "Die anderen Projekte des Nutzers in FORGE: Name, Gruppe, Ordner und Technik. Mit name die Details eines Projekts samt Index seines Projektwissens. Für Verweise wie „wie im Projekt cento“ oder @cento: Ordner nachschlagen und dort mit Read, Glob und Grep lesen.",
+  listProjectsName: "Name eines Projekts, auch ungefähr; weglassen für die Liste aller Projekte",
+  noOtherProjects: "In FORGE gibt es keine anderen Projekte.",
+  projectLine: (name: string, group: string | null, dir: string, tech: string) => `- ${name}${group ? ` (Gruppe ${group})` : ""}: ${dir}${tech ? `, ${tech}` : ""}`,
+  projectList: (count: number, lines: string) =>
+    `${count === 1 ? "1 anderes Projekt" : `${count} andere Projekte`} in FORGE:\n${lines}\nMit name bekommst du die Details eines Projekts samt Index seines Projektwissens.`,
+  projectNotFound: (name: string, known: string) => `Kein Projekt „${name}“ gefunden. Vorhanden: ${known}.`,
+  projectAmbiguous: (name: string, lines: string) => `Mehrere Projekte passen zu „${name}“:\n${lines}\nFrag den Nutzer, welches gemeint ist, oder nenne den genauen Namen.`,
+  projectDetails: (name: string, group: string | null, dir: string, tech: string) =>
+    `Projekt ${name}${group ? ` (Gruppe ${group})` : ""}\nOrdner: ${dir}${tech ? `\nTechnik: ${tech}` : ""}`,
+  projectKnowledge: (dir: string, total: number, lines: string) =>
+    `Projektwissen (${total === 1 ? "1 Eintrag" : `${total} Einträge`}) als Markdown-Dateien in ${dir}, meist <Kennung>.md:\n${lines}`,
+  projectReadHint: "Lies dort mit Read, Glob und Grep über absolute Pfade. Ändere in dem Projekt nichts, außer der Nutzer verlangt es ausdrücklich.",
+  projectsLine:
+    "- list_projects: die anderen Projekte des Nutzers in FORGE mit ihren Ordnern. Verweist er auf eines („wie im Projekt cento“, „aus cento übernehmen“, @cento), schlag es nach und lies dort mit Read, Glob und Grep über absolute Pfade. Ändere dort nichts ohne ausdrücklichen Auftrag.",
+  mentionLine: (name: string, dir: string, tech: string, knowledge: string | null) =>
+    `- @${name}: Ordner ${dir}${tech ? `, Technik: ${tech}` : ""}${knowledge ? `, Projektwissen in ${knowledge}` : ""}`,
+  mentionNote: (lines: string) =>
+    `[FORGE-Hinweis, nicht vom Nutzer geschrieben] Der Nutzer verweist in dieser Nachricht auf andere Projekte in FORGE:\n${lines}\nLies dort mit Read, Glob und Grep über absolute Pfade, was du für die Aufgabe brauchst; das ist freigegeben. Ändere in diesen Projekten nichts, außer der Nutzer verlangt es ausdrücklich.`,
+  mentionNoteConfined: (names: string) =>
+    `[FORGE-Hinweis, nicht vom Nutzer geschrieben] Der Nutzer verweist auf andere Projekte in FORGE (${names}). Dieses Projekt erlaubt Dateizugriffe aber nur im eigenen Ordner (Tag project-files-only), du kannst dort nicht lesen. Sag das dem Nutzer.`,
   // session context
   introNoGit: "Du läufst in FORGE, einer Desktop-Oberfläche für Claude Code. Neben deinen Werkzeugen gibt es FORGE-Werkzeuge (mcp__forge__…).",
   noGit: (cwd: string) =>

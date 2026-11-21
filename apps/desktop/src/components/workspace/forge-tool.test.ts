@@ -25,3 +25,13 @@ describe("forgeToolView in both languages", () => {
     expect(forgeToolView("preview_screenshot", {}, done("Adresse: http://localhost:3000\nKonsole: keine Meldungen")).tone).toBe("accent");
   });
 });
+
+describe("list_projects", () => {
+  it("names the project that was looked up and warns when none matched", () => {
+    expect(forgeToolView("list_projects", {}, done("3 andere Projekte in FORGE:\n- cento: C:\\cento"))).toMatchObject({ title: "Andere Projekte nachgeschlagen", ref: null, icon: "projects", tone: "accent" });
+    expect(forgeToolView("list_projects", { name: "cento" }, done("Project cento\nFolder: C:\\cento"))).toMatchObject({ title: "Projekt nachgeschlagen", ref: "cento", tone: "accent" });
+    for (const text of ["Kein Projekt „nimbus“ gefunden. Vorhanden: cento.", 'No project "nimbus" found. Available: cento.']) {
+      expect(forgeToolView("list_projects", { name: "nimbus" }, done(text))).toMatchObject({ title: "Projekt nicht gefunden", tone: "warning" });
+    }
+  });
+});

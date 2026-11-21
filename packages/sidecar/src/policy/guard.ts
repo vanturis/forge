@@ -26,7 +26,8 @@ export interface GuardViolation {
 
 const SHELL_TOOLS = new Set(["Bash", "PowerShell", "BashOutput"]);
 const WRITE_TOOLS = new Set(["Write", "Edit", "MultiEdit", "NotebookEdit"]);
-const FILE_TOOLS = new Set([...WRITE_TOOLS, "Read", "Glob", "Grep", "LS"]);
+const READ_TOOLS = new Set(["Read", "Glob", "Grep", "LS"]);
+const FILE_TOOLS = new Set([...WRITE_TOOLS, ...READ_TOOLS]);
 /** Tools that walk a directory tree; a root above a credentials folder can reach it. */
 const SEARCH_TOOLS = new Set(["Glob", "Grep"]);
 const PROTECTED_BRANCHES = new Set(["main", "master"]);
@@ -290,6 +291,22 @@ export function writesOutsideProject(toolName: string, input: Record<string, unk
   return pathFields(input).some((p) => {
     const abs = resolveToolPath(p, projectDir, home);
     return !isInside(abs, projectDir) && !extraWriteDirs.some((d) => isInside(abs, d));
+  });
+}
+
+/**
+ * True if a read-only file tool names its target and that lies inside one of `dirs`. A search without
+ * a root, or with an absolute glob that may point elsewhere, does not count.
+ */
+export function readsInside(toolName: string, input: Record<string, unknown>, projectDir: string, dirs: readonly string[], home?: string): boolean {
+  if (!READ_TOOLS.has(toolName) || !dirs.length) return false;
+  const paths = pathFields(input);
+  if (!paths.length) return false;
+  const glob = toolName === "Glob" ? input.pattern : input.glob;
+  if (typeof glob === "string" && (path.isAbsolute(glob) || glob.startsWith("~") || glob.split(/[\\/]/).includes(".."))) return false;
+  return paths.every((p) => {
+    const abs = resolveToolPath(p, projectDir, home);
+    return dirs.some((d) => isInside(abs, d));
   });
 }
 

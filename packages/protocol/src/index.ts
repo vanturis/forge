@@ -5,6 +5,7 @@ export * from "./models.js";
 export * from "./rpc.js";
 export * from "./files.js";
 export * from "./templates.js";
+export * from "./mentions.js";
 export * from "./format.js";
 export * from "./support.js";
 export * from "./git-remote.js";

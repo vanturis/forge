@@ -1,7 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { AppWindow, Archive, Bot, CalendarDays, ChevronDown, Columns2, Eye, FileStack, Gauge, Hourglass, LayoutGrid, MessageSquare, MessageSquarePlus, Plus, SquareArrowOutUpRight, Users, X } from "lucide-react";
+import { AppWindow, Archive, AtSign, Bot, CalendarDays, ChevronDown, Columns2, Eye, FileStack, Gauge, Hourglass, LayoutGrid, MessageSquare, MessageSquarePlus, Plus, SquareArrowOutUpRight, Users, X } from "lucide-react";
 import { openChatWindow, useChatWindows } from "@/lib/chat-windows";
 import { contextItems } from "@/lib/context-menu";
 import { call, keys, useLiveSessions, useProjects, useSession } from "@/lib/queries";
@@ -17,7 +17,8 @@ import { splitActive, useUi, type SplitPane } from "@/stores/ui";
 import { toast } from "@/stores/toast";
 import { useTemplateDialogs } from "@/stores/templates";
 import { useSessionUsageDialog } from "@/stores/session-usage";
-import { isTmpChat } from "@forge/protocol";
+import { isTmpChat, mentionable, mentionText } from "@forge/protocol";
+import { insertMentionSoon } from "@/lib/project-mention";
 import { ProjectIcon } from "@/components/projects/ProjectIcon";
 import { TempChatIcon } from "@/components/workspace/TempChat";
 import { Skeleton, SkeletonRegion } from "@/components/ui/skeleton";
@@ -242,6 +243,10 @@ export function OpenSessions() {
                   },
                 },
                 ...(splitRoom > 0 && !projectActive ? [{ label: t.layout.openSessions.openBeside, icon: <Columns2 className={MENU_ICON} />, onSelect: () => addSplitPane(g.projectId) }] : []),
+                // Into the chat that is open: "@Name" refers Claude to this project.
+                ...(activeGroup && mentionable(projects.data ?? [], activeGroup).some((p) => p.id === g.projectId)
+                  ? [{ label: t.chat.mention.inChat, icon: <AtSign className={MENU_ICON} />, onSelect: () => insertMentionSoon(`${mentionText(g.projectName)} `) }]
+                  : []),
                 { label: t.layout.openSessions.dailyReport, icon: <CalendarDays className={MENU_ICON} />, onSelect: () => openReport(g.projectId) },
                 { label: t.layout.openSessions.applyTemplate, icon: <FileStack className={MENU_ICON} />, onSelect: () => useTemplateDialogs.getState().openApply({ projectId: g.projectId }) },
                 ...(hasRows ? [{ label: collapsed ? t.layout.openSessions.showSessions : t.layout.openSessions.hideSessions, icon: <ChevronDown className={MENU_ICON} />, onSelect: () => toggleGroup(g.projectId) }] : []),

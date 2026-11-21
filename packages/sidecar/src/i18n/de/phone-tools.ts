@@ -14,13 +14,13 @@ export const phoneTools = {
   send_message: {
     description: "Schickt einer Session eine Anweisung; Claude Code arbeitet dann weiter. Eine geschlossene Session wird dafür wieder geöffnet.",
     params: {
-      text: "Anweisung an Claude Code, vollständig ausformuliert",
+      text: "Anweisung an Claude Code, vollständig ausformuliert. Verweist der Anrufer auf ein anderes Projekt („wie im Projekt cento“), schreibe es als @Projektname in den Text: Claude bekommt dann dessen Ordner",
     },
   },
   start_session: {
     description: "Startet eine neue Claude-Code-Session in einem Projekt, auf Wunsch als parallelen Agenten in einem eigenen Worktree.",
     params: {
-      prompt: "Auftrag, vollständig ausformuliert",
+      prompt: "Auftrag, vollständig ausformuliert. Verweist der Anrufer auf ein anderes Projekt, schreibe es als @Projektname in den Text: Claude bekommt dann dessen Ordner",
       model: "nur wenn der Anrufer ein Modell nennt: opus, sonnet oder haiku",
       effort: "Denkaufwand, nur wenn der Anrufer ihn nennt",
       plan_only: "true, wenn Claude erst einen Plan machen soll",

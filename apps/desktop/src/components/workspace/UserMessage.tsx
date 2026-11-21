@@ -18,6 +18,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { isSlashCommand, type ChatItem } from "./chat-items";
 import { ChatRow, HoverTime } from "./ChatRow";
 import { withUltrathink } from "./ultrathink";
+import { MentionedText } from "./project-mentions";
 import { useChatSlot } from "./chat-slot";
 import { t } from "@/i18n";
 
@@ -98,7 +99,11 @@ export function UserMessage({ item, sessionId }: { item: Extract<ChatItem, { kin
           <div className="min-w-0 flex-1">
             {item.remote && <RemoteLabel />}
             {item.task && <TaskLabel task={item.task} view={taskView} />}
-            {editing ? <MessageEditor item={item} sessionId={sessionId} /> : <div className="whitespace-pre-wrap break-words">{withUltrathink(item.text)}</div>}
+            {editing ? (
+              <MessageEditor item={item} sessionId={sessionId} />
+            ) : (
+              <div className="whitespace-pre-wrap break-words">{item.text.includes("@") ? <MentionedText text={item.text} projectId={projectId} /> : withUltrathink(item.text)}</div>
+            )}
             {hasMeta && (
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-caption leading-normal text-subtle">
                 {chips.map((a, i) => (

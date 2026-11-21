@@ -15,6 +15,7 @@ export type ForgeToolIcon =
   | "screenshot"
   | "console"
   | "interact"
+  | "projects"
   | "forge";
 
 /** Where the card's button leads: an entry of the knowledge (or the list), the agents, the dev tools. */
@@ -177,6 +178,18 @@ export function forgeToolView(tool: string, input: Record<string, unknown>, resu
         tone: urgent ? "warning" : "accent",
         target: null,
         hidden: done,
+      });
+    }
+    case "list_projects": {
+      const name = str(input, "name");
+      const missing = done && /^(?:Kein Projekt|No project|Mehrere Projekte|Several projects)/.test(text);
+      return view({
+        title: !result ? t.chat.forgeTools.projectsLooking : missing ? t.chat.forgeTools.projectNotFound : name ? t.chat.forgeTools.projectLookedUp : t.chat.forgeTools.projectsListed,
+        failedTitle: t.chat.forgeTools.projectsFailed,
+        ref: name,
+        icon: "projects",
+        tone: missing ? "warning" : "accent",
+        target: null,
       });
     }
     case "start_agent":

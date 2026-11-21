@@ -40,6 +40,7 @@ import { ClaudeAssist } from "./claude-assist.js";
 import { SessionLifecycle, type StartParams } from "./lifecycle.js";
 import { BUSY } from "./live-session.js";
 import { AgentRegistry, forgeSessionTools, type DailyReportText, type ProjectToolDeps } from "./forge-tools.js";
+import { mentionedDirs, mentionNote } from "./project-refs.js";
 import { WorktreeService } from "../automation/worktrees.js";
 import type { WorktreeSetup } from "../automation/worktree-setup.js";
 import type { AgentFinisher } from "../automation/agent-finish.js";
@@ -161,6 +162,10 @@ export class SessionService {
       },
       spill: (name, data) => uploads.write(name, data),
       note: (id) => [this.agentReturn.takeNote(id), this.crew?.takeNews(id, false) ?? null].filter(Boolean).join("\n\n") || null,
+      mentions: (id, text) => {
+        const rec = db.getSession(id);
+        return rec ? mentionNote(projects, rec.projectId, text) : null;
+      },
     });
     this.agentReturn = new AgentReturn({
       db,
@@ -194,6 +199,7 @@ export class SessionService {
         const rec = db.getSession(id);
         return (rec && db.getProject(rec.projectId)?.tags) ?? [];
       },
+      mentionedDirs: (id) => mentionedDirs(db, projects, id),
     });
     this.autoContinue = new AutoContinue(
       db,

@@ -15,13 +15,13 @@ export const phoneTools: typeof De = {
   send_message: {
     description: "Sends an instruction to a session; Claude Code then keeps working. A closed session is reopened for it.",
     params: {
-      text: "Instruction for Claude Code, fully written out",
+      text: "Instruction for Claude Code, fully written out. When the caller refers to another project (\"as in project cento\"), write it as @projectname in the text: Claude then gets its folder",
     },
   },
   start_session: {
     description: "Starts a new Claude Code session in a project, optionally as a parallel agent in its own worktree.",
     params: {
-      prompt: "The task, fully written out",
+      prompt: "The task, fully written out. When the caller refers to another project, write it as @projectname in the text: Claude then gets its folder",
       model: "only if the caller names a model: opus, sonnet or haiku",
       effort: "Thinking effort, only if the caller names it",
       plan_only: "true if Claude should make a plan first",

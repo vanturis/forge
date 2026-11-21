@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowUp, ListTodo, Paperclip, SlidersHorizontal, Square } from "lucide-react";
-import { findTemplates, isTmpChat, suggestTemplates, templatePlaceholders, type EffortLevel, type Project, type PromptTemplate, type Session } from "@forge/protocol";
+import { findProjectMentions, findTemplates, isTmpChat, matchMentionTargets, mentionQueryAt, mentionText, suggestTemplates, templatePlaceholders, type EffortLevel, type Project, type ProjectWithStatus, type PromptTemplate, type Session } from "@forge/protocol";
 import { useRuntimeInfo, useSettings, useTemplates } from "@/lib/queries";
 import { EFFORT_LEVELS, findModel, modelLabel } from "@/lib/models";
 import { isWorking } from "@/lib/working";
@@ -27,7 +27,9 @@ import { DICTATION_TOGGLE_EVENT } from "@/stores/dictation";
 import { useDictation } from "./useDictation";
 import { compactSession, stopSession, useComposerOptions, useSendMessage } from "./useSendMessage";
 import { composerInputId, useChatSlot } from "./chat-slot";
-import { hasUltrathink, withUltrathink } from "./ultrathink";
+import { hasUltrathink } from "./ultrathink";
+import { composerMention, ProjectMentionMenu, useMentionTargets, withMentions } from "./project-mentions";
+import { insertMention, MENTION_INSERT_EVENT } from "@/lib/project-mention";
 import { ArchivedBar } from "./SessionArchive";
 import { TemplateSuggestions } from "@/components/templates/TemplateSuggestions";
 import { TemplateFillDialog } from "@/components/templates/TemplateFillDialog";
@@ -147,6 +149,35 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
   const [templateIndex, setTemplateIndex] = useState(-1);
   useEffect(() => setTemplateIndex(explicitTemplates ? 0 : -1), [text, explicitTemplates]);
   const [filling, setFilling] = useState<PromptTemplate | null>(null);
+
+  /**
+   * Other projects: "@" and a few letters list them, the picked one stands in the text as "@Name". The
+   * sidecar tells Claude where it lies. The cursor counts only for the text it was read with, so a text
+   * set from elsewhere (a template, dictation) opens no list.
+   */
+  const targets = useMentionTargets(project.id);
+  const [cursor, setCursor] = useState<{ at: number; text: string } | null>(null);
+  const noteCursor = (el: HTMLTextAreaElement) => setCursor(el.selectionStart === el.selectionEnd ? { at: el.selectionStart, text: el.value } : null);
+  const mentionAt = useMemo(() => (cursor && cursor.text === text && !matches.length && dismissedFor !== text ? mentionQueryAt(text, cursor.at) : null), [cursor, text, matches.length, dismissedFor]);
+  const mentionMatches = useMemo(() => (mentionAt ? matchMentionTargets(mentionAt.query, targets.list) : []), [mentionAt, targets.list]);
+  const mentionLoading = !!mentionAt && targets.loading;
+  const [mentionIndex, setMentionIndex] = useState(0);
+  useEffect(() => setMentionIndex(0), [text]);
+  const mentions = useMemo(() => findProjectMentions(text, targets.list), [text, targets.list]);
+  const placeCaret = (caret: number, next: string) =>
+    requestAnimationFrame(() => {
+      ref.current?.focus();
+      ref.current?.setSelectionRange(caret, caret);
+      setCursor({ at: caret, text: next });
+    });
+  const pickMention = (p: ProjectWithStatus) => {
+    if (!mentionAt || !cursor) return;
+    const { text: next, caret } = insertMention(text, mentionAt.start, cursor.at, `${mentionText(p.name)} `);
+    // A space that already follows is not doubled.
+    const tidy = next.slice(0, caret) + next.slice(caret).replace(/^ /, "");
+    setText(tidy);
+    placeCaret(caret, tidy);
+  };
   const pickTemplate = (t: PromptTemplate) => {
     setApplied(true);
     if (templatePlaceholders(t.text).length) return setFilling(t);
@@ -167,7 +198,7 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
    * and a copy behind it, laid out the same way, shows the text with the colored word.
    */
   const mirror = useRef<HTMLDivElement>(null);
-  const ultrathink = hasUltrathink(text);
+  const decorated = hasUltrathink(text) || mentions.length > 0;
 
   useEffect(() => {
     const el = ref.current;
@@ -358,7 +389,8 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
   const localTyped = clearTyped || !!typedInfo;
   // The field still holds live words or waits for the finished text; sent now, the rest would land in an empty draft.
   const dictating = dictation.state !== "idle";
-  const shownTemplates = dictating || filling ? NO_TEMPLATES : templateMatches;
+  const mentionOpen = !dictating && (mentionMatches.length > 0 || mentionLoading);
+  const shownTemplates = dictating || filling || mentionOpen ? NO_TEMPLATES : templateMatches;
   /** counts sends; the arrow animation restarts with each */
   const [sentTick, setSentTick] = useState(0);
   /** Ctrl+R: earlier messages of this project containing what is typed, like the search in the terminal */
@@ -413,6 +445,18 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
     el.addEventListener(DICTATION_TOGGLE_EVENT, onToggle);
     return () => el.removeEventListener(DICTATION_TOGGLE_EVENT, onToggle);
   });
+  // Command palette and the menu of a project: a mention (or a bare "@" that opens the list) at the cursor.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onInsert = (e: Event) => {
+      const { text: next, caret } = insertMention(draftText(), el.selectionStart, el.selectionEnd, (e as CustomEvent<string>).detail);
+      setText(next);
+      placeCaret(caret, next);
+    };
+    el.addEventListener(MENTION_INSERT_EVENT, onInsert);
+    return () => el.removeEventListener(MENTION_INSERT_EVENT, onInsert);
+  });
 
   const models = runtime.data?.models.filter((m) => m.value !== "default") ?? [];
   const modelOptions = [
@@ -456,6 +500,7 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
     <div className="@container/composer relative w-full shrink-0 px-6 pb-5 pt-2">
       {historyOpen && <ComposerHistoryMenu matches={historyMatches} index={historyIndex} onPick={pickHistory} />}
       <SlashCommandMenu matches={matches} index={cmdIndex} onPick={pickCommand} />
+      {mentionOpen && <ProjectMentionMenu matches={mentionMatches} loading={mentionLoading} index={mentionIndex} onPick={pickMention} />}
       <TemplateSuggestions templates={shownTemplates} index={templateIndex} explicit={explicitTemplates} onPick={pickTemplate} />
       {filling && (
         <TemplateFillDialog
@@ -498,9 +543,9 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
           </div>
         )}
         <div className="relative">
-        {ultrathink && (
+        {decorated && (
           <div ref={mirror} aria-hidden className="pointer-events-none absolute inset-0 overflow-y-auto whitespace-pre-wrap break-words px-5 pt-4 text-ui text-fg">
-            {withUltrathink(text)}
+            {withMentions(text, mentions, composerMention)}
             {"​"}
           </div>
         )}
@@ -509,7 +554,11 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
           data-composer
           ref={ref}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            noteCursor(e.target);
+          }}
+          onSelect={(e) => noteCursor(e.currentTarget)}
           onScroll={(e) => {
             if (mirror.current) mirror.current.scrollTop = e.currentTarget.scrollTop;
           }}
@@ -525,7 +574,7 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
           rows={2}
           // Not through cn: tailwind-merge takes text-ui for a color and drops it next to text-fg, the text would
           // shrink to 13px and no longer line up with the copy behind it.
-          className={`relative block max-h-65 w-full resize-none bg-transparent px-5 pt-4 text-ui placeholder:text-subtle focus:outline-none focus-visible:outline-none ${ultrathink ? "text-transparent caret-fg" : "text-fg"}`}
+          className={`relative block max-h-65 w-full resize-none bg-transparent px-5 pt-4 text-ui placeholder:text-subtle focus:outline-none focus-visible:outline-none ${decorated ? "text-transparent caret-fg" : "text-fg"}`}
           onKeyUp={(e) => {
             if (e.key !== " ") return;
             if (holding.current) e.preventDefault();
@@ -582,6 +631,24 @@ const ComposerInput = memo(function ComposerInput({ project, session, resumeClau
               if (historyMatches.length && (e.key === "Tab" || (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing))) {
                 e.preventDefault();
                 pickHistory(historyMatches[Math.min(historyIndex, historyMatches.length - 1)]!);
+                return;
+              }
+            }
+            if (mentionOpen) {
+              const n = mentionMatches.length;
+              if (n && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+                e.preventDefault();
+                setMentionIndex((i) => (e.key === "ArrowDown" ? (i + 1) % n : (i + n - 1) % n));
+                return;
+              }
+              if (n && ((e.key === "Tab" && !e.shiftKey) || (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing))) {
+                e.preventDefault();
+                pickMention(mentionMatches[Math.min(mentionIndex, n - 1)]!);
+                return;
+              }
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setDismissedFor(text);
                 return;
               }
             }

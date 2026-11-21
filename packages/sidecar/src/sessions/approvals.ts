@@ -5,7 +5,7 @@ import { ELICITATION_TOOL, elicitationContent, elicitationFields, elicitationUrl
 import type { ApprovalDecision, ApprovalRequest } from "../claude/runtime.js";
 import { truncateInput } from "../claude/normalize.js";
 import type { GitEngine } from "../git/git.js";
-import { checkToolUse, claudePlansDir, needsBranch, writesOutsideProject, type GuardViolation } from "../policy/guard.js";
+import { checkToolUse, claudePlansDir, needsBranch, readsInside, writesOutsideProject, type GuardViolation } from "../policy/guard.js";
 import { blockedTools, NO_NETWORK_TAG } from "../policy/profiles.js";
 import { redact } from "../policy/redact.js";
 import type { LiveSession } from "./live-session.js";
@@ -35,6 +35,8 @@ export interface ApprovalHost {
   cliSupports(capability: string): boolean;
   /** current tags of the session's project */
   projectTags(sessionId: string): readonly string[];
+  /** folders of the other projects the user mentioned in the session ("@Name") */
+  mentionedDirs?(sessionId: string): string[];
 }
 
 /** Denies every open prompt of a process (stop, end, shutdown). */
@@ -93,6 +95,7 @@ export class ApprovalGate {
   }
 
   request(id: string, live: LiveSession, req: ApprovalRequest, signal: AbortSignal): Promise<ApprovalDecision> {
+    if (this.readsMentionedProject(id, live, req)) return Promise.resolve({ behavior: "allow", scope: "once" });
     const allowSessionScope = live.profile.allowSessionScope && !req.suppressAlwaysAllow && !INTERACTIVE_TOOLS.has(req.toolName);
     const { input, truncated } = truncateInput(req.input);
     this.core.record(id, {
@@ -145,6 +148,30 @@ export class ApprovalGate {
       // With Remote Control the prompt may also have been answered in the Claude app.
       signal.addEventListener("abort", () => finish({ behavior: "deny", message: this.host.abortReason(id) }, "abort", "once"), { once: true });
     });
+  }
+
+  /**
+   * Reading in a project the user mentioned with "@Name" needs no prompt: the mention is the go-ahead.
+   * The hard policy check (credentials) ran before; writes there still ask or are refused.
+   */
+  private readsMentionedProject(id: string, live: LiveSession, req: ApprovalRequest): boolean {
+    try {
+      if (!this.host.mentionedDirs || !readsInside(req.toolName, req.input, live.projectDir, this.host.mentionedDirs(id), os.homedir())) return false;
+      this.core.db.recordApproval({
+        sessionId: id,
+        requestId: req.requestId,
+        toolName: req.toolName,
+        input: redact(truncateInput(req.input).input),
+        decision: "allow",
+        scope: "once",
+        source: "mention",
+        reason: null,
+      });
+      return true;
+    } catch {
+      // Unsure whether it applies: the user decides as usual.
+      return false;
+    }
   }
 
   /** An MCP server asks the user for input. A declined or failed prompt never reaches the server as an answer. */

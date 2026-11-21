@@ -2,10 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import type { Project, PromptTemplate, ServerEvent, Session } from "@forge/protocol";
+import type { Project, ProjectWithStatus, PromptTemplate, ServerEvent, Session } from "@forge/protocol";
 import type * as RpcModuleNs from "@/lib/rpc";
 import { rememberSent } from "@/stores/composer-history";
 import { draftKey, useDrafts } from "@/stores/drafts";
+import { MENTION_INSERT_EVENT } from "@/lib/project-mention";
 import { useUi } from "@/stores/ui";
 
 type RpcModule = typeof RpcModuleNs;
@@ -72,6 +73,7 @@ const session: Session = {
 };
 
 let templateList: PromptTemplate[] = [];
+let projectList: ProjectWithStatus[] = [];
 const noUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, totalTokens: 0, costUsd: 0, turns: 0, windows: [], planError: null };
 const tpl = (id: string, name: string, text: string, description: string | null = null): PromptTemplate => ({ id, projectId: null, name, description, text, sortOrder: 0, createdAt: "", updatedAt: "" });
 
@@ -89,6 +91,7 @@ function setup(ui: React.ReactNode) {
 beforeEach(() => {
   useDrafts.setState({ drafts: {} });
   templateList = [];
+  projectList = [];
   callMock.mockReset();
   callMock.mockImplementation(async (method: string) => {
     if (method === "settings.get") return { enterToSend: true, defaultModel: null, defaultEffort: null, sounds: false };
@@ -96,7 +99,7 @@ beforeEach(() => {
     if (method === "sessions.send") return session;
     if (method === "templates.list") return templateList;
     if (method === "projects.get") return { ...project("p1"), git: { branch: "main" }, lastSession: null };
-    if (method === "projects.list") return [];
+    if (method === "projects.list") return projectList;
     throw new Error("unexpected " + method);
   });
 });
@@ -212,7 +215,7 @@ describe("Composer", () => {
     callMock.mockImplementation((method: string) => {
       if (method === "sessions.send") return new Promise<Session>((r) => (finish = r));
       if (method === "settings.get") return Promise.resolve({ enterToSend: true });
-      if (method === "templates.list") return Promise.resolve([]);
+      if (method === "templates.list" || method === "projects.list") return Promise.resolve([]);
       if (method === "sessions.usage") return Promise.resolve(noUsage);
       return Promise.resolve({ models: [] });
     });
@@ -343,7 +346,7 @@ describe("/clear", () => {
       if (method === "settings.get") return { enterToSend: true };
       if (method === "sessions.close") return { ...session, live: false, status: "stopped" };
       if (method === "sessions.usage") return noUsage;
-      return method === "templates.list" ? [] : { models: [] };
+      return method === "templates.list" || method === "projects.list" ? [] : { models: [] };
     });
     useDrafts.getState().setText("s1", "/clear");
     setup(<Composer project={project("p1")} session={session} />);
@@ -388,7 +391,7 @@ describe("dictation", () => {
     callMock.mockImplementation(async (method: string) => {
       if (method === "settings.get") return { enterToSend: true };
       if (method === "voice.start") return { id: "v1" };
-      return method === "templates.list" ? [] : { models: [] };
+      return method === "templates.list" || method === "projects.list" ? [] : { models: [] };
     });
     useDrafts.getState().setText(draftKey("p1", null), "Bitte");
     setup(<Composer project={{ ...project("p1"), name: "Kundenportal", technologies: ["Next.js"] }} session={null} />);
@@ -407,7 +410,7 @@ describe("dictation", () => {
     callMock.mockImplementation(async (method: string) => {
       if (method === "settings.get") return { enterToSend: true };
       if (method === "voice.start") return { id: "v1" };
-      return method === "templates.list" ? [] : { models: [] };
+      return method === "templates.list" || method === "projects.list" ? [] : { models: [] };
     });
     setup(<Composer project={project("p1")} session={null} />);
     const box = screen.getByRole("textbox", { name: "Nachricht an Claude" });
@@ -426,7 +429,7 @@ describe("dictation", () => {
         if (method === "settings.get") return { enterToSend: true };
         if (method === "voice.start") return { id: "v1" };
         if (method === "voice.stop") return { text: "die Tests ausführen." };
-        return method === "templates.list" ? [] : { models: [] };
+        return method === "templates.list" || method === "projects.list" ? [] : { models: [] };
       });
       stubMicrophone();
     });
@@ -534,7 +537,7 @@ describe("dictation", () => {
         if (method === "settings.get") return { enterToSend: true };
         if (method === "voice.start") return { id: "v1" };
         if (method === "voice.stop") return { text };
-        return method === "templates.list" ? [] : { models: [] };
+        return method === "templates.list" || method === "projects.list" ? [] : { models: [] };
       });
     }
     beforeEach(() => stubMicrophone());
@@ -631,7 +634,7 @@ describe("info commands", () => {
       if (method === "system.usage") return { available: true, subscriptionType: "max", windows: [{ key: "five_hour", label: "Aktuelle Session", utilization: 12, resetsAt: null }], fetchedAt: new Date().toISOString(), error: null };
       if (method === "sessions.usage")
         return { ...noUsage, cacheReadTokens: 2_000_000, totalTokens: 2_000_000, turns: 3, windows: [{ key: "five_hour", label: "5 Stunden", share: 4.5, utilization: 12, resetsAt: null, tokens: 2_000_000 }] };
-      return method === "templates.list" ? [] : { models: [] };
+      return method === "templates.list" || method === "projects.list" ? [] : { models: [] };
     });
     useDrafts.getState().setText("s1", "/usage");
     setup(<Composer project={project("p1")} session={session} />);
@@ -688,5 +691,52 @@ describe("suggestion for the next message", () => {
     expect(screen.queryByRole("button", { name: "Vorschlag übernehmen" })).toBeNull();
     rerender(<Composer project={project("p1")} session={session} />);
     expect(screen.queryByRole("button", { name: "Vorschlag übernehmen" })).toBeNull();
+  });
+});
+
+describe("mentions of other projects", () => {
+  const listed = (id: string, over: Partial<Project> = {}): ProjectWithStatus => ({ ...project(id), ...over, git: null, lastSession: null });
+  const type = (box: HTMLTextAreaElement, value: string) => fireEvent.change(box, { target: { value } });
+
+  beforeEach(() => {
+    projectList = [listed("p1"), listed("cento"), listed("shop", { group: "Kunden" }), listed("p1-wt", { parentId: "p1" }), listed("alt", { exists: false })];
+  });
+
+  it("lists the other projects after @ and puts the picked one into the text", async () => {
+    setup(<Composer project={project("p1")} session={session} />);
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    type(box, "Design aus @");
+    expect(await screen.findByRole("option", { name: /@cento/ })).toBeTruthy();
+    // Not the project of the chat, its worktrees or a project whose folder is gone.
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["@centoC:\\cento", "@shopKundenC:\\shop"]);
+    type(box, "Design aus @sh");
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(1));
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(useDrafts.getState().drafts.s1?.text).toBe("Design aus @shop ");
+    expect(callMock).not.toHaveBeenCalledWith("sessions.send", expect.anything());
+    // The name is complete: the list is gone and Enter sends.
+    await waitFor(() => expect(screen.queryByRole("option")).toBeNull());
+    fireEvent.keyDown(box, { key: "Enter" });
+    await waitFor(() => expect(callMock).toHaveBeenCalledWith("sessions.send", { sessionId: "s1", text: "Design aus @shop", attachments: [] }));
+  });
+
+  it("hides the list with Esc and leaves addresses alone", async () => {
+    setup(<Composer project={project("p1")} session={session} />);
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    type(box, "@c");
+    expect(await screen.findByRole("option", { name: /@cento/ })).toBeTruthy();
+    fireEvent.keyDown(box, { key: "Escape" });
+    expect(screen.queryByRole("option")).toBeNull();
+    expect(useDrafts.getState().drafts.s1?.text).toBe("@c");
+    type(box, "mail an info@c");
+    expect(screen.queryByRole("option")).toBeNull();
+  });
+
+  it("writes a mention from the menu of a project at the cursor", async () => {
+    setup(<Composer project={project("p1")} session={session} />);
+    const box = screen.getByRole("textbox") as HTMLTextAreaElement;
+    type(box, "wie in");
+    act(() => void box.dispatchEvent(new CustomEvent(MENTION_INSERT_EVENT, { detail: "@cento " })));
+    expect(useDrafts.getState().drafts.s1?.text).toBe("wie in @cento ");
   });
 });

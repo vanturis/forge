@@ -121,6 +121,26 @@ export const forgeTools: typeof De = {
   usageLine: "- usage_status: subscription usage and limits; check before big efforts (several agents, long runs).",
   usageLineQuiet: "- usage_status: subscription usage and limits; only when the user asks. The user turned limit warnings off: don't check the limit on your own and don't point out a tight limit.",
   dailyReportLine: "- daily_report: what happened on a day (sessions, agents, commits, open items); for reviews and \"What happened today?\".",
+  // list_projects and @mentions of other projects
+  listProjectsDescription:
+    "The user's other projects in FORGE: name, group, folder and stack. With name the details of one project including the index of its project knowledge. For references like \"as in project cento\" or @cento: look up the folder and read there with Read, Glob and Grep.",
+  listProjectsName: "Name of a project, approximate is fine; omit for the list of all projects",
+  noOtherProjects: "There are no other projects in FORGE.",
+  projectLine: (name, group, dir, tech) => `- ${name}${group ? ` (group ${group})` : ""}: ${dir}${tech ? `, ${tech}` : ""}`,
+  projectList: (count, lines) =>
+    `${count === 1 ? "1 other project" : `${count} other projects`} in FORGE:\n${lines}\nWith name you get the details of one project including the index of its project knowledge.`,
+  projectNotFound: (name, known) => `No project "${name}" found. Available: ${known}.`,
+  projectAmbiguous: (name, lines) => `Several projects match "${name}":\n${lines}\nAsk the user which one is meant, or give the exact name.`,
+  projectDetails: (name, group, dir, tech) => `Project ${name}${group ? ` (group ${group})` : ""}\nFolder: ${dir}${tech ? `\nStack: ${tech}` : ""}`,
+  projectKnowledge: (dir, total, lines) => `Project knowledge (${total === 1 ? "1 entry" : `${total} entries`}) as Markdown files in ${dir}, usually <id>.md:\n${lines}`,
+  projectReadHint: "Read there with Read, Glob and Grep using absolute paths. Change nothing in that project unless the user explicitly asks for it.",
+  projectsLine:
+    "- list_projects: the user's other projects in FORGE with their folders. When they refer to one (\"as in project cento\", \"take it from cento\", @cento), look it up and read there with Read, Glob and Grep using absolute paths. Change nothing there without an explicit request.",
+  mentionLine: (name, dir, tech, knowledge) => `- @${name}: folder ${dir}${tech ? `, stack: ${tech}` : ""}${knowledge ? `, project knowledge in ${knowledge}` : ""}`,
+  mentionNote: (lines) =>
+    `[FORGE note, not written by the user] In this message the user refers to other projects in FORGE:\n${lines}\nRead there with Read, Glob and Grep using absolute paths, whatever the task needs; that is approved. Change nothing in these projects unless the user explicitly asks for it.`,
+  mentionNoteConfined: (names) =>
+    `[FORGE note, not written by the user] The user refers to other projects in FORGE (${names}). This project allows file access only in its own folder (tag project-files-only), so you cannot read there. Tell the user.`,
   introNoGit: "You are running in FORGE, a desktop interface for Claude Code. Besides your own tools there are FORGE tools (mcp__forge__…).",
   noGit: (cwd) =>
     `This project deliberately works without Git: the user turned off Git for ${cwd} in FORGE. Don't run any git commands (no git init, status, add, commit, branch, checkout, push), don't create a repository and don't suggest commits, branches or pull requests. An existing .git folder stays untouched too. Changes only end up as files in the folder; if something has to be undone, that only works through the files themselves.`,

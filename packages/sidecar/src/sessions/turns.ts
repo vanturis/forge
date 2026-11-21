@@ -17,6 +17,8 @@ export interface TurnHost {
   spill: Spill;
   /** a further note for Claude with the next message (news from the crew); null: none */
   note?: (sessionId: string) => string | null;
+  /** where the other projects lie that the text mentions with "@Name"; null: it mentions none */
+  mentions?: (sessionId: string, text: string) => string | null;
 }
 
 /** "auto": FORGE continues after a usage limit; the timeline marks the message as automatic. */
@@ -84,14 +86,25 @@ export class TurnDispatch {
     const { blocks, meta } = attachments.length ? await buildAttachmentBlocks(attachments, this.host.spill) : { blocks: [], meta: [] };
     // The timeline shows what Claude got: a shortened text names the file with the full one.
     const fitted = await fitMessageText(text, this.host.spill);
-    const withTask = task ? [{ type: "text" as const, text: task.note }, ...blocks] : blocks;
+    // Only what the user wrote refers to projects; an agent's answer or an automatic message does not.
+    const mentions = task || source ? null : this.mentionNote(sessionId, text);
+    const notes = [task?.note, mentions].filter((n): n is string => !!n).map((n) => ({ type: "text" as const, text: n }));
     return {
-      msg: { text: fitted, blocks: withTask, uuid: randomUUID() },
+      msg: { text: fitted, blocks: [...notes, ...blocks], uuid: randomUUID() },
       meta,
       ...(source ? { source } : {}),
       ...(task?.ref ? { task: task.ref } : {}),
       ...(task?.agents?.length ? { agents: task.agents } : {}),
     };
+  }
+
+  /** A note that cannot be built must not keep the message from going out. */
+  private mentionNote(sessionId: string, text: string): string | null {
+    try {
+      return this.host.mentions?.(sessionId, text) ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /**
