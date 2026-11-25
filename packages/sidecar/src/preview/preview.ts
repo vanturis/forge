@@ -430,6 +430,25 @@ export class PreviewService {
     });
   }
 
+  /**
+   * Pixels that differ clearly (one channel by more than 32) between two JPEGs of the same size; -1 for
+   * different sizes. Counted in the comparison tab on about:blank, where no page's CSP blocks data images.
+   */
+  changedPixels(projectId: string, a: string, b: string): Promise<number> {
+    return this.exclusive(projectId, async () => {
+      try {
+        const inst = await this.instance(projectId);
+        inst.compare ??= await PreviewPage.open(inst.browser.cdp);
+        await inst.compare.navigate("about:blank", LOAD_MS);
+        return await inst.compare.evaluate<number>(diffScript(a, b), true, 20_000);
+      } catch (e) {
+        return this.hung(projectId, e);
+      } finally {
+        this.idle(projectId);
+      }
+    });
+  }
+
   private async close(projectId: string) {
     const inst = this.open.get(projectId);
     if (!inst) return;
@@ -498,4 +517,24 @@ async function runStep(page: PreviewPage, s: PreviewStep, stepMs: number) {
       else await new Promise((r) => setTimeout(r, Math.min(s.ms ?? 0, MAX_STEP_MS)));
       return;
   }
+}
+
+function diffScript(a: string, b: string): string {
+  return `(async () => {
+    const load = (src) => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error("image")); i.src = src; });
+    const [x, y] = await Promise.all([load(${JSON.stringify(`data:image/jpeg;base64,${a}`)}), load(${JSON.stringify(`data:image/jpeg;base64,${b}`)})]);
+    if (x.naturalWidth !== y.naturalWidth || x.naturalHeight !== y.naturalHeight) return -1;
+    const c = document.createElement("canvas");
+    c.width = x.naturalWidth;
+    c.height = x.naturalHeight;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.drawImage(x, 0, 0);
+    const p = g.getImageData(0, 0, c.width, c.height).data;
+    g.clearRect(0, 0, c.width, c.height);
+    g.drawImage(y, 0, 0);
+    const q = g.getImageData(0, 0, c.width, c.height).data;
+    let n = 0;
+    for (let i = 0; i < p.length; i += 4) if (Math.abs(p[i] - q[i]) > 32 || Math.abs(p[i + 1] - q[i + 1]) > 32 || Math.abs(p[i + 2] - q[i + 2]) > 32) n++;
+    return n;
+  })()`;
 }

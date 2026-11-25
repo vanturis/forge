@@ -242,8 +242,10 @@ export const Session = z.object({
   suggestion: z.string().nullable().optional(),
   /** the running turn waits for another attempt of a failed API request (not persisted); gone once an answer arrives */
   retry: ApiRetry.nullable().optional(),
-  /** estimated tokens of the thinking block Claude is in right now (not persisted); null when it is not thinking */
+  /** estimated thinking tokens of the running turn so far, subagents included (not persisted); null before the first thinking */
   thinkingTokens: z.number().nullable().optional(),
+  /** a thinking block runs right now (not persisted) */
+  thinking: z.boolean().optional(),
   /** a crew member's session shown here read-only (crew.shareAsk view); missing for own sessions */
   mirror: CrewMirror.optional(),
 });
@@ -732,8 +734,8 @@ export const UiCompare = z.object({
   url: z.string(),
   files: z.array(z.string()),
   createdAt: z.string(),
-  /** capturing: the after image is being taken (also when taken again) */
-  status: z.enum(["capturing", "ready", "failed"]),
+  /** capturing: the after image is being taken (also when taken again); unchanged: after looks like before */
+  status: z.enum(["capturing", "ready", "failed", "unchanged"]),
   before: UiCompareShot,
   after: UiCompareShot.nullable(),
   /** why the after image failed */

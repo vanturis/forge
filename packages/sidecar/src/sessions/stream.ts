@@ -71,7 +71,7 @@ export class SessionStream {
       return;
     }
     if (m.type === "system" && m.subtype === "thinking_tokens") {
-      this.noteThinking(id, live, m.estimated_tokens);
+      this.noteThinking(id, live, m);
       return;
     }
     if (m.type === "system" && m.subtype === "session_state_changed") {
@@ -123,6 +123,7 @@ export class SessionStream {
         live.cliTurn = false;
         live.retry = null;
         live.thinkingTokens = null;
+        live.thinkingBlock = 0;
         this.remote.endTurn(id, live);
         pruneSeenUuids(live.seenUuids);
         const failed = body.isError && !wasInterrupt;
@@ -166,22 +167,31 @@ export class SessionStream {
       error: typeof m.error === "string" ? m.error : "unknown",
     };
     // What the failed attempt had thought so far is gone with it.
-    live.thinkingTokens = null;
+    if (live.thinkingTokens !== null) live.thinkingTokens = Math.max(0, live.thinkingTokens - live.thinkingBlock) || null;
+    live.thinkingBlock = 0;
     this.core.publish(this.core.db.getSession(id));
   }
 
-  /** Running estimate of the thinking block Claude is in; outside of a turn nothing would take it back. */
-  private noteThinking(id: string, live: LiveSession, estimated: unknown) {
-    const tokens = finite(estimated);
-    if (tokens === null || !live.turnActive) return;
-    live.thinkingTokens = tokens;
+  /**
+   * Thinking of the running turn, summed over its blocks. A block lasts a few seconds between tool calls;
+   * the sum stays visible after it, so the line does not flash up and vanish. Frames carry no
+   * parent_tool_use_id: a subagent's thinking counts too, and the increments keep the sum right when
+   * blocks run at the same time. Outside of a turn nothing would take the value back.
+   */
+  private noteThinking(id: string, live: LiveSession, m: Record<string, unknown>) {
+    const total = finite(m.estimated_tokens);
+    if (total === null || !live.turnActive) return;
+    const delta = finite(m.estimated_tokens_delta) ?? Math.max(0, total - live.thinkingBlock);
+    const started = live.thinkingBlock === 0;
+    live.thinkingBlock += delta;
+    live.thinkingTokens = (live.thinkingTokens ?? 0) + delta;
     const now = Date.now();
-    if (now - live.thinkingPublishedAt < THINKING_PUBLISH_MS) return;
+    if (!started && now - live.thinkingPublishedAt < THINKING_PUBLISH_MS) return;
     live.thinkingPublishedAt = now;
     this.core.publish(this.core.db.getSession(id));
   }
 
-  /** An answer that arrives ends the wait for a retry; the end of a block of the main thread ends its thinking. */
+  /** An answer that arrives ends the wait for a retry; the end of a block ends the thinking, the sum stays. */
   private noteAnswer(id: string, live: LiveSession, m: Record<string, unknown>) {
     const event = m.type === "stream_event" ? (m.event as Record<string, unknown> | undefined)?.type : null;
     let changed = false;
@@ -189,8 +199,9 @@ export class SessionStream {
       live.retry = null;
       changed = true;
     }
-    if (live.thinkingTokens !== null && !m.parent_tool_use_id && (event === "content_block_stop" || event === "message_start" || event === "message_stop")) {
-      live.thinkingTokens = null;
+    // Any thread's end of block: a block still running sends its next frame within a second.
+    if (live.thinkingBlock > 0 && (event === "content_block_stop" || event === "message_start" || event === "message_stop")) {
+      live.thinkingBlock = 0;
       changed = true;
     }
     if (changed) this.core.publish(this.core.db.getSession(id));
@@ -214,6 +225,7 @@ export class SessionStream {
       live.turnActive = false;
       live.retry = null;
       live.thinkingTokens = null;
+      live.thinkingBlock = 0;
       if (status === "running") this.core.setStatus(id, "idle");
     }
   }

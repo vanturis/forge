@@ -2687,7 +2687,7 @@ describe("what newer Claude Code versions report", () => {
     expect(svc.get(s.id).retry).toBeNull();
   });
 
-  it("shows how far Claude's thinking got while the block runs", async () => {
+  it("sums Claude's thinking over the turn and keeps it after the block", async () => {
     const s = await svc.start({ projectId, prompt: "Lies a.txt" });
     const sink = rt.sinks[0]!;
     const updates: Array<number | null | undefined> = [];
@@ -2698,14 +2698,19 @@ describe("what newer Claude Code versions report", () => {
     for (const e of emitted) if (e.event === "session.updated") updates.push(e.payload.thinkingTokens);
     // frames within a second are not broadcast one by one
     expect(updates).toEqual([50]);
-    expect(svc.get(s.id).thinkingTokens).toBe(303);
-    // a subagent's block does not end the main thread's thinking
-    sink.onMessage({ type: "stream_event", parent_tool_use_id: "t1", event: { type: "content_block_stop", index: 0 } });
-    expect(svc.get(s.id).thinkingTokens).toBe(303);
+    expect(svc.get(s.id)).toMatchObject({ thinkingTokens: 303, thinking: true });
+    // the block ends: the sum stays, only the thinking is over
     sink.onMessage({ type: "stream_event", event: { type: "content_block_stop", index: 0 } });
+    expect(svc.get(s.id)).toMatchObject({ thinkingTokens: 303, thinking: false });
+    // the next block adds to it
+    sink.onMessage({ type: "system", subtype: "thinking_tokens", estimated_tokens: 100, estimated_tokens_delta: 100 });
+    expect(svc.get(s.id)).toMatchObject({ thinkingTokens: 403, thinking: true });
+    // a failed attempt takes its block's thinking with it
+    sink.onMessage({ type: "system", subtype: "api_retry", attempt: 1, max_retries: 10, retry_delay_ms: 100, error_status: 529, error: "overloaded" });
+    expect(svc.get(s.id)).toMatchObject({ thinkingTokens: 303, thinking: false });
+    sink.onMessage(done);
     expect(svc.get(s.id).thinkingTokens).toBeNull();
     // outside of a turn nothing would take the value back
-    sink.onMessage(done);
     sink.onMessage({ type: "system", subtype: "thinking_tokens", estimated_tokens: 80, estimated_tokens_delta: 80 });
     expect(svc.get(s.id).thinkingTokens).toBeNull();
   });

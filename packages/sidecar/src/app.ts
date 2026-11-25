@@ -193,6 +193,7 @@ export function createApp(opts: { dataDir: string; write: Writer; log?: (m: stri
     hasBrowser: () => preview.hasBrowser(),
     lastViewed: (sessionId) => preview.lastViewed(sessionId),
     capture: (projectId, url) => preview.capture(projectId, url),
+    changedPixels: (projectId, a, b) => preview.changedPixels(projectId, a, b),
   });
   void uiCompare.prune().catch(() => null);
   const notifyProject = (projectId: string) => emit({ event: "project.updated", payload: { projectId } });

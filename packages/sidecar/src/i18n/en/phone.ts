@@ -373,6 +373,7 @@ Security:
     subagent: (desc: string, since: string, summary: string) => `Subagent ${desc}, ${since}${summary ? `, latest: ${summary}` : ""}`,
     background: (kind: string, desc: string, since: string, summary: string) => `In the background: ${kind} ${desc}, ${since}${summary ? `, latest: ${summary}` : ""}`,
     context: (percent: number) => ` Context ${percent} percent full.`,
+    thinking: (tokens: string, now: boolean) => `${now ? "Claude is thinking right now; the" : "The"} running turn has thought about ${tokens} tokens so far.`,
     retry: (attempt: number, max: number, overloaded: boolean) =>
       `The session waits for the Claude API, ${overloaded ? "it is overloaded" : "the last request failed"}. Claude Code tries again by itself, attempt ${attempt} of ${max}.`,
     suggestion: (text: string) => `Claude Code suggests as the next message: ${text}. Send it with send_message if the caller wants that.`,
@@ -874,6 +875,7 @@ Security:
     uiFiles: (n: number) => (n === 1 ? "1 UI file" : `${n} UI files`),
     compareReady: "before and after images are available",
     compareCapturing: "the after image is being captured",
+    compareUnchanged: "nothing visible changed on this page",
     compareFailed: (error: string) => `the after image is missing: ${error}`,
     unknownError: "unknown error",
     compare: (ref: string, when: string, url: string, files: string, names: string, state: string) =>

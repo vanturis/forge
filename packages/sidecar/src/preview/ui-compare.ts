@@ -18,6 +18,8 @@ const MAX_AGE_MS = 14 * 24 * 60 * 60_000;
 const MAX_KEPT = 100;
 /** A before image without a comparison (sidecar ended mid-turn) is left over after this. */
 const ORPHAN_MS = 6 * 60 * 60_000;
+/** Pixels that may differ between two shots of an unchanged page (blinking caret, a spinner frame). */
+export const SAME_PIXELS = 24;
 
 export interface UiCompareDeps {
   /** the data folder for the images, one subfolder per comparison */
@@ -29,6 +31,8 @@ export interface UiCompareDeps {
   /** the page the session's preview tools showed last */
   lastViewed(sessionId: string): string | null;
   capture(projectId: string, url: string): Promise<Capture>;
+  /** pixels that differ between two JPEGs (base64); null when the browser could not tell */
+  changedPixels?(projectId: string, a: string, b: string): Promise<number | null>;
   record(sessionId: string, body: SessionEventBody): void;
   emit(e: ServerEvent): void;
   /** lets drain() and shutdown wait for running captures */
@@ -37,12 +41,18 @@ export interface UiCompareDeps {
   now?: () => number;
 }
 
+type Before = UiCompareShot & { url: string; doneAt: number };
+
 interface Watch {
   id: string;
   projectId: string;
   cwd: string;
-  before: Promise<UiCompareShot & { url: string } | null>;
+  before: Promise<Before | null>;
   files: Set<string>;
+  /** when the first UI file edit of the turn came in */
+  firstEditAt: number | null;
+  /** the page the preview tools showed last when the turn started */
+  viewedAtStart: string | null;
 }
 
 export function isUiFile(file: string): boolean {
@@ -57,17 +67,32 @@ export function editedFile(cwd: string, tool: string, input: Record<string, unkn
   return rel.split(path.sep).join("/");
 }
 
+function localPage(url: string | null): URL | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return (u.protocol === "http:" || u.protocol === "https:") && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname) ? u : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The page the comparison shows: the one Claude looked at last when it is on this machine, else the dev server's address. */
 export function comparePage(lastViewed: string | null, devUrl: string): string {
-  if (lastViewed) {
+  return localPage(lastViewed) ? lastViewed! : devUrl;
+}
+
+/** Same page apart from the fragment and a trailing slash. */
+export function samePage(a: string, b: string): boolean {
+  const key = (url: string) => {
     try {
-      const u = new URL(lastViewed);
-      if ((u.protocol === "http:" || u.protocol === "https:") && ["localhost", "127.0.0.1", "[::1]"].includes(u.hostname)) return lastViewed;
+      const u = new URL(url);
+      return `${u.origin}${u.pathname.replace(/\/+$/, "")}${u.search}`;
     } catch {
-      /* not a URL: the dev server's address */
+      return url;
     }
-  }
-  return devUrl;
+  };
+  return key(a) === key(b);
 }
 
 const newId = (now: number) => `${now.toString(36)}-${randomBytes(4).toString("hex")}`;
@@ -99,17 +124,19 @@ export class UiCompareService {
     const rec = this.deps.session(sessionId);
     if (!rec) return;
     const id = newId(this.now());
-    const before = this.takeBefore(id, sessionId, rec.projectId);
-    this.watching.set(sessionId, { id, projectId: rec.projectId, cwd: rec.cwd, before, files: new Set() });
+    const viewedAtStart = this.deps.lastViewed(sessionId);
+    const before = this.takeBefore(id, rec.projectId, viewedAtStart);
+    this.watching.set(sessionId, { id, projectId: rec.projectId, cwd: rec.cwd, before, files: new Set(), firstEditAt: null, viewedAtStart });
     this.deps.track(before);
   }
 
-  private async takeBefore(id: string, sessionId: string, projectId: string): Promise<(UiCompareShot & { url: string }) | null> {
+  private async takeBefore(id: string, projectId: string, viewed: string | null): Promise<Before | null> {
     try {
       const dev = await this.deps.devServer(projectId);
       if (dev.status !== "running" || !dev.url || !this.deps.hasBrowser()) return null;
-      const shot = await this.deps.capture(projectId, comparePage(this.deps.lastViewed(sessionId), dev.url));
-      return { ...(await this.save(id, "before", shot)), url: shot.url };
+      const shot = await this.deps.capture(projectId, comparePage(viewed, dev.url));
+      const doneAt = this.now();
+      return { ...(await this.save(id, "before", shot)), url: shot.url, doneAt };
     } catch {
       // No comparison for this turn; the chat stays as it is.
       await rm(this.folder(id), { recursive: true, force: true }).catch(() => null);
@@ -130,7 +157,9 @@ export class UiCompareService {
     const w = this.watching.get(sessionId);
     if (!w) return;
     const file = editedFile(w.cwd, tool, input);
-    if (file && isUiFile(file)) w.files.add(file);
+    if (!file || !isUiFile(file)) return;
+    w.files.add(file);
+    w.firstEditAt ??= this.now();
   }
 
   /** The turn ended (done, failed or stopped): the after image when UI files changed, else the before image goes. */
@@ -149,13 +178,24 @@ export class UiCompareService {
     this.deps.track(w.before.then(() => rm(this.folder(w.id), { recursive: true, force: true })));
   }
 
+  /**
+   * Whether the before image can stand for the page as it was. Not when it was finished only after the
+   * first edit (the page may show the change already), nor when Claude looked at another page in this
+   * turn: that is the page it worked on, and the before image shows a different one.
+   */
+  private usable(sessionId: string, w: Watch, before: Before): boolean {
+    if (w.firstEditAt !== null && before.doneAt > w.firstEditAt) return false;
+    const viewed = this.deps.lastViewed(sessionId);
+    return !viewed || viewed === w.viewedAtStart || !localPage(viewed) || samePage(viewed, before.url);
+  }
+
   private async finish(sessionId: string, w: Watch) {
     const before = await w.before;
-    if (!before || !w.files.size) {
+    if (!before || !w.files.size || !this.usable(sessionId, w, before)) {
       await rm(this.folder(w.id), { recursive: true, force: true }).catch(() => null);
       return;
     }
-    const { url, ...shot } = before;
+    const { url, doneAt: _doneAt, ...shot } = before;
     const compare: UiCompare = {
       id: w.id,
       sessionId,
@@ -184,7 +224,8 @@ export class UiCompareService {
       if (dev.status !== "running") throw new Error(tr().core.preview.devServerStopped);
       if (!this.deps.hasBrowser()) throw new Error(tr().core.preview.noBrowserShort);
       const shot = await this.deps.capture(compare.projectId, compare.url);
-      next = { ...compare, status: "ready", after: await this.save(compare.id, "after", shot), error: null };
+      const after = await this.save(compare.id, "after", shot);
+      next = { ...compare, status: (await this.unchanged(compare, shot.data)) ? "unchanged" : "ready", after, error: null };
     } catch (e) {
       next = { ...compare, status: "failed", error: e instanceof Error ? e.message : String(e) };
     }
@@ -192,6 +233,16 @@ export class UiCompareService {
     await this.writeMeta(next).catch(() => null);
     this.deps.emit({ event: "uiCompare.updated", payload: next });
     return next;
+  }
+
+  /** The after image looks like the before image: the change does not show on this page or above its fold. */
+  private async unchanged(compare: UiCompare, after: string): Promise<boolean> {
+    const before = await readFile(compare.before.path).catch(() => null);
+    if (!before) return false;
+    const b64 = before.toString("base64");
+    if (b64 === after) return true;
+    const changed = await this.deps.changedPixels?.(compare.projectId, b64, after).catch(() => null);
+    return changed != null && changed >= 0 && changed <= SAME_PIXELS;
   }
 
   private writeMeta(c: UiCompare) {

@@ -371,4 +371,14 @@ describe.skipIf(!browser)("preview in a real browser", () => {
     expect(await preview.console("x", {})).toContain(`Adresse: ${base}/?seite=2`);
     await expect(preview.capture("x", "https://example.com/")).rejects.toThrow(/nur Adressen auf diesem Rechner/);
   }, 60_000);
+
+  it("counts the pixels two comparison shots differ in", async () => {
+    const a = await preview.capture("x", `${base}/?vergleich=1`);
+    const b = await preview.capture("x", `${base}/?vergleich=1`);
+    expect(await preview.changedPixels("x", a.data, b.data)).toBe(0);
+    const other = await preview.capture("x", `${base}/zeigen`);
+    expect(await preview.changedPixels("x", a.data, other.data)).toBeGreaterThan(100);
+    // the next shot still loads its page
+    expect((await preview.capture("x", `${base}/?vergleich=3`)).url).toBe(`${base}/?vergleich=3`);
+  }, 60_000);
 });

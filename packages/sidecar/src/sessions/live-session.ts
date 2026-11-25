@@ -46,8 +46,10 @@ export interface LiveSession {
   suggestion: string | null;
   /** the failed API request the turn waits to send again; null once an answer arrives */
   retry: ApiRetry | null;
-  /** estimated tokens of the running thinking block; null outside of one */
+  /** estimated thinking tokens of the running turn; null until the turn thinks */
   thinkingTokens: number | null;
+  /** tokens of the thinking block that runs now; 0 outside of one */
+  thinkingBlock: number;
   /** when thinkingTokens was last published (ms) */
   thinkingPublishedAt: number;
   /** the CLI reported a turn of its own (session_state_changed) that has no result yet */

@@ -108,6 +108,15 @@ describe("UiCompareCard", () => {
     expect(await screen.findByRole("status", { name: "Lädt Nachher-Bild" })).toBeTruthy();
   });
 
+  it("collapses to one line when nothing visible changed, the images stay one click away", async () => {
+    respond(() => compare({ status: "unchanged" }));
+    setup();
+    expect(await screen.findByText("Keine sichtbare Änderung auf dieser Seite")).toBeTruthy();
+    expect(screen.queryByRole("img")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Bilder zeigen" }));
+    expect(await screen.findByRole("img", { name: /Vorher/ })).toBeTruthy();
+  });
+
   it("says when the images were cleaned up", async () => {
     respond(() => new RpcCallError("NOT_FOUND", "Vergleich nicht mehr vorhanden."));
     setup();

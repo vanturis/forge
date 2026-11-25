@@ -533,6 +533,7 @@ export const chat = {
     notMoved: "Nicht in den Hintergrund verschoben",
     toInterrupt: "zum Unterbrechen",
     thinking: (tokens: string) => `denkt nach, ca. ${tokens} Tokens`,
+    thought: (tokens: string) => `ca. ${tokens} Tokens nachgedacht`,
     retry: {
       overloaded: "Die Claude-API ist überlastet.",
       rateLimit: "Die Claude-API nimmt gerade keine weiteren Anfragen an.",
@@ -723,6 +724,9 @@ export const chat = {
     filesChanged: (n: number) => `${n === 1 ? "1 UI-Datei" : `${n} UI-Dateien`} geändert`,
     gone: "Bilder nicht mehr vorhanden. FORGE räumt sie nach 14 Tagen weg.",
     afterFailed: (error: string | null) => `Nachher-Bild fehlgeschlagen: ${error ?? ""}`,
+    unchanged: "Keine sichtbare Änderung auf dieser Seite",
+    unchangedHint: "Die Änderung liegt auf einer anderen Seite, unterhalb des sichtbaren Bereichs oder erst nach einer Eingabe.",
+    showImages: "Bilder zeigen",
     retake: "Neu aufnehmen",
     view: "Ansicht",
     loadingImage: (side: Side) => `Lädt ${sideName(side)}-Bild`,

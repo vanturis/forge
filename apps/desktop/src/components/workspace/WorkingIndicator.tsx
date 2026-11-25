@@ -161,12 +161,14 @@ export const WorkingIndicator = memo(function WorkingIndicator({
   sessionId,
   retry,
   thinkingTokens,
+  thinking = false,
 }: {
   startedAt: string;
   subagents?: SubagentProgress[];
   sessionId?: string;
   retry?: ApiRetry | null;
   thinkingTokens?: number | null;
+  thinking?: boolean;
 }) {
   const now = useNow();
   const elapsed = now - new Date(startedAt).getTime();
@@ -184,7 +186,7 @@ export const WorkingIndicator = memo(function WorkingIndicator({
       <WorkingLine startedAt={startedAt} now={now}>
         <span className="tabular-nums text-subtle">
           ({formatElapsed(elapsed)}
-          {thinkingTokens != null && !retry && <> · {t.chat.working.thinking(formatTokens(thinkingTokens))}</>} · <Kbd>Esc</Kbd> {t.chat.working.toInterrupt})
+          {thinkingTokens != null && !retry && <> · {(thinking ? t.chat.working.thinking : t.chat.working.thought)(formatTokens(thinkingTokens))}</>} · <Kbd>Esc</Kbd> {t.chat.working.toInterrupt})
         </span>
       </WorkingLine>
       {retry && (

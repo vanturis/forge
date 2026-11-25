@@ -1,6 +1,6 @@
 import { useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Blend, Columns2, Copy, ExternalLink, FolderOpen, GitCompareArrows, ImageOff, Maximize2, RefreshCw } from "lucide-react";
+import { Blend, Columns2, Copy, Equal, ExternalLink, FolderOpen, GitCompareArrows, ImageOff, Maximize2, RefreshCw } from "lucide-react";
 import type { UiCompare } from "@forge/protocol";
 import { contextItems, copyText } from "@/lib/context-menu";
 import { openExternal } from "@/lib/native";
@@ -81,11 +81,12 @@ export function UiCompareCard({ item, sessionId }: { item: Extract<ChatItem, { k
   const q = useUiCompare(sessionId, b.compareId);
   const [mode, setMode] = useCardState<CompareMode>(cardKey(sessionId, b.compareId, "mode"), "side");
   const [zoom, setZoom] = useState<CompareMode | null>(null);
+  const [showSame, setShowSame] = useState(false);
   const c = q.data;
   const { retake, menu } = useCompareActions(sessionId, c, setZoom);
   const gone = q.isError;
   const tone: ForgeTone = gone ? "warning" : c?.status === "failed" ? "danger" : "accent";
-  
+
   return (
     <ChatRow className="group text-body" markerClassName={FORGE_MARKER_OFFSET} marker={<GitCompareArrows className={cn(EVENT_ICON, FORGE_ICON_TONE[tone])} />}>
       <div onContextMenu={menu}>
@@ -105,6 +106,16 @@ export function UiCompareCard({ item, sessionId }: { item: Extract<ChatItem, { k
             <p className="mt-1.5 flex items-center gap-1.5 text-small text-muted">
               <ImageOff className="h-3.5 w-3.5" /> {t.chat.compare.gone}
             </p>
+          ) : c?.status === "unchanged" && !showSame ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-small text-muted">
+              <Equal className="h-3.5 w-3.5" />
+              <span className="min-w-0 flex-1" title={t.chat.compare.unchangedHint}>
+                {t.chat.compare.unchanged}
+              </span>
+              <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setShowSame(true)}>
+                {t.chat.compare.showImages}
+              </Button>
+            </div>
           ) : (
             <>
               <ModeBar value={mode} onChange={setMode} className="mt-2" />

@@ -2,12 +2,13 @@ import { existsSync, mkdirSync, readdirSync, utimesSync, writeFileSync } from "n
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ServerEvent, SessionEventBody, UiCompare } from "@forge/protocol";
-import { comparePage, editedFile, isUiFile, UiCompareService } from "../src/preview/ui-compare.js";
+import { comparePage, editedFile, isUiFile, samePage, UiCompareService } from "../src/preview/ui-compare.js";
 import type { Capture } from "../src/preview/preview.js";
 import { tempDir } from "./helpers.js";
 
 const SHOP = path.resolve("/work/shop");
-const JPEG = Buffer.from("jpeg").toString("base64");
+/** The n-th capture's image; every capture differs unless a test says otherwise. */
+const jpeg = (n: number) => Buffer.from(`jpeg-${n}`).toString("base64");
 
 describe("UiCompareService", () => {
   let tmp: ReturnType<typeof tempDir>;
@@ -22,6 +23,8 @@ describe("UiCompareService", () => {
   let fail: string | null;
   let viewed: string | null;
   let now: number;
+  let same: boolean;
+  let pixels: number | null;
 
   const make = () =>
     new UiCompareService({
@@ -34,8 +37,9 @@ describe("UiCompareService", () => {
       capture: async (_projectId, url): Promise<Capture> => {
         captures.push(url);
         if (fail) throw new Error(fail);
-        return { data: JPEG, mimeType: "image/jpeg", width: 1280, height: 800, cut: false, url };
+        return { data: same ? jpeg(0) : jpeg(captures.length), mimeType: "image/jpeg", width: 1280, height: 800, cut: false, url };
       },
+      changedPixels: async () => pixels,
       record: (id, body) => recorded.push({ id, body }),
       emit: (e: ServerEvent) => {
         if (e.event === "uiCompare.updated") emitted.push(e.payload);
@@ -60,6 +64,8 @@ describe("UiCompareService", () => {
     browser = true;
     fail = null;
     viewed = null;
+    same = false;
+    pixels = null;
     now = Date.parse("2026-10-16T10:00:00.000Z");
   });
   afterEach(() => tmp.cleanup());
@@ -84,7 +90,7 @@ describe("UiCompareService", () => {
     const c = await ui.get("s1", id);
     expect(c.status).toBe("ready");
     expect(existsSync(c.before.path) && existsSync(c.after!.path)).toBe(true);
-    expect(await ui.image("s1", id, "after")).toEqual({ mediaType: "image/jpeg", base64: JPEG });
+    expect(await ui.image("s1", id, "after")).toEqual({ mediaType: "image/jpeg", base64: jpeg(2) });
     await expect(ui.get("s2", id)).rejects.toThrow(/nicht mehr vorhanden/);
     expect((await ui.latest({ sessionId: "s1" }))?.id).toBe(id);
     expect(await ui.latest({ projectId: "p2" })).toBeNull();
@@ -148,6 +154,59 @@ describe("UiCompareService", () => {
     expect(emitted.at(-1)?.status).toBe("ready");
   });
 
+  it("says when the after image looks like the before image", async () => {
+    const ui = make();
+    same = true;
+    ui.turnStarted("s1");
+    ui.toolUsed("s1", "Edit", { file_path: "src/App.tsx" });
+    ui.turnEnded("s1");
+    await settle();
+    expect(emitted.map((c) => c.status)).toEqual(["capturing", "unchanged"]);
+    // a few pixels apart (a caret) is the same page; more is a change
+    same = false;
+    pixels = 3;
+    const id = (recorded[0]!.body as Extract<SessionEventBody, { type: "ui.compare" }>).compareId;
+    await ui.retake("s1", id);
+    await settle();
+    expect((await ui.get("s1", id)).status).toBe("unchanged");
+    pixels = 900;
+    await ui.retake("s1", id);
+    await settle();
+    expect((await ui.get("s1", id)).status).toBe("ready");
+  });
+
+  it("drops a before image that was finished only after the first edit", async () => {
+    const ui = make();
+    ui.turnStarted("s1");
+    ui.toolUsed("s1", "Edit", { file_path: "src/App.tsx" });
+    // the capture is still running (it resolves in later ticks) when the edit comes in
+    now += 1;
+    ui.turnEnded("s1");
+    await settle();
+    expect(captures).toHaveLength(1);
+    expect(recorded).toEqual([]);
+  });
+
+  it("drops the comparison when Claude looked at another page in this turn", async () => {
+    const ui = make();
+    viewed = "http://localhost:5173/";
+    ui.turnStarted("s1");
+    ui.toolUsed("s1", "Edit", { file_path: "src/Stats.tsx" });
+    viewed = "http://localhost:5173/stats";
+    ui.turnEnded("s1");
+    await settle();
+    expect(recorded).toEqual([]);
+    expect(existsSync(dir) ? readdirSync(dir) : []).toEqual([]);
+    // the same page again (fragment, trailing slash) keeps it
+    viewed = "http://localhost:5173/stats";
+    ui.turnStarted("s1");
+    ui.toolUsed("s1", "Edit", { file_path: "src/Stats.tsx" });
+    viewed = "http://localhost:5173/stats/#top";
+    ui.turnEnded("s1");
+    await settle();
+    expect(recorded).toHaveLength(1);
+  });
+
   it("prunes comparisons older than 14 days and before images left behind", async () => {
     const ui = make();
     ui.turnStarted("s1");
@@ -180,6 +239,12 @@ describe("ui-compare helpers", () => {
     expect(editedFile(cwd, "Edit", { file_path: path.resolve("/other/App.tsx") })).toBeNull();
     expect(editedFile(cwd, "Read", { file_path: "src/App.tsx" })).toBeNull();
     expect(editedFile(cwd, "Bash", { command: "sed -i s/a/b/ src/App.tsx" })).toBeNull();
+  });
+
+  it("tells pages apart without fragment and trailing slash", () => {
+    expect(samePage("http://localhost:3000/a/", "http://localhost:3000/a#x")).toBe(true);
+    expect(samePage("http://localhost:3000/a", "http://localhost:3000/b")).toBe(false);
+    expect(samePage("http://localhost:3000/?q=1", "http://localhost:3000/?q=2")).toBe(false);
   });
 
   it("shows the page Claude looked at last when it is local, else the dev server", () => {

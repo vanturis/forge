@@ -1816,6 +1816,7 @@ export class PhoneService {
             s.status === "waiting_approval" ? m.details.open(pendingText(db, s.id)) : "",
             tasks.length ? m.details.tasks(tasks.join("\n")) : "",
             s.retry && s.status === "running" ? m.details.retry(s.retry.attempt, s.retry.maxRetries, s.retry.error === "overloaded") : "",
+            s.thinkingTokens != null && s.status === "running" && !s.retry ? m.details.thinking(m.details.tokens(s.thinkingTokens), s.thinking === true) : "",
             s.suggestion && s.status === "idle" ? m.details.suggestion(excerptData(s.suggestion, 300)) : "",
           ]
             .filter(Boolean)
@@ -3040,7 +3041,8 @@ export class PhoneService {
               return sm.retake(r);
             }
             const files = sm.uiFiles(c.files.length);
-            const state = c.status === "ready" ? sm.compareReady : c.status === "capturing" ? sm.compareCapturing : sm.compareFailed(asData(c.error ?? sm.unknownError));
+            const state =
+              c.status === "ready" ? sm.compareReady : c.status === "capturing" ? sm.compareCapturing : c.status === "unchanged" ? sm.compareUnchanged : sm.compareFailed(asData(c.error ?? sm.unknownError));
             return sm.compare(r, dateTime(c.createdAt), asData(c.url), files, asData(c.files.slice(0, 5).join(", ")), state);
           }
           if (action === "rewind") {

@@ -374,6 +374,7 @@ Sicherheit:
     subagent: (desc: string, since: string, summary: string) => `Subagent ${desc}, ${since}${summary ? `, zuletzt: ${summary}` : ""}`,
     background: (kind: string, desc: string, since: string, summary: string) => `Im Hintergrund: ${kind} ${desc}, ${since}${summary ? `, zuletzt: ${summary}` : ""}`,
     context: (percent: number) => ` Kontext zu ${percent} Prozent voll.`,
+    thinking: (tokens: string, now: boolean) => `${now ? "Claude denkt gerade nach, im" : "Im"} laufenden Durchlauf bisher ca. ${tokens} Tokens Denken.`,
     retry: (attempt: number, max: number, overloaded: boolean) =>
       `Die Session wartet auf die Claude-API, ${overloaded ? "sie ist überlastet" : "die letzte Anfrage ist fehlgeschlagen"}. Claude Code versucht es von selbst erneut, Versuch ${attempt} von ${max}.`,
     suggestion: (text: string) => `Claude Code schlägt als nächste Nachricht vor: ${text}. Mit send_message schicken, wenn der Anrufer das will.`,
@@ -877,6 +878,7 @@ Sicherheit:
     uiFiles: (n: number) => (n === 1 ? "1 UI-Datei" : `${n} UI-Dateien`),
     compareReady: "Vorher- und Nachher-Bild liegen vor",
     compareCapturing: "das Nachher-Bild wird gerade aufgenommen",
+    compareUnchanged: "auf dieser Seite hat sich sichtbar nichts geändert",
     compareFailed: (error: string) => `das Nachher-Bild fehlt: ${error}`,
     unknownError: "unbekannter Fehler",
     compare: (ref: string, when: string, url: string, files: string, names: string, state: string) =>

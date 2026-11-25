@@ -238,6 +238,7 @@ export class SessionLifecycle {
       suggestion: null,
       retry: null,
       thinkingTokens: null,
+      thinkingBlock: 0,
       thinkingPublishedAt: 0,
       cliTurn: false,
       reloadPending: false,

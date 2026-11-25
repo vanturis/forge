@@ -530,6 +530,7 @@ export const chat: typeof De = {
     notMoved: "Not moved to the background",
     toInterrupt: "to interrupt",
     thinking: (tokens) => `thinking, about ${tokens} tokens`,
+    thought: (tokens) => `about ${tokens} tokens of thinking`,
     retry: {
       overloaded: "The Claude API is overloaded.",
       rateLimit: "The Claude API is not taking more requests right now.",
@@ -718,6 +719,9 @@ export const chat: typeof De = {
     filesChanged: (n) => `${n === 1 ? "1 UI file" : `${n} UI files`} changed`,
     gone: "Images no longer available. FORGE removes them after 14 days.",
     afterFailed: (error) => `After image failed: ${error ?? ""}`,
+    unchanged: "No visible change on this page",
+    unchangedHint: "The change is on another page, below the visible area or only after some input.",
+    showImages: "Show images",
     retake: "Retake",
     view: "View",
     loadingImage: (side) => `Loading ${side} image`,

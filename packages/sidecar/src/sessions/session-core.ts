@@ -28,6 +28,7 @@ export class SessionCore {
       suggestion: live?.suggestion ?? null,
       retry: live?.retry ?? null,
       thinkingTokens: live?.thinkingTokens ?? null,
+      thinking: (live?.thinkingBlock ?? 0) > 0,
     };
   }
 
